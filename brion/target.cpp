@@ -96,7 +96,7 @@ public:
         ValueTable::const_iterator i = _targetValues.find( name );
         if( i != _targetValues.end( ))
             return i->second;
-        LBTHROW( std::runtime_error( name + " not a valid target" ));
+        throw std::runtime_error( name + " not a valid target" );
     }
 
 private:
