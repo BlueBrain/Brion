@@ -1,6 +1,4 @@
-[TOC]
-
-# Introduction {#Introduction}
+# Introduction
 
 ![](doc/BBPLOGO350.jpg)
 
@@ -14,9 +12,9 @@ The [latest API documentation]
 (http://bluebrain.github.io/Brion-1.7/index.html) can be found on
 [bluebrain.github.io](http://bluebrain.github.io).
 
-To keep track of the changes between releases check the [changelog](@ref Changelog).
+To keep track of the changes between releases check the [changelog](doc/Changelog.md).
 
-# Features {#Features}
+# Features
 
 Brion provides two libraries Brion and Brain. The former is a collection of file
 readers and writers intended for low level access to the data model. The latter
@@ -55,7 +53,7 @@ The higher level library is called Brain and it provides:
   morphologies in local and global circuit coordinates.
 * A morphology class with higher level functions to deal with morphologies.
 
-# Building {#Building}
+# Building
 
 Brion is a cross-platform library, designed to run on any modern operating
 system, including all Unix variants. Brion uses CMake to create a
