@@ -25,6 +25,9 @@
 
 #include <math.h> // for nextafterf and INFINITY
 
+// Disable overflow in floating point constant arithmetic MSVC warnings
+#pragma warning( disable: 4056 4756 )
+
 namespace brain
 {
 
@@ -88,7 +91,8 @@ Spikes SpikeReportReader::getSpikes()
             // is complete.
             const float time = report.getLatestSpikeTime();
             // Ensuring that we don't block if no spikes have been received.
-            if( time != brion::UNDEFINED_TIMESTAMP )
+            if( time != brion::UNDEFINED_TIMESTAMP &&
+                time > -std::numeric_limits<float>::max( ))
                 report.waitUntil( nextafterf( time, -INFINITY ));
         }
     }

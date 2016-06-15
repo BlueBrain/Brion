@@ -20,6 +20,12 @@
  * 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
  */
 
+#ifdef _WINDOWS
+// first thing to include to get M_PI defined
+#define _USE_MATH_DEFINES
+#include <cmath>
+#endif
+
 #include "circuit.h"
 #include "neuron/morphology.h"
 
@@ -109,7 +115,7 @@ public:
         brain::GIDSet gids;
         brain::GIDSet::const_iterator hint = gids.begin();
         for( size_t i = 0; i < getNumNeurons(); ++i )
-            hint = gids.insert( hint, i + 1 );
+            hint = gids.insert( hint, uint32_t( i ) + 1 );
         return gids;
     }
 
@@ -162,7 +168,7 @@ public:
 
         Vector3fs positions( gids.size( ));
 #pragma omp parallel for
-        for( size_t i = 0; i < gids.size(); ++i )
+        for( int i = 0; i < int( gids.size()); ++i )
         {
             try
             {
@@ -190,7 +196,7 @@ public:
         Quaternionfs rotations( gids.size( ));
 
 #pragma omp parallel for
-        for( size_t i = 0; i < gids.size(); ++i )
+        for( int i = 0; i < int( gids.size()); ++i )
         {
             try
             {
@@ -372,7 +378,7 @@ Matrix4fs Circuit::getTransforms( const GIDSet& gids ) const
     Matrix4fs transforms( positions.size( ));
 
 #pragma omp parallel for
-    for( size_t i = 0; i < positions.size(); ++i )
+    for( int i = 0; i < int( positions.size()); ++i )
         transforms[i] = Matrix4f( rotations[i], positions[i] );
     return transforms;
 
