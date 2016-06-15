@@ -77,7 +77,7 @@ uint32_ts Morphology::Impl::getSectionIDs(
             LBWARN << "Unknown section type " << int(type) << std::endl;
         else
             if( bits[size_t( type )] )
-                result.push_back( i );
+                result.push_back( uint32_t( i ));
     }
     return result;
 }
@@ -191,7 +191,7 @@ const uint32_ts& Morphology::Impl::getChildren( const uint32_t sectionID ) const
 void Morphology::Impl::transform( const Matrix4f& matrix )
 {
     #pragma omp parallel for
-    for( size_t i = 0; i < points->size(); ++i)
+    for( int i = 0; i < int( points->size()); ++i)
     {
         Vector4f& p = ( *points )[i];
         const Vector3f& pp = matrix * p.get_sub_vector< 3, 0 >();
@@ -207,7 +207,7 @@ void Morphology::Impl::_extractChildrenLists()
     {
         const int32_t parent = ( *sections )[i][1];
         if( parent != -1 )
-            children[parent].push_back( i );
+            children[parent].push_back( uint32_t( i ));
     }
     _sectionChildren.resize( sections->size( ));
     BOOST_FOREACH( ChildrenMap::value_type& sectionAndChildren,
