@@ -180,10 +180,11 @@ int main( const int argc, char** argv )
     float writeTime = clock.getTimef();
 
     const size_t nFrames = (end - start) / step;
-    boost::progress_display progress( nFrames / lunchbox::OMP::getNThreads( ));
+    boost::progress_display progress( uint32_t( nFrames ) /
+                                      lunchbox::OMP::getNThreads( ));
 
 #pragma omp parallel for private(clock)
-    for( size_t i = 0; i < nFrames; ++i )
+    for( int i = 0; i < nFrames; ++i )
     {
         const float t = start + i * step;
         clock.reset();
@@ -223,7 +224,7 @@ int main( const int argc, char** argv )
 
     if( vm.count( "compare" ))
     {
-        progress.restart( nFrames );
+        progress.restart( uint32_t( nFrames ));
         brion::CompartmentReport result( outURI, brion::MODE_READ );
 
         REQUIRE_EQUAL( in.getStartTime(), result.getStartTime( ));

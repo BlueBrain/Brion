@@ -16,6 +16,11 @@ set(MORPHOLOGYCONVERTER_LINK_LIBRARIES Brion ${Boost_PROGRAM_OPTIONS_LIBRARY})
 
 common_application(morphologyConverter)
 
+if (MSVC)
+  target_compile_definitions(morphologyConverter PRIVATE
+    BOOST_PROGRAM_OPTIONS_DYN_LINK)
+endif()
+
 set(COMPARTMENTCONVERTER_HEADERS)
 set(COMPARTMENTCONVERTER_SOURCES compartmentConverter.cpp)
 set(COMPARTMENTCONVERTER_LINK_LIBRARIES Brion ${Boost_PROGRAM_OPTIONS_LIBRARY})
@@ -24,3 +29,8 @@ if(TARGET BBPTestData)
 endif()
 
 common_application(compartmentConverter)
+
+if (MSVC)
+  target_compile_definitions(compartmentConverter PRIVATE
+    BOOST_PROGRAM_OPTIONS_DYN_LINK)
+endif()
