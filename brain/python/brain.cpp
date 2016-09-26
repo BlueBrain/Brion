@@ -25,6 +25,8 @@
 
 #include "arrayHelpers.h"
 
+#include "docstrings.h"
+
 #include <vmmlib/vector.hpp>
 
 namespace brain
@@ -65,12 +67,15 @@ struct URItoString
 
 BOOST_PYTHON_MODULE(_brain)
 {
+    boost::python::docstring_options doc_options(true, true, false);
+
     boost::python::to_python_converter< servus::URI, URItoString >();
     boost::python::to_python_converter< brain::Vector3f, Vector3fToTuple >();
 
     brain::importArray();
 
-    boost::python::enum_< brain::SynapsePrefetch >( "SynapsePrefetch" )
+    boost::python::enum_< brain::SynapsePrefetch >(
+        "SynapsePrefetch", DOXY_ENUM( brain::SynapsePrefetch ))
         .value( "none", brain::SynapsePrefetch::none )
         .value( "attributes", brain::SynapsePrefetch::attributes )
         .value( "positions", brain::SynapsePrefetch::positions )

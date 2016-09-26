@@ -13,25 +13,54 @@ if(NOT Boost_PYTHON${USE_BOOST_PYTHON_VERSION}_LIBRARY OR
   return()
 endif()
 
-set(BRAIN_PYTHON_SOURCE_FILES
-  arrayHelpers.cpp
+list(APPEND CMAKE_MODULE_PATH ${CMAKE_SOURCE_DIR}/Pydoxine/CMake)
+include(PythonDocstrings)
+
+set(BRAIN_PYTHON_SOURCES
   brain.cpp
   circuit.cpp
+  synapses.cpp
+  neuron/morphology.cpp
+)
+
+set(__docstrings_sources)
+set(__docstrings_headers)
+# Input files to docstrings need absolute paths.
+foreach(__header ${BRAIN_PUBLIC_HEADERS})
+  list(APPEND __docstrings_headers ${PROJECT_SOURCE_DIR}/brain/${__header})
+endforeach()
+foreach(__source ${BRAIN_PYTHON_SOURCES})
+  list(APPEND __docstrings_sources ${CMAKE_CURRENT_SOURCE_DIR}/${__source})
+endforeach()
+
+set(DOCSTRINGS_INCLUDE_PATH ${PROJECT_BINARY_DIR}/include)
+docstrings(__docstrings_sources __docstrings_headers)
+
+list(APPEND BRAIN_PYTHON_SOURCES
+  arrayHelpers.cpp
   spikeReportWriter.cpp
   spikeReportReader.cpp
   spikes.cpp
-  synapses.cpp
   submodules.cpp
   test.cpp
   neuron/module.cpp
-  neuron/morphology.cpp
+  ${PROJECT_BINARY_DIR}/docstrings/cpp/docstrings.cpp
 )
-include_directories(${PYTHON_INCLUDE_DIRS}
+
+if(NOT TARGET ${PROJECT_NAME}-docstrings)
+  configure_file(default_docstrings.cpp
+                 ${PROJECT_BINARY_DIR}/docstrings/cpp/init_docstrings.cpp)
+endif()
+
+include_directories(${PROJECT_BINARY_DIR}/docstrings/cpp
+                    ${PYTHON_INCLUDE_DIRS}
                     ${PYTHON_NUMPY_INCLUDE_DIR})
 
-add_library(brain_python MODULE ${BRAIN_PYTHON_SOURCE_FILES})
+add_library(brain_python MODULE ${BRAIN_PYTHON_SOURCES})
 common_compile_options(brain_python)
-add_dependencies(brain_python Brain)
+if(TARGET ${PROJECT_NAME}-docstrings)
+  add_dependencies(brain_python Brain ${PROJECT_NAME}-docstrings)
+endif()
 
 target_link_libraries(brain_python
   PRIVATE Brain ${PYTHON_LIBRARIES}
