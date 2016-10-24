@@ -1,4 +1,4 @@
-Redesign of the SpikeReport and Spikes container {#spikeReport}
+Redesign of the SpikeReport and Spikes container {#spikereports}
 ============
 
 The current design of the SpikeReport has several flaws that need to be
