@@ -4,10 +4,6 @@
 # This file is part of Brion <https://github.com/BlueBrain/Brion>
 #
 
-# Reusing the FindSphinx script from Pydoxine
-list(APPEND CMAKE_MODULE_PATH ${CMAKE_SOURCE_DIR}/Pydoxine/CMake)
-
-common_find_package(Sphinx)
 if(NOT SPHINX_FOUND)
   return()
 endif()

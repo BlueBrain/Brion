@@ -13,7 +13,6 @@ if(NOT Boost_PYTHON${USE_BOOST_PYTHON_VERSION}_LIBRARY OR
   return()
 endif()
 
-list(APPEND CMAKE_MODULE_PATH ${CMAKE_SOURCE_DIR}/Pydoxine/CMake)
 include(PythonDocstrings)
 
 set(BRAIN_PYTHON_SOURCES
@@ -46,11 +45,6 @@ list(APPEND BRAIN_PYTHON_SOURCES
   neuron/module.cpp
   ${PROJECT_BINARY_DIR}/docstrings/cpp/docstrings.cpp
 )
-
-if(NOT TARGET ${PROJECT_NAME}-docstrings)
-  configure_file(default_docstrings.cpp
-                 ${PROJECT_BINARY_DIR}/docstrings/cpp/init_docstrings.cpp)
-endif()
 
 include_directories(${PROJECT_BINARY_DIR}/docstrings/cpp
                     ${PYTHON_INCLUDE_DIRS}
