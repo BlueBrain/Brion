@@ -25,6 +25,10 @@ set(BRAIN_PYTHON_SOURCES
 docstrings(BRAIN_PYTHON_SOURCES BRAIN_PUBLIC_HEADERS
   ${PROJECT_BINARY_DIR}/include)
 
+if(TARGET Brion-docstrings)
+  add_definitions(-DBRION_HAS_DOCSTRINGS)
+endif()
+
 list(APPEND BRAIN_PYTHON_SOURCES
   arrayHelpers.cpp
   spikeReportWriter.cpp
