@@ -22,18 +22,8 @@ set(BRAIN_PYTHON_SOURCES
   neuron/morphology.cpp
 )
 
-set(__docstrings_sources)
-set(__docstrings_headers)
-# Input files to docstrings need absolute paths.
-foreach(__header ${BRAIN_PUBLIC_HEADERS})
-  list(APPEND __docstrings_headers ${PROJECT_SOURCE_DIR}/brain/${__header})
-endforeach()
-foreach(__source ${BRAIN_PYTHON_SOURCES})
-  list(APPEND __docstrings_sources ${CMAKE_CURRENT_SOURCE_DIR}/${__source})
-endforeach()
-
-set(DOCSTRINGS_INCLUDE_PATH ${PROJECT_BINARY_DIR}/include)
-docstrings(__docstrings_sources __docstrings_headers)
+docstrings(BRAIN_PYTHON_SOURCES BRAIN_PUBLIC_HEADERS
+  ${PROJECT_BINARY_DIR}/include)
 
 list(APPEND BRAIN_PYTHON_SOURCES
   arrayHelpers.cpp
