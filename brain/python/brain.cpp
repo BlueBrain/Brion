@@ -67,7 +67,7 @@ struct URItoString
 
 BOOST_PYTHON_MODULE(_brain)
 {
-#ifdef BRION_HAS_DOCSTRINGS
+#ifdef BRAIN_HAS_DOCSTRINGS
     /* Only change the default Boost.Python options for documentation if we
        are going to get docstrings from doxygen. */
     boost::python::docstring_options doc_options(true, true, false);
