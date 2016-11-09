@@ -24,30 +24,35 @@ CompartmentReport.
 
 ## Meta data
 
-* List of neuron GIDs.
-* Start time in ms.
-* End time in ms.
-* Dt in ms.
+* List of neuron GIDs
+* Start time in ms
+* End time in ms
+* Dt in ms
 * Data unit as string, e.g. mV, pA
+* Morphological skeletons describing the cell tree structure in sections
+  and segments
 
 ## Compartment information
 
-* For each neuron, sorted ascending by GID.
+* For each neuron, sorted ascending by GID
 * Number of compartments of each section per neuron, sections order defined by
-  morphology.
+  morphology
 * All sections of a neuron are always described, i.e. unreported sections have
-  zero compartments.
+  zero compartments
 
-Compartments are always linearly interpolated along all segments of a section,
-i.e. compartments have all the same length within a particular section.
+Compartments and their reported values are linearly interpolated along
+all segments of a section, i.e. all compartments have the same length
+within a particular section, and when computing the value of a segment
+linear interpolation of all compartment contributions in this segment is
+used.
 
 ## Report information
 
-* Reportable value in data unit per compartment.
+* Reportable value in data unit per compartment
 * Sorted ascending by timestamp, discretized in (_endtime - starttime_) / _dt_
-  frames.
-* Within a timestamp, sorted ascending by GID.
-* Within a neuron, sorted by section order defined by morphology.
+  frames
+* Within a timestamp, sorted ascending by GID
+* Within a neuron, sorted by section order defined by morphology
 
 Typically, implementations provide a mapping information to correlate GID and
 section to number of compartments and their reported value.

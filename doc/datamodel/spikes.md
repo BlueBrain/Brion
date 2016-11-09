@@ -10,10 +10,10 @@ Spikes are reported continuously, contrary to frame-based compartment reports.
 
 ## Meta data
 
-* List of neuron GIDs.
-* Start time in ms.
-* End time in ms.
+* List of neuron GIDs
+* Start time in ms
+* End time in ms
 
 ## Report information
 
-* Pairs of timestamp in ms and GID or vice versa, unordered.
+* Spikes: pair of timestamp in ms and GID
