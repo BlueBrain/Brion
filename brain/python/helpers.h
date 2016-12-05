@@ -25,6 +25,8 @@
 
 #include <brain/types.h>
 
+#include <unordered_map>
+
 namespace brain
 {
 
@@ -57,6 +59,15 @@ inline boost::python::list toPythonList( const std::vector< T >& vector )
     return result;
 }
 
+inline uint32_ts toVector( const GIDSet& gids )
+{
+    uint32_ts result;
+    result.reserve( gids.size( ));
+    for( uint32_t gid : gids )
+        result.push_back( gid );
+    return result;
+}
+
 inline boost::python::object toPythonSet( const GIDSet& ids )
 {
     boost::python::object set( boost::python::handle<>( PySet_New( 0 )));
@@ -70,26 +81,22 @@ inline boost::python::object toPythonSet( const GIDSet& ids )
     return set;
 }
 
-inline GIDSet gidsFromPython( const boost::python::object iterable )
-{
-    GIDSet result;
-    try
-    {
-        boost::python::stl_input_iterator< unsigned int > i( iterable ), end;
-        uint32_ts vector;
-        vector.reserve( len( iterable ));
-        for( ; i != end; ++i)
-            vector.push_back( *i );
-        result.insert( vector.begin(), vector.end( ));
-    }
-    catch(...)
-    {
-        PyErr_SetString( PyExc_ValueError,
-                         "Cannot convert argument to GID set" );
-        boost::python::throw_error_already_set();
-    }
-    return result;
-}
+/** Copy the contents of a Python iterable into or numpy array into a GIDSet. */
+GIDSet gidsFromPython( const boost::python::object& object );
+
+/** Copy the contents of a Python iterable or numpy array into a GIDSet and
+    return the correspondance map between elements in the iterable and the set.
+    @param object A Python iterable object or numpy.ndarray
+    @param result The out GID set.
+    @param result mapping If the input iterable is not sorted, this vector
+           contains at each position the position in the input iterable of the
+           elements as iterated in the result set. If the input iterable is
+           sorted this vector is empty.
+           This can be used to shuffle a vector sorted by the GIDSet to match
+           the iteration order of the Python iterable.
+*/
+void gidsFromPython( const boost::python::object& object,
+                     GIDSet& result, uint32_ts& mapping );
 
 }
 #endif

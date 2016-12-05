@@ -103,7 +103,7 @@ public:
         indices.reserve( gids.size( ));
         BOOST_FOREACH( const uint32_t gid, gids )
         {
-            if ( gid > neurons.size( ))
+            if( gid > neurons.size( ) || gid == 0 )
             {
                 std::stringstream msg;
                 msg << "Cell GID out of range: " << gid;
