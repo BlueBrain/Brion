@@ -220,7 +220,7 @@ bool _copyGIDs( PyArrayObject* array, uint32_ts& result )
         if( last >= gid )
             sorted = false;
         else
-            sorted = gid;
+            last = gid;
         result.push_back( gid );
     }
     return sorted;

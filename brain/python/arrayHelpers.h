@@ -30,7 +30,7 @@ namespace brain
 
 void importArray();
 
-/** @return True is the python object is a numpy.ndarray, false otherwise. */
+/** @return True if the python object is a numpy.ndarray, false otherwise. */
 bool isArray( const boost::python::object& object );
 
 template< typename T >
