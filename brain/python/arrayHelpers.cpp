@@ -204,7 +204,7 @@ namespace
 template< typename T >
 bool _copyGIDs( PyArrayObject* array, uint32_ts& result )
 {
-    size_t size = PyArray_DIMS(array)[0];
+    const size_t size = PyArray_DIMS(array)[0];
     bool sorted = true;
 
     result.clear();
@@ -216,7 +216,10 @@ bool _copyGIDs( PyArrayObject* array, uint32_ts& result )
         const T gid = *static_cast< T* >(PyArray_GETPTR1( array, i ));
         if( gid < 0 || ssize_t( gid ) >
                        ssize_t( std::numeric_limits< uint32_t >::max( )))
+        {
             PyErr_SetString( PyExc_ValueError, "Invalid input GID" );
+            boost::python::throw_error_already_set();
+        }
         if( last >= gid )
             sorted = false;
         else

@@ -61,11 +61,7 @@ inline boost::python::list toPythonList( const std::vector< T >& vector )
 
 inline uint32_ts toVector( const GIDSet& gids )
 {
-    uint32_ts result;
-    result.reserve( gids.size( ));
-    for( uint32_t gid : gids )
-        result.push_back( gid );
-    return result;
+    return uint32_ts( gids.begin(), gids.end( ));
 }
 
 inline boost::python::object toPythonSet( const GIDSet& ids )
@@ -81,20 +77,20 @@ inline boost::python::object toPythonSet( const GIDSet& ids )
     return set;
 }
 
-/** Copy the contents of a Python iterable into or numpy array into a GIDSet. */
+/** Copy the contents of a Python iterable or numpy array into a GIDSet. */
 GIDSet gidsFromPython( const boost::python::object& object );
 
 /** Copy the contents of a Python iterable or numpy array into a GIDSet and
-    return the correspondance map between elements in the iterable and the set.
-    @param object A Python iterable object or numpy.ndarray
-    @param result The out GID set.
-    @param result mapping If the input iterable is not sorted, this vector
-           contains at each position the position in the input iterable of the
-           elements as iterated in the result set. If the input iterable is
-           sorted this vector is empty.
-           This can be used to shuffle a vector sorted by the GIDSet to match
-           the iteration order of the Python iterable.
-*/
+ *  return the correspondance map between elements in the iterable and the set.
+ *  @param object A Python iterable object or numpy.ndarray
+ *  @param result The out GID set.
+ *  @param mapping If the input iterable is not sorted, this vector
+ *         contains at each position the position in the input iterable of the
+ *         elements as iterated in the result set. If the input iterable is
+ *         sorted this vector is empty.
+ *         This can be used to shuffle a vector sorted by the GIDSet to match
+ *         the iteration order of the Python iterable.
+ */
 void gidsFromPython( const boost::python::object& object,
                      GIDSet& result, uint32_ts& mapping );
 
