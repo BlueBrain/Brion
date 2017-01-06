@@ -1,4 +1,4 @@
-/* Copyright (c) 2015-2016, EPFL/Blue Brain Project
+/* Copyright (c) 2015-2017, EPFL/Blue Brain Project
  *                          Stefan Eilemann <stefan.eilemann@epfl.ch>
  *
  * This file is part of Brion <https://github.com/BlueBrain/Brion>
@@ -23,6 +23,7 @@
 #  include <BBP/TestDatasets.h>
 #endif
 
+#include <boost/filesystem.hpp>
 #include <boost/program_options.hpp>
 #include <boost/progress.hpp>
 
@@ -162,9 +163,22 @@ int main( const int argc, char** argv )
     const brion::CompartmentCounts& counts = in.getCompartmentCounts();
     const brion::GIDSet& gids = in.getGIDs();
 
-    const lunchbox::URI outURI( vm.count( "output" ) == 1 ?
-                                vm[ "output" ].as< std::string >() :
-                                std::string( "out.h5" ));
+    lunchbox::URI outURI( vm.count( "output" ) == 1 ?
+                          vm[ "output" ].as< std::string >() :
+                          std::string( "out.h5" ));
+    if( outURI.getPath().empty( ))
+    {
+        try
+        {
+            outURI.setPath( boost::filesystem::canonical(
+                                inURI.getPath( )).generic_string( ));
+        }
+        catch( const boost::filesystem::filesystem_error& )
+        {
+            // For non-filebased reports, the canonical above will throw.
+            outURI.setPath( inURI.getPath( ));
+        }
+    }
 
     clock.reset();
     brion::CompartmentReport to( outURI, brion::MODE_OVERWRITE );
