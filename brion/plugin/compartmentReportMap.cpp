@@ -58,26 +58,17 @@ namespace plugin
 namespace
 {
 lunchbox::PluginRegisterer< CompartmentReportMap > registerer;
-
-std::string _generateReportKey( const URI& uri )
-{
-    const auto& path = uri.getPath();
-    if( path.empty( ))
-        LBTHROW( std::runtime_error( "Empty report path for " +
-                                     std::to_string( uri  )));
-    // OPT: hash path to limit string size used as key
-    return lunchbox::make_uint128( path ).getString() + "_";
-}
-
 }
 
 CompartmentReportMap::CompartmentReportMap(
                                 const CompartmentReportInitData& initData )
-    : _key( _generateReportKey( initData.getURI( )))
-    , _readable( false )
+    : _readable( false )
 {
-    // have at least one store
     const auto& uri = initData.getURI();
+    if( uri.getPath().empty( ))
+        LBTHROW( std::runtime_error( "Empty report path for " +
+                                     std::to_string( uri )));
+    // have at least one store
     _stores.emplace_back( keyv::Map( uri ));
     _stores.back().setQueueDepth( _queueDepth );
     if( uri.getScheme() == "memcached" ) // parallelize loading with memcached

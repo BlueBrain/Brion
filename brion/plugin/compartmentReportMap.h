@@ -75,7 +75,6 @@ public:
     };
 
 private:
-    const std::string _key;
     std::vector< keyv::Map > _stores;
 
     Header _header;
@@ -114,14 +113,14 @@ private:
     bool _load( floatsPtr buffer, const Strings& keys,
                 const OffsetMap& offsets) const;
 
-    std::string _getHeaderKey() const { return _key + "header"; }
-    std::string _getGidsKey() const { return _key + "gids"; }
-    std::string _getTunitKey() const { return _key + "tunit"; }
-    std::string _getDunitKey() const { return _key + "dunit"; }
+    std::string _getHeaderKey() const { return "header"; }
+    std::string _getGidsKey() const { return "gids"; }
+    std::string _getTunitKey() const { return "tunit"; }
+    std::string _getDunitKey() const { return "dunit"; }
     std::string _getCountsKey( const uint32_t gid ) const
-        { return _key + "counts_" + std::to_string( gid ); }
+        { return "counts_" + std::to_string( gid ); }
     std::string _getValueKey( const uint32_t gid, const size_t frame ) const
-        { return _key + std::to_string( gid ) + "_" + std::to_string( frame ); }
+        { return std::to_string( gid ) + "_" + std::to_string( frame ); }
 };
 
 }
