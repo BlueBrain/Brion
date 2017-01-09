@@ -261,13 +261,6 @@ bool CompartmentReportMap::_loadHeader()
                       _header.endTime << "/" << _header.timestep );
 
         const bool loadGIDs = _gids.empty();
-        store.fetch( _getDunitKey( ));
-        store.fetch( _getTunitKey( ));
-        if( loadGIDs )
-            store.fetch( _getGidsKey(), _header.nGIDs * sizeof( uint32_t ));
-        for( const uint32_t gid : _gids )
-            store.fetch( _getCountsKey( gid ));
-
         _dunit = store[ _getDunitKey( )];
         _tunit = store[ _getTunitKey( )];
         if( loadGIDs )

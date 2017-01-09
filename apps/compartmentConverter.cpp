@@ -77,7 +77,8 @@ int main( const int argc, char** argv )
 #else
         ( "input,i", po::value< std::string >()->required(), "Input report URI")
 #endif
-        ( "output,o", po::value< std::string >(), "Output report URI" )
+        ( "output,o", po::value< std::string >()->default_value( "out.h5" ),
+          "Output report URI" )
         ( "maxFrames,m", po::value< size_t >(),
           "Convert at most the given number of frames" )
         ( "gids,g", po::value< std::vector< uint32_t >>()->multitoken(),
@@ -163,9 +164,7 @@ int main( const int argc, char** argv )
     const brion::CompartmentCounts& counts = in.getCompartmentCounts();
     const brion::GIDSet& gids = in.getGIDs();
 
-    lunchbox::URI outURI( vm.count( "output" ) == 1 ?
-                          vm[ "output" ].as< std::string >() :
-                          std::string( "out.h5" ));
+    lunchbox::URI outURI( vm[ "output" ].as< std::string >( ));
     if( outURI.getPath().empty( ))
     {
         try
