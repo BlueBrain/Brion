@@ -77,7 +77,7 @@ int main( const int argc, char** argv )
 #else
         ( "input,i", po::value< std::string >()->required(), "Input report URI")
 #endif
-        ( "output,o", po::value< std::string >()->default_value( "out.h5" ),
+        ( "output,o", po::value< std::string >()->default_value( "null://" ),
           "Output report URI" )
         ( "maxFrames,m", po::value< size_t >(),
           "Convert at most the given number of frames" )

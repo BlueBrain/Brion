@@ -185,6 +185,12 @@ bool CompartmentReportBinary::handles(
     return ext == ".bin" || ext == ".rep" || ext == ".bbp";
 }
 
+std::string CompartmentReportBinary::getDescription()
+{
+    return "Blue Brain binary compartment reports:\n"
+           "  [file://]/path/to/report.(bin|rep|bbp)";
+}
+
 const GIDSet& CompartmentReportBinary::getGIDs() const
 {
     return _gids;

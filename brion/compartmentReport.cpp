@@ -21,7 +21,6 @@
 #include "compartmentReportPlugin.h"
 
 #include <lunchbox/log.h>
-#include <lunchbox/plugin.h>
 #include <lunchbox/pluginFactory.h>
 #include <boost/filesystem.hpp>
 #include <boost/scoped_ptr.hpp>
