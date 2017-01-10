@@ -187,7 +187,7 @@ bool CompartmentReportBinary::handles(
 
 std::string CompartmentReportBinary::getDescription()
 {
-    return "Blue Brain binary compartment reports:\n"
+    return "Blue Brain binary compartment reports:"
            "  [file://]/path/to/report.(bin|rep|bbp)";
 }
 

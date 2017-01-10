@@ -39,7 +39,7 @@ public:
 
     static bool handles( const CompartmentReportInitData& initData )
         { return initData.getURI().getScheme() == "null"; }
-    static std::string getDescription() { return "null://"; }
+    static std::string getDescription() { return "Benchmark drain: null://"; }
 
     float getStartTime() const final { return 0.f; }
     float getEndTime() const final { return 0.f; }

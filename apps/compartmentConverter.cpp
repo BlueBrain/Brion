@@ -19,6 +19,8 @@
 
 #include <brion/brion.h>
 #include <lunchbox/clock.h>
+#include <lunchbox/file.h>
+#include <lunchbox/string.h>
 #ifdef BRION_USE_BBPTESTDATA
 #  include <BBP/TestDatasets.h>
 #endif
@@ -67,7 +69,8 @@ template< class T > void requireEqualCollections( const T& a, const T& b )
  */
 int main( const int argc, char** argv )
 {
-    po::options_description options( "Options" );
+    const std::string help = lunchbox::getFilename( std::string( argv[0] ));
+    po::options_description options( help.c_str( ));
 
     options.add_options()
         ( "help,h", "Produce help message" )
@@ -101,7 +104,11 @@ int main( const int argc, char** argv )
 
     if( vm.count( "help" ))
     {
-        std::cout << options << std::endl;
+        std::cout << options << std::endl
+                  << "  Supported input and output URIs:" << std::endl
+                  << lunchbox::string::prepend(
+                         brion::CompartmentReport::getDescriptions(), "    " )
+                  << std::endl;
         return EXIT_SUCCESS;
     }
 

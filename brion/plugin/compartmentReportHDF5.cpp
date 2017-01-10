@@ -218,7 +218,7 @@ bool CompartmentReportHDF5::handles( const CompartmentReportInitData& initData )
 
 std::string CompartmentReportHDF5::getDescription()
 {
-    return "Blue Brain HDF5 compartment reports:\n"
+    return "Blue Brain HDF5 compartment reports:"
            "  [file://]/path/to/report.(h5|hdf5)";
 }
 
