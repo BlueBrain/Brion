@@ -21,6 +21,7 @@
 #include <lunchbox/clock.h>
 #include <lunchbox/file.h>
 #include <lunchbox/string.h>
+#include <lunchbox/term.h>
 #ifdef BRION_USE_BBPTESTDATA
 #  include <BBP/TestDatasets.h>
 #endif
@@ -70,7 +71,8 @@ template< class T > void requireEqualCollections( const T& a, const T& b )
 int main( const int argc, char** argv )
 {
     const std::string help = lunchbox::getFilename( std::string( argv[0] ));
-    po::options_description options( help.c_str( ));
+    po::options_description options( help.c_str(),
+                                     lunchbox::term::getSize().first );
 
     options.add_options()
         ( "help,h", "Produce help message" )
