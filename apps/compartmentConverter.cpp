@@ -71,6 +71,11 @@ template< class T > void requireEqualCollections( const T& a, const T& b )
 int main( const int argc, char** argv )
 {
     const std::string help = lunchbox::getFilename( std::string( argv[0] ));
+    const std::string uriHelp = std::string( "Output report URI\n" ) +
+        "  Supported input and output URIs:\n" +
+        lunchbox::string::prepend( brion::CompartmentReport::getDescriptions(),
+                                   "    " );
+
     po::options_description options( help.c_str(),
                                      lunchbox::term::getSize().first );
 
@@ -83,7 +88,7 @@ int main( const int argc, char** argv )
         ( "input,i", po::value< std::string >()->required(), "Input report URI")
 #endif
         ( "output,o", po::value< std::string >()->default_value( "null://" ),
-          "Output report URI" )
+          uriHelp.c_str( ))
         ( "maxFrames,m", po::value< size_t >(),
           "Convert at most the given number of frames" )
         ( "gids,g", po::value< std::vector< uint32_t >>()->multitoken(),
@@ -106,11 +111,7 @@ int main( const int argc, char** argv )
 
     if( vm.count( "help" ))
     {
-        std::cout << options << std::endl
-                  << "  Supported input and output URIs:" << std::endl
-                  << lunchbox::string::prepend(
-                         brion::CompartmentReport::getDescriptions(), "    " )
-                  << std::endl;
+        std::cout << options << std::endl;
         return EXIT_SUCCESS;
     }
 
