@@ -1,9 +1,6 @@
 /* Copyright (c) 2015-2017, EPFL/Blue Brain Project
  *                          Stefan.Eilemann@epfl.ch
-<<<<<<< a29ca96034eafb848ffb3dd8ab90b880a3467ebf
-=======
  *                          Mohamed-Ghaith Kaabi <mohamed.kaabi@epfl.ch>
->>>>>>> New spike report API
  *
  * This file is part of Brion <https://github.com/BlueBrain/Brion>
  *
@@ -29,6 +26,8 @@
 
 #include <boost/filesystem.hpp>
 #include <boost/filesystem/path.hpp>
+
+#include <fstream>
 
 namespace brion
 {
@@ -133,6 +132,19 @@ SpikeReportBinary::SpikeReportBinary( const SpikeReportInitData& initData )
         }
         _memFile.mapForRead( getURI().getPath() );
     }
+    else
+    {
+        if ( !boost::filesystem::exists( getURI().getPath() ) )
+        {
+            std::fstream fs;
+            fs.open( getURI().getPath(), std::ios::out );
+            if ( !fs )
+                LBTHROW( std::runtime_error( "Failed to create file: '" +
+                                             getURI().getPath() + "'." ) );
+            fs.close();
+            _memFile.mapForReadWrite( getURI().getPath(), 0 ); // create an empty file
+        }
+    }
 }
 
 bool SpikeReportBinary::handles( const SpikeReportInitData& initData )
@@ -147,11 +159,10 @@ bool SpikeReportBinary::handles( const SpikeReportInitData& initData )
 
 std::string SpikeReportBinary::getDescription()
 {
-    return "Blue Brain binary spike reports: "
-           "[file://]/path/to/report" +
+    return "Blue Brain binary spike reports:\n"
+           "  [file://]/path/to/report" +
            std::string( BINARY_REPORT_FILE_EXT );
 }
-
 void SpikeReportBinary::close()
 {
 }
@@ -168,7 +179,6 @@ Spikes SpikeReportBinary::read( const float )
 
     _currentTime = UNDEFINED_TIMESTAMP;
     _state = State::ended;
-
     return spikes;
 }
 
