@@ -181,8 +181,7 @@ public:
      * Let:
      *  - r be the SpikeReport
      *  - f be the returned future by r.read(min)
-     *  - and s = r.getCurrentTime() before read is called (s = -inf if
-     *    undefined):
+     *  - and s = r.getCurrentTime() before read is called:
      * After f.wait() returns the following are all true:
      *  - r.getCurrentTime() >= s
      *  - If r.getState() == State::ok, then r.getCurrentTime() > min
