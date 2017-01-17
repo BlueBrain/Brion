@@ -60,8 +60,9 @@ public:
      * with a time larger or equal to end arrives. The time interval is
      * open on the right, so assuming that spikes arrive in order, this
      * method will return a full snapshot of the spikes between [start, end).
-     *
-     * @version 0.2
+     * Precondition : start < end
+     * @throw std::logic_error if the precondition is not fulfilled.
+     * @version 1.0
      */
     brion::Spikes getSpikes( const float start, const float end );
 

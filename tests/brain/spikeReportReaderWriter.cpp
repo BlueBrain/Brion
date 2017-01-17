@@ -125,11 +125,7 @@ BOOST_AUTO_TEST_CASE( test_closed_window )
     boost::filesystem::path path( BBP_TESTDATA );
     path /= BLURON_SPIKE_REPORT_FILE;
     brain::SpikeReportReader reader( brion::URI( path.string( )));
-
-    const brion::Spikes& spikes = reader.getSpikes( 2.5f, 2.5f );
-    BOOST_CHECK( spikes.empty() );
-    BOOST_CHECK_EQUAL( spikes.size(), 0 );
-    BOOST_CHECK( spikes.begin() == spikes.end( ));
+    BOOST_CHECK_THROW(reader.getSpikes( 2.5f, 2.5f ),std::logic_error);
 }
 
 BOOST_AUTO_TEST_CASE( test_out_of_window )

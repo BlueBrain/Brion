@@ -62,9 +62,6 @@ Spikes SpikeReportASCII::readUntil( const float toTimeStamp )
     Spikes spikes;
     auto start = _lastReadPosition;
 
-    assert( _lastReadPosition == _spikes.end() ||
-            _lastReadPosition->first < toTimeStamp );
-
     _lastReadPosition = std::lower_bound(
         _lastReadPosition, _spikes.end(), toTimeStamp,
         []( const Spike& spike, float val ) { return spike.first < val; });
