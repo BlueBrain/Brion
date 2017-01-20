@@ -20,6 +20,7 @@
 
 #include <brion/brion.h>
 #include <lunchbox/clock.h>
+#include <lunchbox/file.h>
 #include <lunchbox/log.h>
 #include <lunchbox/sleep.h>
 #include <lunchbox/string.h>
@@ -41,8 +42,10 @@ int main( int argc, char* argv[] )
     if ( argc != 3 )
     {
         const auto uriHelp =
-            lunchbox::string::prepend( brion::SpikeReport::getDescriptions(), "    " );
-        std::cerr << "Usage: " << argv[0] << " <inURI> <outURI>" << std::endl
+            lunchbox::string::prepend( brion::SpikeReport::getDescriptions(),
+                                       "    " );
+        std::cout << "Usage: " << lunchbox::getFilename( argv[0] )
+                  << " <inURI> <outURI>" 
                   << "  Supported input and output URIs:" << std::endl
                   << uriHelp << std::endl;
         return EXIT_FAILURE;

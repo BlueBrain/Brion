@@ -215,6 +215,8 @@ void test_compare( const brion::URI& uri1, const brion::URI& uri2 )
 
         BOOST_CHECK( frame1 );
         BOOST_CHECK( frame2 );
+        if( !frame1 || !frame2 )
+            continue;
 
         for( size_t j = 0; j < report1.getFrameSize(); ++j )
         {
@@ -225,20 +227,28 @@ void test_compare( const brion::URI& uri1, const brion::URI& uri2 )
     try
     {
         // cross-check second GID's voltage report
-        const uint32_t gid = *( ++report1.getGIDs().begin( ));
-        brion::floatsPtr frame1 = report1.loadNeuron( gid );
-        brion::floatsPtr frame2 = report2.loadNeuron( gid );
-        const size_t size = report1.getNeuronSize( gid );
+        brion::floatsPtr frame = report1.loadNeuron(
+            *(++report1.getGIDs().begin( )));
+        BOOST_CHECK( frame );
+        if( frame )
+            BOOST_CHECK_CLOSE( (*frame)[2017], -65.1365891f, 0.000001f );
 
-        BOOST_CHECK( frame1 );
-        BOOST_CHECK( frame2 );
-        BOOST_CHECK( size > 0  );
-        BOOST_CHECK_CLOSE( (*frame1)[2017], -65.1365891f, 0.000001f );
-        BOOST_CHECK_EQUAL( size, report2.getNeuronSize( gid ));
-
-        for( size_t i = 0; i < size; ++i )
+        // compare full reports
+        for( const uint32_t gid : report1.getGIDs( ))
         {
-            BOOST_CHECK_EQUAL( (*frame1)[i], (*frame2)[i] );
+            brion::floatsPtr frame1 = report1.loadNeuron( gid );
+            brion::floatsPtr frame2 = report2.loadNeuron( gid );
+            const size_t size = report1.getNeuronSize( gid );
+
+            BOOST_CHECK( frame1 );
+            BOOST_CHECK( frame2 );
+            BOOST_CHECK( size > 0  );
+            BOOST_CHECK_EQUAL( size, report2.getNeuronSize( gid ));
+            if( !frame1 || !frame2 )
+                continue;
+
+            for( size_t i = 0; i < size; ++i )
+                BOOST_CHECK_EQUAL( (*frame1)[i], (*frame2)[i] );
         }
     }
     catch( const std::runtime_error& ) {} // loadNeuron(gid) is optional, ignore
@@ -292,14 +302,16 @@ bool convert( const brion::URI& fromURI, const brion::URI& toURI )
         for( float t = start; t < end; t += step )
         {
             brion::floatsPtr data = from.loadFrame( t );
+            BOOST_CHECK( data );
+            if( !data )
+                return false;
+
             const brion::floats& voltages = *data.get();
             const brion::SectionOffsets& offsets = from.getOffsets();
-
-            BOOST_CHECK( data != 0 );
             BOOST_CHECK_EQUAL( offsets.size(), gids.size( ));
 
             i = 0;
-            BOOST_FOREACH( const uint32_t gid, gids )
+            for( const uint32_t gid : gids )
             {
                 brion::floats cellVoltages;
                 cellVoltages.reserve( from.getNumCompartments( i ));
@@ -359,12 +371,16 @@ BOOST_AUTO_TEST_CASE( test_convert_and_compare )
     test_compare( source, brion::URI( path.string() + "allCompartments.h5" ));
 
     const boost::filesystem::path& temp = createUniquePath();
-    const std::string random = servus::make_UUID().getString();
-    std::vector< brion::URI > uris;
+    const std::string store = std::string( "?store=" ) + temp.string() + ".ldb";
 
+    std::vector< brion::URI > uris;
     uris.push_back( brion::URI( temp.string() + ".h5" ));
-    uris.push_back( brion::URI( std::string( "leveldb:///" ) + random ));
-    uris.push_back( brion::URI( std::string( "memcached:///" ) + random ));
+    uris.push_back( brion::URI( std::string( "leveldb:///" ) + temp.string() +
+                                store ));
+    uris.push_back( brion::URI( std::string( "leveldb:///" ) + temp.string() +
+                                store + "o" ));
+    // uris.push_back( brion::URI( std::string( "memcached:///" ) + random ));
+    // uris.push_back( brion::URI( std::string( "memcached:///o" ) + random ));
 
     while( !uris.empty( ))
     {
@@ -376,7 +392,7 @@ BOOST_AUTO_TEST_CASE( test_convert_and_compare )
             test_compare( source, first );
             testPerf( first );
 
-            BOOST_FOREACH( const brion::URI& second, uris )
+            for( const brion::URI& second : uris )
             {
                 if( convert( source, second )) // bootstrap second from source
                 {
@@ -388,20 +404,19 @@ BOOST_AUTO_TEST_CASE( test_convert_and_compare )
                 }
             }
         }
-    }
-
-    for( const auto& uri : uris )
-    {
         try
         {
-            brion::CompartmentReport report( uri, brion::MODE_READ );
+            brion::CompartmentReport report( first, brion::MODE_READ );
             if( report.erase( ))
                 BOOST_CHECK_THROW(
-                    brion::CompartmentReport( uri, brion::MODE_READ ),
+                    brion::CompartmentReport( first, brion::MODE_READ ),
                     std::runtime_error );
         }
         catch( const std::runtime_error&  ) { /* ignore */ }
     }
+
+    boost::filesystem::remove_all({ temp.string() + ".ldb" });
+    boost::filesystem::remove_all({ temp.string() + ".ldbo" });
 }
 
 BOOST_AUTO_TEST_CASE( test_read_soma_binary )
