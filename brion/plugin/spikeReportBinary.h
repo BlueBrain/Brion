@@ -33,10 +33,10 @@ namespace brion
 namespace plugin
 {
 
-class BinaryReportFileMemMap
+class BinaryReportFile
 {
 public:
-    BinaryReportFileMemMap() = default;
+    BinaryReportFile() = default;
 
     void mapForRead( const std::string& path );
     void mapForReadWrite( const std::string& path, size_t spikeCount );
@@ -44,14 +44,12 @@ public:
     size_t getSpikeCount() const;
     Spike* getSpikes() const;
 
-    bool isMappedForRead()const;
+    bool isMappedForRead() const;
 
     operator bool() const;
 
 private:
-    std::unique_ptr< lunchbox::MemoryMap > _memFile;
-    Spike* _begin = nullptr;
-    size_t _spikeCount = 0;
+    lunchbox::MemoryMap _map;
     bool _mappedForRead = false;
 };
 
@@ -80,7 +78,7 @@ public:
     void write( const Spikes& spikes ) final;
 
 private:
-    BinaryReportFileMemMap _memFile;
+    BinaryReportFile _memFile;
     size_t _startIndex = 0;
 };
 }
