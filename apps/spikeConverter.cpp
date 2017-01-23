@@ -30,13 +30,6 @@
 #define STREAM_SEND_FREQ_MS 500
 #define STREAM_FRAME_LENGTH_MS 10
 
-void printSentFrame( const unsigned int index, const size_t count )
-{
-    LBINFO << "Sent frame " << index << ": " << index * STREAM_FRAME_LENGTH_MS << "-"
-           << ( index + 1 ) * STREAM_FRAME_LENGTH_MS << " [ms], " << count << " spikes"
-           << std::endl;
-}
-
 int main( int argc, char* argv[] )
 {
     if ( argc != 3 )
@@ -45,41 +38,46 @@ int main( int argc, char* argv[] )
             lunchbox::string::prepend( brion::SpikeReport::getDescriptions(),
                                        "    " );
         std::cout << "Usage: " << lunchbox::getFilename( argv[0] )
-                  << " <inURI> <outURI>" 
+                  << " <inURI> <outURI>"
                   << "  Supported input and output URIs:" << std::endl
                   << uriHelp << std::endl;
         return EXIT_FAILURE;
     }
 
-    lunchbox::Clock clock;
-    const float readTime = clock.resetTimef();
-
     try
     {
+        lunchbox::Clock clock;
+
+        float readTime = 0.f;
         brion::SpikeReport in( brion::URI( argv[1] ), brion::MODE_READ );
+        readTime += clock.resetTimef();
+
+        float writeTime = 0.f;
         brion::SpikeReport out( brion::URI( argv[2] ), brion::MODE_WRITE );
+        writeTime += clock.resetTimef();
 
         const float step = 0.1; // arbitrary value
 
         float t = std::max( step, in.getCurrentTime() );
-        std::vector< brion::Spike > spikes;
-        while ( in.getState() == brion::SpikeReport::State::ok )
+        while( in.getState() == brion::SpikeReport::State::ok )
         {
-            spikes = in.read( t ).get();
+            const auto spikes = in.read( t ).get();
+            readTime += clock.resetTimef();
+
             out.write( spikes );
+            writeTime += clock.resetTimef();
+
             t = std::max( t + step, in.getCurrentTime() );
         }
+
+        LBINFO << "Converted " << argv[1] << " => " << argv[2] << " in "
+               << readTime << " + " << writeTime << " ms" << std::endl;
     }
     catch ( const std::exception& exception )
     {
-        LBINFO << "Failed to conver spikes : " << exception.what() << std::endl;
+        LBINFO << "Failed to convert spikes : " << exception.what() << std::endl;
         return EXIT_FAILURE;
     }
-
-    const float writeTime = clock.resetTimef();
-
-    LBINFO << "Converted " << argv[1] << " => " << argv[2] << " in " << readTime << " + "
-           << writeTime << " ms" << std::endl;
 
     return EXIT_SUCCESS;
 }
