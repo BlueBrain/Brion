@@ -237,7 +237,7 @@ private:
         if( _accessMode != MODE_READ )
         {
             LBTHROW( std::runtime_error(
-                         "Can't read : Not open in read mode" ));
+                         "Can't read: Not open in read mode" ));
         }
     }
     void _checkCanWrite()
@@ -245,13 +245,14 @@ private:
         if( _accessMode != MODE_WRITE )
         {
             LBTHROW( std::runtime_error(
-                         "Can't write : Not open in write mode" ));
+                         "Can't write: Not open in write mode" ));
         }
     }
 
     void _checkStateOk()
     {
-        switch ( _state ) {
+        switch ( _state )
+        {
         case State::ended:
             LBTHROW( std::logic_error( "State is ENDED" ));
         case State::failed:

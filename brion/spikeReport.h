@@ -119,6 +119,7 @@ public:
      * @version 2.0
      */
     BRION_API void close();
+
     /**
      * \return true if the report was closed
      * @version 2.0
@@ -272,8 +273,8 @@ public:
      *
      * @param spikes A collection of spikes sorted by timestamp in ascending
      *        order. For every spike, its timestamp must be >= getCurrentTime().
-     * @throw std::runtime_error if the input spikes are not sorted or a
-     *        timestamp is < getCurrentTime().
+     * @throw std::runtime_error if the report is read-only, the input spikes
+     *        are not sorted, or a timestamp is < getCurrentTime().
      * @version 2.0
      */
     BRION_API void write( const Spikes& spikes );

@@ -195,9 +195,6 @@ BOOST_AUTO_TEST_CASE( invoke_invalid_method_nest )
                        std::runtime_error );
 }
 
-
-// write_data
-
 inline void testWrite (const char * format)
 {
     TemporaryData data {format};
@@ -229,8 +226,6 @@ BOOST_AUTO_TEST_CASE( write_data_bluron )
 {
     testWrite( "dat" );
 }
-
-// read
 
 inline void testRead(const char * format)
 {
@@ -352,7 +347,6 @@ BOOST_AUTO_TEST_CASE( read_content_nest )
     BOOST_CHECK_EQUAL( spikes.rbegin()->second, NEST_LAST_SPIKE_GID );
 }
 
-// read_until
 inline void testReadUntil(const char * format)
 {
     TemporaryData data {format} ;
@@ -536,7 +530,11 @@ inline void testInvalidWrite(const char * format)
                                     brion::MODE_WRITE );
     reportWrite.write( data.spikes );
 
-    BOOST_CHECK_THROW( reportWrite.write({{0.0, 0 }}), std::logic_error );
+    BOOST_CHECK_THROW( reportWrite.write({{ 0.0, 0 }}), std::logic_error );
+
+    brion::SpikeReport reportRead { brion::URI( data.tmpFileName ),
+                                    brion::MODE_READ };
+    BOOST_CHECK_THROW( reportRead.write({{ 100.0, 0 }}), std::runtime_error );
 }
 
 BOOST_AUTO_TEST_CASE( invalid_write_binary )
@@ -556,7 +554,7 @@ BOOST_AUTO_TEST_CASE( invalid_write_bluron )
 
 // write incremental
 
-inline void testWriteIncreamental (const char * format)
+inline void testWriteIncremental (const char * format)
 {
     TemporaryData data{ format };
     brion::SpikeReport reportWrite( brion::URI( data.tmpFileName ),
@@ -575,17 +573,17 @@ inline void testWriteIncreamental (const char * format)
 
 BOOST_AUTO_TEST_CASE( write_incremental_binary )
 {
-    testWriteIncreamental( "spikes" );
+    testWriteIncremental( "spikes" );
 }
 
 BOOST_AUTO_TEST_CASE( write_incremental_nest )
 {
-    testWriteIncreamental( "gdf" );
+    testWriteIncremental( "gdf" );
 }
 
 BOOST_AUTO_TEST_CASE( write_incremental_bluron )
 {
-    testWriteIncreamental( "dat" );
+    testWriteIncremental( "dat" );
 }
 
 // seek and write
