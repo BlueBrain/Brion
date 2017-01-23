@@ -24,24 +24,69 @@
 #include <lunchbox/log.h>
 #include <lunchbox/sleep.h>
 #include <lunchbox/string.h>
+#include <lunchbox/term.h>
+#ifdef BRION_USE_BBPTESTDATA
+#  include <BBP/TestDatasets.h>
+#endif
 
 #define STREAM_READ_TIMEOUT_MS 500
 #define STREAM_SEND_DELAY_MS 1000
 #define STREAM_SEND_FREQ_MS 500
 #define STREAM_FRAME_LENGTH_MS 10
 
+#include <boost/program_options.hpp>
+#include <boost/progress.hpp>
+
+namespace po = boost::program_options;
+
 int main( int argc, char* argv[] )
 {
-    if ( argc != 3 )
+    const std::string help = lunchbox::getFilename( std::string( argv[0] ));
+    const std::string uriHelp = std::string( "Output report URI\n" ) +
+        "  Supported input and output URIs:\n" +
+        lunchbox::string::prepend( brion::SpikeReport::getDescriptions(),
+                                   "    " );
+
+    po::options_description options( help.c_str(),
+                                     lunchbox::term::getSize().first );
+
+    options.add_options()
+        ( "help,h", "Produce help message" )
+        ( "version,v", "Show program name/version banner and exit" )
+#ifdef BRION_USE_BBPTESTDATA
+        ( "input,i", po::value< std::string >()->default_value(
+            std::string( BBP_TESTDATA ) +
+            "/circuitBuilding_1000neurons/Neurodamus_output/out.dat" ),
+          "Input report URI" )
+#else
+        ( "input,i", po::value< std::string >()->required(), "Input report URI")
+#endif
+        ( "output,o", po::value< std::string >()->default_value( "out.spikes" ),
+          uriHelp.c_str( ));
+    po::variables_map vm;
+    try
     {
-        const auto uriHelp =
-            lunchbox::string::prepend( brion::SpikeReport::getDescriptions(),
-                                       "    " );
-        std::cout << "Usage: " << lunchbox::getFilename( argv[0] )
-                  << " <inURI> <outURI>"
-                  << "  Supported input and output URIs:" << std::endl
-                  << uriHelp << std::endl;
+        po::store( po::parse_command_line( argc, argv, options ), vm );
+        po::notify( vm );
+    }
+    catch( const po::error& e )
+    {
+        std::cerr << "Command line parse error: " << e.what() << std::endl
+                  << options << std::endl;
         return EXIT_FAILURE;
+    }
+
+    if( vm.count( "help" ))
+    {
+        std::cout << options << std::endl;
+        return EXIT_SUCCESS;
+    }
+
+    if( vm.count( "version" ))
+    {
+        std::cout << "Brion spike report converter "
+                  << brion::Version::getString() << std::endl;
+        return EXIT_SUCCESS;
     }
 
     try
@@ -49,11 +94,13 @@ int main( int argc, char* argv[] )
         lunchbox::Clock clock;
 
         float readTime = 0.f;
-        brion::SpikeReport in( brion::URI( argv[1] ), brion::MODE_READ );
+        brion::SpikeReport in( brion::URI( vm["input"].as< std::string >( )),
+                               brion::MODE_READ );
         readTime += clock.resetTimef();
 
         float writeTime = 0.f;
-        brion::SpikeReport out( brion::URI( argv[2] ), brion::MODE_WRITE );
+        brion::SpikeReport out( brion::URI( vm["output"].as< std::string >( )),
+                                brion::MODE_WRITE );
         writeTime += clock.resetTimef();
 
         const float step = 0.1; // arbitrary value
@@ -70,8 +117,9 @@ int main( int argc, char* argv[] )
             t = std::max( t + step, in.getCurrentTime() );
         }
 
-        LBINFO << "Converted " << argv[1] << " => " << argv[2] << " in "
-               << readTime << " + " << writeTime << " ms" << std::endl;
+        std::cout << "Converted " << vm["input"].as< std::string >() << " => "
+                  << vm["output"].as< std::string >() << " in " << readTime
+                  << " + " << writeTime << " ms" << std::endl;
     }
     catch ( const std::exception& exception )
     {
