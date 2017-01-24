@@ -62,7 +62,7 @@ public:
      * State::ended means that the report end is reached (in read mode)
      * State::failed means that a error occured when readyn or writing the report
      */
-    enum class State : uint32_t
+    enum class State
     {
         ok,
         ended,

@@ -143,13 +143,9 @@ public:
     {
         _idsSubset = ids;
         if( !_idsSubset.empty( ))
-        {
             _pushBackFunction = &SpikeReportPlugin::_pushBackFiltered;
-        }
         else
-        {
             _pushBackFunction = &SpikeReportPlugin::_pushBack;
-        }
     }
 
     virtual const URI& getURI() const

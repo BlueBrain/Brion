@@ -46,8 +46,7 @@ Spikes SpikeReportASCII::read( const float )
     Spikes spikes;
     auto start = _lastReadPosition;
     _lastReadPosition = _spikes.end();
-    _currentTime = _spikes.rbegin()->first +
-                   std::numeric_limits< float >::epsilon();
+    _currentTime = UNDEFINED_TIMESTAMP;
     _state = State::ended;
 
     for( ; start != _spikes.end(); ++start )
@@ -69,8 +68,7 @@ Spikes SpikeReportASCII::readUntil( const float toTimeStamp )
          _currentTime = _lastReadPosition->first;
     else
     {
-        _currentTime = _spikes.rbegin()->first +
-                       std::numeric_limits< float >::epsilon();
+        _currentTime = UNDEFINED_TIMESTAMP;
         _state = State::ended;
     }
 
@@ -104,8 +102,7 @@ void SpikeReportASCII::readSeek( const float toTimeStamp )
     {
         _lastReadPosition = _spikes.end();
         _state = State::ended;
-        _currentTime = _spikes.rbegin()->first +
-                       std::numeric_limits< float >::epsilon();
+        _currentTime = brion::UNDEFINED_TIMESTAMP;
     }
     else
     {
