@@ -48,8 +48,8 @@ SpikeReportBluron::SpikeReportBluron( const SpikeReportInitData& initData )
 {
     if ( initData.getAccessMode() == MODE_READ )
     {
-        SpikeReportFile reader{_uri.getPath(), BLURON_SPIKE_REPORT,
-                               initData.getAccessMode()};
+        SpikeReportFile reader{ _uri.getPath(), BLURON_SPIKE_REPORT,
+                                initData.getAccessMode()};
         SpikeMap spikes;
         reader.fillReportMap( spikes );
 
@@ -60,6 +60,8 @@ SpikeReportBluron::SpikeReportBluron( const SpikeReportInitData& initData )
     }
 
     _lastReadPosition = _spikes.begin();
+    if( !_spikes.empty( ))
+        _currentTime = _spikes.begin()->first;
 }
 
 bool SpikeReportBluron::handles( const SpikeReportInitData& initData )

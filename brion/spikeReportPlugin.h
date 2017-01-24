@@ -139,12 +139,12 @@ public:
                      "Operation not supported in spike report plugin" ));
     }
 
-    void setFilter( const GIDSet & ids )
+    void setFilter( const GIDSet& ids )
     {
         _idsSubset = ids;
         if( !_idsSubset.empty( ))
         {
-           _pushBackFunction = &SpikeReportPlugin::_pushBackFiltered;
+            _pushBackFunction = &SpikeReportPlugin::_pushBackFiltered;
         }
         else
         {

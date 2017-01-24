@@ -103,18 +103,14 @@ int main( int argc, char* argv[] )
                                 brion::MODE_WRITE );
         writeTime += clock.resetTimef();
 
-        const float step = 0.1; // arbitrary value
-
-        float t = std::max( step, in.getCurrentTime() );
+        const float step = 10.f; //ms, arbitrary value
         while( in.getState() == brion::SpikeReport::State::ok )
         {
-            const auto spikes = in.read( t ).get();
+            const auto spikes = in.readUntil( in.getCurrentTime() + step ).get();
             readTime += clock.resetTimef();
 
             out.write( spikes );
             writeTime += clock.resetTimef();
-
-            t = std::max( t + step, in.getCurrentTime() );
         }
 
         std::cout << "Converted " << vm["input"].as< std::string >() << " => "
@@ -123,7 +119,7 @@ int main( int argc, char* argv[] )
     }
     catch ( const std::exception& exception )
     {
-        LBINFO << "Failed to convert spikes : " << exception.what() << std::endl;
+        LBINFO << "Failed to convert spikes: " << exception.what() << std::endl;
         return EXIT_FAILURE;
     }
 
