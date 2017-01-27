@@ -186,7 +186,7 @@ protected:
     URI _uri;
     brion::GIDSet _idsSubset;
     int _accessMode = brion::MODE_READ;
-    float _currentTime = -std::numeric_limits< float >::max();
+    float _currentTime = 0;
     State _state = State::ok;
 
     void pushBack( const Spike& spike, Spikes& spikes ) const
