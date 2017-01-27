@@ -19,9 +19,9 @@
  */
 
 #include "spikeReportBluron.h"
+
 #include "../detail/skipWhiteSpace.h"
 #include "../pluginInitData.h"
-#include "spikeReportTypes.h"
 
 #include <boost/filesystem.hpp>
 
@@ -39,24 +39,20 @@ namespace plugin
 namespace
 {
 lunchbox::PluginRegisterer< SpikeReportBluron > registerer;
+const char* const BLURON_REPORT_FILE_EXT = ".dat";
 }
-
-using brion::Spike;
 
 SpikeReportBluron::SpikeReportBluron( const SpikeReportInitData& initData )
     : SpikeReportASCII( initData )
 {
     if ( initData.getAccessMode() == MODE_READ )
     {
-        SpikeReportFile reader{ _uri.getPath(), BLURON_SPIKE_REPORT,
-                                initData.getAccessMode()};
-        SpikeMap spikes;
-        reader.fillReportMap( spikes );
-
-        _spikes.resize( spikes.size() );
-        size_t i = 0;
-        for ( auto& spike : spikes )
-            _spikes[i++] = {spike.first, spike.second};
+        _spikes = parse( _uri.getPath(),
+                         []( const std::string& buffer, Spike& spike )
+                         {
+                             return sscanf( buffer.data(), "%20f%20ud",
+                                            &spike.first, &spike.second ) == 2;
+                         });
     }
 
     _lastReadPosition = _spikes.begin();

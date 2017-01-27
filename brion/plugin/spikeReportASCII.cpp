@@ -20,6 +20,7 @@
 #include "spikeReportASCII.h"
 
 #include "../pluginInitData.h"
+#include "../detail/skipWhiteSpace.h"
 
 #include <boost/filesystem.hpp>
 #include <boost/regex.hpp>
@@ -121,6 +122,104 @@ void SpikeReportASCII::writeSeek( const float toTimeStamp )
             std::runtime_error( "Backward seek not supported in write mode" ));
 
     _currentTime = toTimeStamp;
+}
+
+namespace
+{
+void _parse( Spikes& spikes, const std::string& filename,
+             const  std::function< bool( const std::string&, Spike& ) >& parse )
+{
+    std::fstream file( filename.c_str(),
+                       std::ios_base::binary | std::ios_base::in );
+
+   size_t lineNumber = 0;
+   file >> detail::SkipWhiteSpace( lineNumber );
+
+#ifdef BRION_USE_OPENMP
+   // The batch size is divisible by all reasonable core counts between 1
+   // and 50.
+   const size_t batchSize = 554400;
+
+   while( !file.fail( ))
+   {
+       // Reading a batch of strings to parse in parallel
+       Strings lines( batchSize );
+       size_t linesRead = 0;
+
+       while( linesRead != lines.size() &&
+              !std::getline( _file, lines[linesRead] ).fail( ))
+       {
+           // This check skips comments
+           const char c = lines[linesRead][0];
+           if( c != '/' && c != '#' )
+               ++linesRead;
+           size_t skipCount = 0;
+           file >> detail::SkipWhiteSpace( skipCount );
+       }
+
+       const size_t first = spikeArray.size( );
+       spikes.resize( first + linesRead );
+
+       // Parsing strings
+       #pragma omp parallel for
+       for( int64_t i = 0; i < int64_t( linesRead ); ++i )
+       {
+           const std::string& line = lines[i];
+           if( !parse( line.c_str( ), spikes[first + i] ))
+           {
+               // Getting the line number right is not possible unless the
+               // line numbers are stored along with the strings.
+               // Instead of telling the line number, the full line will be
+               // printed. The error should be easy to spot in the file as
+               // it will be found at the first occurence in the file.
+               LBERROR << "Error reading spike times file: " << _filename
+                       << ", line: " << lines[i] << std::endl;
+           }
+       }
+   }
+#else
+   std::string line;
+   while( !std::getline( file, line ).fail( ))
+   {
+       ++lineNumber;
+       if ( line[0] == '/' || line[0] == '#' )
+            continue;
+
+       Spike spike;
+       if( !parse( line.c_str( ), spike ))
+       {
+           LBTHROW( std::runtime_error( "Parsing spike times file " +
+                                        filename + " failed at line " +
+                                        std::to_string( lineNumber )));
+       }
+       spikes.push_back( spike );
+
+       file >> detail::SkipWhiteSpace( lineNumber );
+   }
+#endif
+
+   if( file.fail() && !file.eof( ))
+       LBTHROW( std::runtime_error( "IO error reading spike times file: " +
+                                    filename ));
+}
+}
+
+Spikes SpikeReportASCII::parse( const Strings& files, const ParseFunc& parse )
+{
+    Spikes spikes;
+    for( const auto& file : files )
+        _parse( spikes, file, parse );
+    std::sort( spikes.begin(), spikes.end( ));
+    return spikes;
+}
+
+Spikes SpikeReportASCII::parse( const std::string& file,
+                                const ParseFunc& parse )
+{
+    Spikes spikes;
+    _parse( spikes, file, parse );
+    std::sort( spikes.begin(), spikes.end( ));
+    return spikes;
 }
 
 }
