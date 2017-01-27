@@ -113,9 +113,6 @@ SpikeReportBinary::SpikeReportBinary( const SpikeReportInitData& initData )
         _memFile.reset( new BinaryReportMap( getURI().getPath( )));
     else
         _memFile.reset( new BinaryReportMap( getURI().getPath(), 0 ));
-
-    if( _memFile->getNumSpikes() > 0 )
-        _currentTime = _memFile->getReadableSpikes()[0].first;
 }
 
 bool SpikeReportBinary::handles( const SpikeReportInitData& initData )
