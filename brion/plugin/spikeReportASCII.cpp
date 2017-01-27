@@ -147,7 +147,7 @@ void _parse( Spikes& spikes, const std::string& filename,
        size_t linesRead = 0;
 
        while( linesRead != lines.size() &&
-              !std::getline( _file, lines[linesRead] ).fail( ))
+              !std::getline( file, lines[linesRead] ).fail( ))
        {
            // This check skips comments
            const char c = lines[linesRead][0];
@@ -157,7 +157,7 @@ void _parse( Spikes& spikes, const std::string& filename,
            file >> detail::SkipWhiteSpace( skipCount );
        }
 
-       const size_t first = spikeArray.size( );
+       const size_t first = spikes.size();
        spikes.resize( first + linesRead );
 
        // Parsing strings
@@ -172,7 +172,7 @@ void _parse( Spikes& spikes, const std::string& filename,
                // Instead of telling the line number, the full line will be
                // printed. The error should be easy to spot in the file as
                // it will be found at the first occurence in the file.
-               LBERROR << "Error reading spike times file: " << _filename
+               LBERROR << "Error reading spike times file: " << filename
                        << ", line: " << lines[i] << std::endl;
            }
        }
@@ -192,7 +192,7 @@ void _parse( Spikes& spikes, const std::string& filename,
                                         filename + " failed at line " +
                                         std::to_string( lineNumber )));
        }
-       spikes.push_back( spike );
+       spikes.emplace_back( spike );
 
        file >> detail::SkipWhiteSpace( lineNumber );
    }
