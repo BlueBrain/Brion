@@ -49,7 +49,6 @@ int main( int argc, char* argv[] )
 
     po::options_description options( help.c_str(),
                                      lunchbox::term::getSize().first );
-
     options.add_options()
         ( "help,h", "Produce help message" )
         ( "version,v", "Show program name/version banner and exit" )
@@ -63,10 +62,16 @@ int main( int argc, char* argv[] )
 #endif
         ( "output,o", po::value< std::string >()->default_value( "out.spikes" ),
           uriHelp.c_str( ));
+    
+    po::positional_options_description positional;
+    positional.add("input", 1);
+    positional.add("output", 2);    
+    
     po::variables_map vm;
     try
     {
-        po::store( po::parse_command_line( argc, argv, options ), vm );
+        po::store( po::command_line_parser( argc, argv ).
+                   options( options ).positional( positional ).run(), vm );       
         po::notify( vm );
     }
     catch( const po::error& e )
