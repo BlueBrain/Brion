@@ -145,7 +145,7 @@ public:
 
     /**
      * @return the end time of the latest complete read/write operation or
-     *         -inf if no operation has been issued.
+     *         0 if no operation has been issued.
      *
      * Read operations are deemed as complete when the returned future is
      * ready.
