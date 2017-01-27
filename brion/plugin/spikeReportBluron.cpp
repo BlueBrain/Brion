@@ -60,8 +60,6 @@ SpikeReportBluron::SpikeReportBluron( const SpikeReportInitData& initData )
     }
 
     _lastReadPosition = _spikes.begin();
-    if( !_spikes.empty( ))
-        _currentTime = _spikes.begin()->first;
 }
 
 bool SpikeReportBluron::handles( const SpikeReportInitData& initData )
