@@ -48,8 +48,11 @@ protected:
     // Returns true if parsing succeeded
     using ParseFunc = std::function< bool( const std::string&, Spike& ) >;
 
+    using WriteFunc = std::function< void( std::ostream&, const Spike& ) >;
+
     static Spikes parse( const Strings& files, const ParseFunc& parse );
-    static Spikes parse( const std::string& file, const ParseFunc& parse );
+    static Spikes parse( const std::string& filename, const ParseFunc& parse );
+    void write( const Spikes& spikes, const WriteFunc& parse );
 };
 
 }

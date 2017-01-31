@@ -213,13 +213,35 @@ Spikes SpikeReportASCII::parse( const Strings& files, const ParseFunc& parse )
     return spikes;
 }
 
-Spikes SpikeReportASCII::parse( const std::string& file,
+Spikes SpikeReportASCII::parse( const std::string& filename,
                                 const ParseFunc& parse )
 {
     Spikes spikes;
-    _parse( spikes, file, parse );
+    _parse( spikes, filename, parse );
     std::sort( spikes.begin(), spikes.end( ));
     return spikes;
+}
+
+void SpikeReportASCII::write( const Spikes& spikes, const WriteFunc& writefunc )
+{
+    if ( !spikes.size() )
+        return;
+
+    std::fstream file{getURI().getPath(),
+                      std::ios_base::binary | std::ios::out | std::ios::app};
+    if ( !file.is_open() )
+    {
+        _state = State::failed;
+        return;
+    }
+
+    for ( const Spike& spike : spikes )
+        writefunc( file, spike );
+
+    file.flush();
+
+    _currentTime = spikes.rbegin()->first +
+                   std::numeric_limits< float >::epsilon();
 }
 
 }

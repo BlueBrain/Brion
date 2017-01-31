@@ -126,22 +126,9 @@ void SpikeReportNEST::close()
 
 void SpikeReportNEST::write( const Spikes& spikes )
 {
-    if ( spikes.empty() )
-        return;
-
-    std::fstream file{ getURI().getPath(),
-                       std::ios_base::binary | std::ios::out | std::ios::app };
-
-    if ( !file.is_open( ))
-    {
-        _state = State::failed;
-        return;
-    }
-
-    for ( const Spike& spike : spikes )
-        file << spike.second << " " << spike.first << '\n';
-
-    _currentTime = spikes.rbegin()->first + std::numeric_limits< float >::epsilon();
+    SpikeReportASCII::write(
+        spikes, []( std::ostream& file, const Spike& spike ){
+            file << spike.second << " " << spike.first << '\n'; });
 }
 }
 } // namespaces
