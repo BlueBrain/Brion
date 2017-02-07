@@ -545,6 +545,10 @@ inline void testInvalidWrite(const char * format)
     reportWrite.write( data.spikes );
 
     BOOST_CHECK_THROW( reportWrite.write({{ 0.0, 0 }}), std::logic_error );
+    
+    BOOST_CHECK_THROW( reportWrite.write(
+                           {{10.0, 0}, {10.0, 1}, {11.0, 0}, {0.5, 1}}),
+                       std::logic_error);
 
     brion::SpikeReport reportRead { brion::URI( data.tmpFileName ),
                                     brion::MODE_READ };
