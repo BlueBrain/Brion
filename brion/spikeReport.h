@@ -267,17 +267,20 @@ public:
      * @version 2.0
      */
     BRION_API std::future< void > seek( float toTimeStamp );
-
+    
     /**
      * Write the given spikes to the output.
+     * Preconditions:
+     * - spikes is a sorted by time stamp
+     * - spikes.front().first < getCurrentTime()
      *
      * Upon return getCurrenTime() is the greatest of all the spike times
      * plus an epsilon.
      *
      * @param spikes A collection of spikes sorted by timestamp in ascending
      *        order. For every spike, its timestamp must be >= getCurrentTime().
-     * @throw std::runtime_error if the report is read-only, the input spikes
-     *        are not sorted, or a timestamp is < getCurrentTime().
+     * @throw std::runtime_error if the report is read-only,
+     * @throw std::logic_error if a precondition does not hold
      * @version 2.0
      */
     BRION_API void write( const Spikes& spikes );
