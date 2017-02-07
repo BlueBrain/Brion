@@ -222,7 +222,7 @@ Spikes SpikeReportASCII::parse( const std::string& filename,
     return spikes;
 }
 
-void SpikeReportASCII::write( const Spikes& spikes, const WriteFunc& writefunc )
+void SpikeReportASCII::append( const Spikes& spikes, const WriteFunc& writefunc )
 {
     if ( !spikes.size() )
         return;
