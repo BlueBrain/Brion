@@ -53,7 +53,7 @@ class SpikeReport;
  *
  * This class is not thread-safe except where stated otherwise.
  */
-class SpikeReport : public boost::noncopyable
+class SpikeReport
 {
 public:
     /**
@@ -109,6 +109,9 @@ public:
      * get on the corresponding future will throw std::runtime_error.
      */
     BRION_API ~SpikeReport();
+
+    BRION_API SpikeReport( SpikeReport&& );
+    BRION_API SpikeReport& operator = ( SpikeReport&& );
 
     /** @return the descriptions of all loaded report backends. @version 1.10 */
     BRION_API static std::string getDescriptions();
@@ -280,7 +283,10 @@ public:
     BRION_API void write( const Spikes& spikes );
 
 private:
-    detail::SpikeReport* _impl;
+    std::unique_ptr< detail::SpikeReport > _impl;
+
+    SpikeReport( const SpikeReport& ) = delete;
+    SpikeReport& operator = ( const SpikeReport& ) = delete;
 };
 }
 

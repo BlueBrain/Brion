@@ -101,8 +101,19 @@ SpikeReport::SpikeReport( const URI& uri, const GIDSet& ids )
 
 SpikeReport::~SpikeReport()
 {
-    close();
-    delete _impl;
+    if( _impl )
+        close();
+}
+
+SpikeReport::SpikeReport( SpikeReport&& from )
+    : _impl( std::move( from._impl ))
+{}
+
+SpikeReport& SpikeReport::operator = ( SpikeReport&& from )
+{
+    if( this != &from )
+        _impl = std::move( from._impl );
+    return *this;
 }
 
 std::string SpikeReport::getDescriptions()
