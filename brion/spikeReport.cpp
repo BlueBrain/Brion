@@ -242,17 +242,7 @@ void SpikeReport::write( const Spikes& spikes )
                                    std::to_string( spikes.front().first ) +
                                    " time inferior to current time " +
                                    std::to_string( getCurrentTime( ))));
-    }
-        
-    if ( spikes.size() &&
-         !std::is_sorted( spikes.begin(), spikes.end(),
-                          []( const Spike& x, const Spike& y ) {
-                              return x.first >= y.second;
-                          }))
-    {
-        LBTHROW(std::logic_error(
-            "Can't write spikes: Expecting a sorted spike vector"));
-    }
+    }        
 
     _impl->plugin->write( spikes );
 }
