@@ -21,8 +21,6 @@
 #include "compartmentReportReader.h"
 #include "detail/compartmentReportReader.h"
 
-#include <iostream>
-
 namespace brain
 {
 CompartmentReportReader::CompartmentReportReader(const brion::URI& uri)
