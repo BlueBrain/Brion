@@ -45,7 +45,6 @@ class CompartmentReportReader;
 class CompartmentReportFrame;
 class CompartmentReportMapping;
 class CompartmentReportView;
-class Spikes;
 class SpikeReportReader;
 class SpikeReportWriter;
 class CompartmentReportReader;
