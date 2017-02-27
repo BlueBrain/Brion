@@ -64,14 +64,25 @@ template< class T > void requireEqualCollections( const T& a, const T& b )
 }
 
 /** @return true if the cell occupies a continuous region in the report frame */
-bool _isContinuous( const brion::CompartmentReport& report,
+bool _isCompact( const brion::CompartmentReport& report,
                     const size_t gidIndex )
 {
     const auto& offsets = report.getOffsets()[gidIndex];
     const auto& counts = report.getCompartmentCounts()[gidIndex];
-    for( size_t i = 0; i < offsets.size() - 1; ++i )
-        if( offsets[i] + counts[i] != offsets[i+1] )
+
+    // sections are not guaranteed to be enumerated in order - sort them:
+    std::map< uint64_t, uint16_t > mapping;
+    for( size_t i = 0; i < offsets.size(); ++i )
+        mapping.emplace(offsets[i], counts[i]);
+
+    auto i = mapping.begin();
+    uint64_t next = i->first + i->second;
+    for( ++i; i != mapping.end(); ++i )
+    {
+        if( i->first != next )
             return false;
+        next = i->first + i->second;
+    }
     return true;
 }
 }
@@ -232,35 +243,35 @@ int main( const int argc, char** argv )
             ::exit( EXIT_FAILURE );
         }
 
-        const brion::floats& voltages = *data.get();
+        const brion::floats& values = *data.get();
         const auto& offsets = in.getOffsets();
 
         size_t index = 0;
         clock.reset();
         for( const uint32_t gid : gids )
         {
-            if( _isContinuous( in, index ))
+            if( _isCompact( in, index ))
             {
-                const float* values = &voltages[ offsets[index][0] ];
+                const float* cellValues = &values[ offsets[index][0] ];
                 const size_t size = std::accumulate( counts[index].begin(),
                                                      counts[index].end(), 0 );
-                if( !to.writeFrame( gid, values, size, t ))
+                if( !to.writeFrame( gid, cellValues, size, t ))
                     return EXIT_FAILURE;
                 ++index;
                 continue;
             }
 
-            brion::floats cellVoltages;
-            cellVoltages.reserve( in.getNumCompartments( index ));
+            brion::floats cellvalues;
+            cellvalues.reserve( in.getNumCompartments( index ));
 
             for( size_t j = 0; j < offsets[index].size(); ++j )
             {
                 const auto offset = offsets[index][j];
                 for( size_t k = 0; k < counts[index][j]; ++k )
-                    cellVoltages.emplace_back( voltages[ offset + k ] );
+                    cellvalues.emplace_back( values[ offset + k ] );
             }
 
-            if( !to.writeFrame( gid, cellVoltages, t ))
+            if( !to.writeFrame( gid, cellvalues, t ))
                 return EXIT_FAILURE;
             ++index;
         }

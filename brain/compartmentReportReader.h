@@ -217,7 +217,7 @@ public:
     struct IndexEntry
     {
         // To ensure proper alignment and compactness for the python binding the
-        // order of this fields mustn't be changed.
+        // order of these fields mustn't be changed.
         uint64_t offset;
         uint32_t gid;
         uint16_t section;
