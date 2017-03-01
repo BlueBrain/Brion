@@ -55,7 +55,7 @@ std::string CompartmentReportDummy::getDescription()
 {
     return R"(Benchmark drain (write): dummy://
 Benchmark dummy source (read): dummy://[?size=size-in-MB][&randomValues]
-    default 1024MB of pseudo-random report data)";
+    default 1024MB of dummy report data)";
 }
 
 const std::string& CompartmentReportDummy::getDataUnit() const
@@ -101,12 +101,13 @@ void CompartmentReportDummy::updateMapping( const GIDSet& gids )
 
     const auto& subset = gids.empty() ? all : gids;
     _gids = _computeIntersection( all, subset );
-
     _counts.clear();
     _offsets.clear();
+    if( _gids.empty( ))
+        return;
 
     // aim for ~1k compartments/cell
-    static const size_t spread = 0x1f; // mask, 31
+    static const size_t spread = 32;
     static const size_t maxCompartments = 256 /* x 4B/value */ - spread / 2;
     uint64_t offset = 0;
 
@@ -119,7 +120,7 @@ void CompartmentReportDummy::updateMapping( const GIDSet& gids )
              nCompartments += _counts.back().back( ))
         {
             _counts.back().push_back(
-                uint16_t( distribution( engine ) & spread ));
+                uint16_t( distribution( engine ) % (spread-1) + 1 ));
             _offsets.back().push_back( offset );
             offset += _counts.back().back();
         }
@@ -132,7 +133,7 @@ void CompartmentReportDummy::updateMapping( const GIDSet& gids )
     while( offset < targetSize )
     {
         _counts.back().push_back(
-            uint16_t( distribution( engine ) & spread ));
+            uint16_t( distribution( engine ) % (spread-1) + 1 ));
         _offsets.back().push_back( offset );
         offset += _counts.back().back();
     }
