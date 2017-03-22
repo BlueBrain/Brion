@@ -117,6 +117,11 @@ size_t CompartmentReport::getFrameSize() const
     return _impl->plugin->getFrameSize();
 }
 
+std::future<floatsPtr> CompartmentReport::loadNeuronAsync(uint32_t gid) const
+{
+    return _impl->plugin->loadNeuronAsync(gid);
+}
+
 size_t CompartmentReport::getBufferSize() const
 {
     return _impl->plugin->getBufferSize();
@@ -128,6 +133,19 @@ floatsPtr CompartmentReport::loadFrame(const float timestamp) const
         return floatsPtr();
 
     return _impl->plugin->loadFrame(timestamp);
+}
+
+
+std::future<floatsPtr> CompartmentReport::loadFrameAsync(float timestamp) const
+{
+    if (timestamp < getStartTime() || timestamp > getEndTime())
+    {
+        std::promise<floatsPtr> promise;
+        promise.set_value(floatsPtr());
+        return promise.get_future();
+    }
+
+    return _impl->plugin->loadFrameAsync(timestamp);
 }
 
 size_t CompartmentReport::getNeuronSize(const uint32_t gid) const
