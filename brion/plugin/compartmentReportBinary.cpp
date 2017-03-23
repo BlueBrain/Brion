@@ -396,7 +396,6 @@ std::future<floatsPtr> CompartmentReportBinary::loadFrameAsync(
         floatsPtr buffer(new floats(_subNumCompartments));
         const SectionOffsets& offsets = getOffsets();
         const CompartmentCounts& compCounts = getCompartmentCounts();
-
         std::vector<AIOReadData> readData;
 
         for (size_t i = 0; i < _gids.size(); ++i)
@@ -412,7 +411,7 @@ std::future<floatsPtr> CompartmentReportBinary::loadFrameAsync(
                     _fileDescriptor,
                     buffer->data() + targetOffset, // destination buffer
                     numCompartments * sizeof(float), // size
-                    (frameOffset + sourceOffset)* sizeof(float) //  global offset
+                    frameOffset + sourceOffset* sizeof(float) //  global offset
                 });
                 // clang-format on
             }
