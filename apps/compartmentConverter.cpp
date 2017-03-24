@@ -89,13 +89,13 @@ bool _isCompact(const brion::CompartmentReport& report, const size_t gidIndex)
 }
 }
 
-bool convert(const brion::CompartmentReport& in, brion::CompartmentReport& to,
-             size_t maxFrames, lunchbox::Clock& clock, float& loadTime,
-             float& writeTime);
+void convert(const brion::CompartmentReport& in, brion::CompartmentReport& to,
+             size_t maxFrames);
 
-bool convertAsync(const brion::CompartmentReport& in,
-                  brion::CompartmentReport& to, size_t maxFrames,
-                  lunchbox::Clock& clock, float& loadTime, float& writeTime);
+void convertAsync(const brion::CompartmentReport& in,
+                  brion::CompartmentReport& to, size_t maxFrames);
+
+po::variables_map vm;
 
 /**
  * Convert a compartment report to an HDF5 report.
@@ -138,8 +138,10 @@ int main(const int argc, char** argv)
                 "compare,c", "Compare written report with input")(
                 "dump,d",
                 "Dump input report information (no output conversion)")(
-                "async,a", "Internal : Use async API ");
-    po::variables_map vm;
+                "async,a", "Internal : Use async API")(
+                "threads,t", po::value<size_t>()->default_value(
+                                 std::thread::hardware_concurrency()),
+                "Internal : Read thread count in async mode");
 
     try
     {
@@ -247,16 +249,20 @@ int main(const int argc, char** argv)
 
     auto startTime = std::chrono::high_resolution_clock::now();
 
-    if (vm.count("async"))
+    try
     {
-        if (!convertAsync(in, to, maxFrames, clock, loadTime, writeTime))
-            return EXIT_FAILURE;
+        if (vm.count("async"))
+            convertAsync(in, to, maxFrames);
+        else
+            convert(in, to, maxFrames);
     }
-    else
+    catch (const std::runtime_error& e)
     {
-        if (!convert(in, to, maxFrames, clock, loadTime, writeTime))
-            return EXIT_FAILURE;
+        LBERROR << e.what() << std::endl;
+        return EXIT_FAILURE;
     }
+
+
 
     auto endTime = std::chrono::high_resolution_clock::now();
 
@@ -320,9 +326,8 @@ int main(const int argc, char** argv)
     return EXIT_SUCCESS;
 }
 
-bool convert(const brion::CompartmentReport& in, brion::CompartmentReport& to,
-             size_t maxFrames, lunchbox::Clock& clock, float& loadTime,
-             float& writeTime)
+void convert(const brion::CompartmentReport& in, brion::CompartmentReport& to,
+             size_t maxFrames)
 {
     const float start = in.getStartTime();
     const float step = in.getTimestep();
@@ -340,20 +345,17 @@ bool convert(const brion::CompartmentReport& in, brion::CompartmentReport& to,
     for (size_t i = 0; i < nFrames; ++i)
     {
         const float t = start + i * step;
-        clock.reset();
         brion::floatsPtr data = in.loadFrame(t);
-        loadTime += clock.getTimef();
         if (!data)
         {
-            LBERROR << "Can't load frame at " << t << " ms" << std::endl;
-            ::exit(EXIT_FAILURE);
+            throw std::runtime_error("Can't load frame at " +
+                                     std::to_string(t) + " ms");
         }
 
         const brion::floats& values = *data.get();
         const auto& offsets = in.getOffsets();
 
         size_t index = 0;
-        clock.reset();
         for (const uint32_t gid : gids)
         {
             if (_isCompact(in, index))
@@ -362,7 +364,9 @@ bool convert(const brion::CompartmentReport& in, brion::CompartmentReport& to,
                 const size_t size = std::accumulate(counts[index].begin(),
                                                     counts[index].end(), 0);
                 if (!to.writeFrame(gid, cellValues, size, t))
-                    return false;
+                    throw std::runtime_error(
+                        "Can't write frame at " + std::to_string(t) +
+                        " ms for gid " + std::to_string(gid));
                 ++index;
                 continue;
             }
@@ -378,24 +382,21 @@ bool convert(const brion::CompartmentReport& in, brion::CompartmentReport& to,
             }
 
             if (!to.writeFrame(gid, cellvalues, t))
-                return EXIT_FAILURE;
+                throw std::runtime_error("Can't write frame at " +
+                                         std::to_string(t) + " ms for gid " +
+                                         std::to_string(gid));
             ++index;
         }
-        writeTime += clock.getTimef();
         ++progress;
     }
 
     to.flush();
-
-    return true;
 }
 
-bool convertAsync(const brion::CompartmentReport& in,
-                  brion::CompartmentReport& to, size_t maxFrames,
-                  lunchbox::Clock& clock, float& loadTime, float& writeTime)
+void convertAsync(const brion::CompartmentReport& in,
+                  brion::CompartmentReport& to, size_t maxFrames)
 
 {
-    std::cout << "Async convertion" << std::endl;
     const float start = in.getStartTime();
     const float step = in.getTimestep();
 
@@ -411,8 +412,11 @@ bool convertAsync(const brion::CompartmentReport& in,
 
     boost::progress_display progress(nFrames);
 
-    lunchbox::ThreadPool readers;
+    lunchbox::ThreadPool readers{vm["threads"].as<size_t>()};
     lunchbox::ThreadPool writer{1};
+
+    std::cout << "Async convertion. Reader count : " << readers.getSize()
+              << std::endl;
 
     std::vector<std::future<void>> reads(nFrames);
 
@@ -420,19 +424,16 @@ bool convertAsync(const brion::CompartmentReport& in,
     {
         auto task = [&, i] {
             const float t = start + i * step;
-            clock.reset();
             brion::floatsPtr data = in.loadFrameAsync(t).get();
-            loadTime += clock.getTimef();
             if (!data)
             {
-                LBERROR << "Can't load frame at " << t << " ms" << std::endl;
-                ::exit(EXIT_FAILURE);
+                throw std::runtime_error("Can't load frame at " +
+                                         std::to_string(t) + " ms");
             }
 
             const brion::floats& values = *data.get();
 
             size_t index = 0;
-            clock.reset();
             for (const uint32_t gid : gids)
             {
                 if (_isCompact(in, index))
@@ -443,16 +444,13 @@ bool convertAsync(const brion::CompartmentReport& in,
 
                     auto writeTask = [gid, cellValues, size, t, &to] {
                         if (!to.writeFrame(gid, cellValues, size, t))
-                        {
-                            throw std::runtime_error("Failed to write frame");
-                        }
+                            throw std::runtime_error(
+                                "Can't write frame at " + std::to_string(t) +
+                                " ms for gid " + std::to_string(gid));
                     };
 
                     writer.postDetached(writeTask);
 
-                    //                    if (!to.writeFrame(gid, cellValues,
-                    //                    size, t))
-                    //                        return false;
                     ++index;
                     continue;
                 }
@@ -472,14 +470,10 @@ bool convertAsync(const brion::CompartmentReport& in,
                         throw std::runtime_error("Failed to write frame");
                     }
                 };
-
                 writer.postDetached(writeTask);
 
-                //                if (!to.writeFrame(gid, cellvalues, t))
-                //                    return false;
                 ++index;
             }
-            writeTime += clock.getTimef();
             ++progress;
         };
 
@@ -494,5 +488,4 @@ bool convertAsync(const brion::CompartmentReport& in,
 
     flushFuture.get();
 
-    return true;
 }
