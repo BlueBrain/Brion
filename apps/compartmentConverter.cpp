@@ -188,7 +188,7 @@ int main(const int argc, char** argv)
     lunchbox::URI inURI(input);
     lunchbox::Clock clock;
     brion::CompartmentReport in(inURI, brion::MODE_READ);
-    float loadTime = clock.getTimef();
+    //    float loadTime = clock.getTimef();
 
     const float start = in.getStartTime();
     const float step = in.getTimestep();
@@ -262,15 +262,12 @@ int main(const int argc, char** argv)
         return EXIT_FAILURE;
     }
 
-
-
     auto endTime = std::chrono::high_resolution_clock::now();
 
     clock.reset();
     writeTime += clock.getTimef();
 
-    std::cout << "Converted " << inURI << " to " << outURI << " (in "
-              << size_t(loadTime) << " out " << size_t(writeTime) << " ms, "
+    std::cout << "Converted " << inURI << " to " << outURI << ", "
               << gids.size() << " cells X " << nFrames << " frames). Total : "
               << std::chrono::duration_cast<std::chrono::milliseconds>(
                      endTime - startTime)
@@ -410,74 +407,85 @@ void convertAsync(const brion::CompartmentReport& in,
 
     const auto& offsets = in.getOffsets();
 
-    boost::progress_display progress(nFrames);
-
-    lunchbox::ThreadPool readers{vm["threads"].as<size_t>()};
+    lunchbox::ThreadPool readers{std::min(vm["threads"].as<size_t>(), nFrames)};
     lunchbox::ThreadPool writer{1};
 
-    std::cout << "Async convertion. Reader count : " << readers.getSize()
+    std::cout << "Async convertion. Readers count : " << readers.getSize()
               << std::endl;
 
-    std::vector<std::future<void>> reads(nFrames);
+    boost::progress_display progress(nFrames * gids.size());
 
-    for (size_t i = 0; i < nFrames; ++i)
+    std::vector<std::future<void>> reads(readers.getSize());
+
+    size_t framesPerThread = nFrames / readers.getSize();
+
+    for (size_t th = 0; th < readers.getSize(); ++th)
     {
-        auto task = [&, i] {
-            const float t = start + i * step;
-            brion::floatsPtr data = in.loadFrameAsync(t).get();
-            if (!data)
-            {
-                throw std::runtime_error("Can't load frame at " +
-                                         std::to_string(t) + " ms");
-            }
+        const size_t startIndex = th * framesPerThread;
+        const size_t endIndex = (th == readers.getSize() - 1)
+                                    ? nFrames
+                                    : startIndex + framesPerThread;
 
-            const brion::floats& values = *data.get();
+        auto task = [&, startIndex, endIndex] {
+            for (size_t i = startIndex; i < endIndex; ++i)
 
-            size_t index = 0;
-            for (const uint32_t gid : gids)
             {
-                if (_isCompact(in, index))
+                const float t = start + i * step;
+                brion::floatsPtr data = in.loadFrameAsync(t).get();
+                if (!data)
                 {
-                    const float* cellValues = &values[offsets[index][0]];
-                    const size_t size = std::accumulate(counts[index].begin(),
-                                                        counts[index].end(), 0);
-
-                    auto writeTask = [gid, cellValues, size, t, &to] {
-                        if (!to.writeFrame(gid, cellValues, size, t))
-                            throw std::runtime_error(
-                                "Can't write frame at " + std::to_string(t) +
-                                " ms for gid " + std::to_string(gid));
-                    };
-
-                    writer.postDetached(writeTask);
-
-                    ++index;
-                    continue;
+                    throw std::runtime_error("Can't load frame at " +
+                                             std::to_string(t) + " ms");
                 }
 
-                brion::floats cellvalues;
-                cellvalues.reserve(in.getNumCompartments(index));
+                const brion::floats& values = *data.get();
 
-                for (size_t j = 0; j < offsets[index].size(); ++j)
+                size_t index = 0;
+                for (const uint32_t gid : gids)
                 {
-                    const auto offset = offsets[index][j];
-                    for (size_t k = 0; k < counts[index][j]; ++k)
-                        cellvalues.emplace_back(values[offset + k]);
-                }
-                auto writeTask = [gid, cellvalues, t, &to] {
-                    if (!to.writeFrame(gid, cellvalues, t))
+                    if (_isCompact(in, index))
                     {
-                        throw std::runtime_error("Failed to write frame");
+                        const float* cellValues = &values[offsets[index][0]];
+                        const size_t size =
+                            std::accumulate(counts[index].begin(),
+                                            counts[index].end(), 0);
+
+                        auto writeTask = [&, gid, cellValues, size, t] {
+                            if (!to.writeFrame(gid, cellValues, size, t))
+                                throw std::runtime_error(
+                                    "Can't write frame at " +
+                                    std::to_string(t) + " ms for gid " +
+                                    std::to_string(gid));
+                            progress += gids.size();
+
+                        };
+
+                        writer.postDetached(writeTask);
+
+                        ++index;
+                        continue;
                     }
-                };
-                writer.postDetached(writeTask);
 
-                ++index;
+                    brion::floats cellvalues;
+                    cellvalues.reserve(in.getNumCompartments(index));
+
+                    for (size_t j = 0; j < offsets[index].size(); ++j)
+                    {
+                        const auto offset = offsets[index][j];
+                        for (size_t k = 0; k < counts[index][j]; ++k)
+                            cellvalues.emplace_back(values[offset + k]);
+                    }
+                    auto writeTask = [&, gid, cellvalues, t] {
+                        if (!to.writeFrame(gid, cellvalues, t))
+                            throw std::runtime_error("Failed to write frame");
+                        ++progress;
+                    };
+                    writer.postDetached(writeTask);
+                    ++index;
+                }
             }
-            ++progress;
         };
-
-        reads[i] = readers.post(task);
+        reads[th] = readers.post(task);
     }
 
     auto flush = [&] { to.flush(); };
@@ -487,5 +495,4 @@ void convertAsync(const brion::CompartmentReport& in,
         task.get();
 
     flushFuture.get();
-
 }
