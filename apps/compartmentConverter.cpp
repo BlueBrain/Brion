@@ -92,10 +92,13 @@ bool _isCompact(const brion::CompartmentReport& report, const size_t gidIndex)
 void convert(const brion::CompartmentReport& in, brion::CompartmentReport& to,
              size_t maxFrames);
 
-void convertAsync(const brion::CompartmentReport& in,
-                  brion::CompartmentReport& to, size_t maxFrames);
+void convertParallel(const brion::CompartmentReport& in,
+                     brion::CompartmentReport& to, size_t maxFrames);
 
 po::variables_map vm;
+
+bool asyncLoad = false;
+size_t threadCount = 1;
 
 /**
  * Convert a compartment report to an HDF5 report.
@@ -139,9 +142,8 @@ int main(const int argc, char** argv)
                 "dump,d",
                 "Dump input report information (no output conversion)")(
                 "async,a", "Internal : Use async API")(
-                "threads,t", po::value<size_t>()->default_value(
-                                 std::thread::hardware_concurrency()),
-                "Internal : Read thread count in async mode");
+                "threads,t", po::value<size_t>()->default_value(threadCount),
+                "Internal : Conversion thread count");
 
     try
     {
@@ -177,6 +179,9 @@ int main(const int argc, char** argv)
         std::cerr << "Could not erase " << outURI << std::endl;
         return EXIT_FAILURE;
     }
+
+    asyncLoad = vm.count("async");
+    threadCount = vm["threads"].as<size_t>();
 
     ////
 
@@ -249,10 +254,17 @@ int main(const int argc, char** argv)
 
     auto startTime = std::chrono::high_resolution_clock::now();
 
+
+    std::cout << "Asynchronous load   : " << (asyncLoad ? "yes" : "no")  << std::endl;
+    if (threadCount > 1)
+        std::cout << "Parallel conversion : " << threadCount << " threads"  << std::endl;
+    else
+        std::cout << "Parallel conversion : no" << std::endl;
+
     try
     {
-        if (vm.count("async"))
-            convertAsync(in, to, maxFrames);
+        if (threadCount > 1)
+            convertParallel(in, to, maxFrames);
         else
             convert(in, to, maxFrames);
     }
@@ -342,7 +354,8 @@ void convert(const brion::CompartmentReport& in, brion::CompartmentReport& to,
     for (size_t i = 0; i < nFrames; ++i)
     {
         const float t = start + i * step;
-        brion::floatsPtr data = in.loadFrame(t);
+        brion::floatsPtr data =
+            asyncLoad ? in.loadFrameAsync(t).get() : in.loadFrame(t);
         if (!data)
         {
             throw std::runtime_error("Can't load frame at " +
@@ -390,8 +403,8 @@ void convert(const brion::CompartmentReport& in, brion::CompartmentReport& to,
     to.flush();
 }
 
-void convertAsync(const brion::CompartmentReport& in,
-                  brion::CompartmentReport& to, size_t maxFrames)
+void convertParallel(const brion::CompartmentReport& in,
+                     brion::CompartmentReport& to, size_t maxFrames)
 
 {
     const float start = in.getStartTime();
@@ -434,7 +447,8 @@ void convertAsync(const brion::CompartmentReport& in,
             for (size_t i = startIndex; i < endIndex; ++i)
             {
                 const float t = start + i * step;
-                brion::floatsPtr data = in.loadFrameAsync(t).get();
+                brion::floatsPtr data =
+                    asyncLoad ? in.loadFrameAsync(t).get() : in.loadFrame(t);
                 if (!data)
                 {
                     throw std::runtime_error("Can't load frame at " +
