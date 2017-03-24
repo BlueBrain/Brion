@@ -410,12 +410,7 @@ void convertAsync(const brion::CompartmentReport& in,
     lunchbox::ThreadPool readers{std::min(vm["threads"].as<size_t>(), nFrames)};
     lunchbox::ThreadPool writer{1};
 
-    std::cout << "Async convertion. Readers count : " << readers.getSize()
-              << std::endl;
-
     boost::progress_display progress(nFrames);
-
-    std::cout << "Total " << nFrames << std::endl;
 
     std::vector<std::future<void>> reads(readers.getSize());
 
@@ -434,8 +429,6 @@ void convertAsync(const brion::CompartmentReport& in,
         const size_t endIndex = (th == readers.getSize() - 1)
                                     ? nFrames
                                     : startIndex + framesPerThread;
-
-        std::cout << "Slice " << startIndex << " , " << endIndex << std::endl;
 
         auto task = [&, startIndex, endIndex] {
             for (size_t i = startIndex; i < endIndex; ++i)
