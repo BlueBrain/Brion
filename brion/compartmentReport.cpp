@@ -135,7 +135,6 @@ floatsPtr CompartmentReport::loadFrame(const float timestamp) const
     return _impl->plugin->loadFrame(timestamp);
 }
 
-
 std::future<floatsPtr> CompartmentReport::loadFrameAsync(float timestamp) const
 {
     if (timestamp < getStartTime() || timestamp > getEndTime())

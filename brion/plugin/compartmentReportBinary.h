@@ -25,7 +25,6 @@
 #include <lunchbox/bitOperation.h>
 #include <lunchbox/memoryMap.h>
 
-
 namespace brion
 {
 namespace plugin
@@ -74,9 +73,10 @@ public:
     size_t getFrameSize() const final;
 
     floatsPtr loadFrame(float timestamp) const final;
+
     std::future<floatsPtr> loadFrameAsync(float timestamp) const final;
 
-    floatsPtr loadNeuron(const uint32_t gid) const final;    
+    floatsPtr loadNeuron(const uint32_t gid) const final;
     std::future<floatsPtr> loadNeuronAsync(uint32_t gid LB_UNUSED) const final;
 
     void updateMapping(const GIDSet& gids) final;

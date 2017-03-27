@@ -415,11 +415,13 @@ void testReadAllCompartments(const char* relativePath)
     BOOST_CHECK_EQUAL(report.getFrameSize(), 629);
 
     frame = report.loadFrame(report.getStartTime());
+
     BOOST_CHECK(frame);
     BOOST_CHECK_EQUAL((*frame)[0], -65);
 
     frame = report.loadFrame(4.5f);
     BOOST_CHECK(frame);
+
     BOOST_CHECK_CLOSE((*frame)[0], -65.3935928f, .000001f);
 }
 
@@ -602,12 +604,12 @@ BOOST_AUTO_TEST_CASE(test_perf_binary)
 }
 
 BOOST_AUTO_TEST_CASE(test_perf_hdf5)
+
 {
     boost::filesystem::path path(BBP_TESTDATA);
     path /= "local/simulations/may17_2011/Control/allCompartments.h5";
     testPerf(brion::URI(path.string()));
 }
-
 
 BOOST_AUTO_TEST_CASE(test_convert_and_compare)
 {
@@ -685,9 +687,7 @@ BOOST_AUTO_TEST_CASE(dummy_report)
     BOOST_CHECK_NE(report3a.getFrameSize(), report2.getFrameSize());
 }
 
-
 ////
 void testReadPerf(const char* /*relativePath*/)
 {
-
 }

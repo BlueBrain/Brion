@@ -25,7 +25,6 @@
 #include "../types.h"
 
 #include <lunchbox/threadPool.h>
-
 namespace brion
 {
 namespace plugin
@@ -36,9 +35,9 @@ public:
     CompartmentReportCommon();
     ~CompartmentReportCommon() {}
     size_t getNumCompartments(size_t index) const final;
-
     std::future<floatsPtr> loadFrameAsync(float timestamp) const override;
-    std::future<floatsPtr> loadNeuronAsync(uint32_t gid LB_UNUSED) const override;
+    std::future<floatsPtr> loadNeuronAsync(
+        uint32_t gid LB_UNUSED) const override;
 
 protected:
     void _cacheNeuronCompartmentCounts(const GIDSet& gids);
@@ -46,6 +45,7 @@ protected:
     static GIDSet _computeIntersection(const GIDSet& all, const GIDSet& subset);
 
     mutable lunchbox::ThreadPool _threadPool;
+
 private:
     size_ts _neuronCompartments;
 };

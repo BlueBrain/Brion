@@ -254,10 +254,11 @@ int main(const int argc, char** argv)
 
     auto startTime = std::chrono::high_resolution_clock::now();
 
-
-    std::cout << "Asynchronous load   : " << (asyncLoad ? "yes" : "no")  << std::endl;
+    std::cout << "Asynchronous load   : " << (asyncLoad ? "yes" : "no")
+              << std::endl;
     if (threadCount > 1)
-        std::cout << "Parallel conversion : " << threadCount << " threads"  << std::endl;
+        std::cout << "Parallel conversion : " << threadCount << " threads"
+                  << std::endl;
     else
         std::cout << "Parallel conversion : no" << std::endl;
 

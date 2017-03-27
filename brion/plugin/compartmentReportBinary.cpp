@@ -370,12 +370,9 @@ std::future<floatsPtr> CompartmentReportBinary::loadFrameAsync(
             floatsPtr buffer(new floats(_header.numCompartments));
 
             // clang-format off
-            auto cb = readAsync({
-                _fileDescriptor,
-                buffer->data(),
-                _header.numCompartments * sizeof(float),
-                frameOffset
-            });
+            auto cb = readAsync(
+                {_fileDescriptor,                         buffer->data(),
+                 _header.numCompartments * sizeof(float), frameOffset});
             // clang-format off
 
             waitFor(&cb);
@@ -407,12 +404,13 @@ std::future<floatsPtr> CompartmentReportBinary::loadFrameAsync(
                 const uint64_t targetOffset = offsets[i][j];
 
                 // clang-format off
-                readData.push_back({
-                    _fileDescriptor,
-                    buffer->data() + targetOffset, // destination buffer
-                    numCompartments * sizeof(float), // size
-                    frameOffset + sourceOffset* sizeof(float) //  global offset
-                });
+                readData.push_back(
+                    {_fileDescriptor,
+                     buffer->data() + targetOffset,   // destination buffer
+                     numCompartments * sizeof(float), // size
+                     frameOffset +
+                         sourceOffset * sizeof(float) //  global offset
+                    });
                 // clang-format on
             }
         }
@@ -506,13 +504,14 @@ std::future<floatsPtr> CompartmentReportBinary::loadNeuronAsync(
                 const uint64_t sourceOffset = offsets[index][j];
 
                 // clang-format off
-                readData.push_back({
-                    _fileDescriptor,
-                    buffer->data() + dstOffset, // destination buffer
-                    numCompartments * sizeof(float), // size
-                    _header.dataBlockOffset + (frameOffset + sourceOffset)*
-                                       sizeof(float) //  global offset
-                });
+                readData.push_back(
+                    {_fileDescriptor,
+                     buffer->data() + dstOffset,      // destination buffer
+                     numCompartments * sizeof(float), // size
+                     _header.dataBlockOffset +
+                         (frameOffset + sourceOffset) *
+                             sizeof(float) //  global offset
+                    });
                 // clang-format on
 
                 dstOffset += numCompartments;
