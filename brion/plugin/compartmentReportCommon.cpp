@@ -76,5 +76,17 @@ GIDSet CompartmentReportCommon::_computeIntersection(const GIDSet& all,
     }
     return intersection;
 }
+
+std::future<floatsPtr> CompartmentReportCommon::loadFrameAsync(
+    float timestamp) const
+{
+    return _threadPool.post([this, timestamp] { return loadFrame(timestamp); });
+}
+
+std::future<floatsPtr> CompartmentReportCommon::loadNeuronAsync(
+    uint32_t gid) const
+{
+    return _threadPool.post([this, gid] { return loadNeuron(gid); });
+}
 }
 }

@@ -73,7 +73,12 @@ public:
     size_t getFrameSize() const final;
 
     floatsPtr loadFrame(float timestamp) const final;
+
+    std::future<floatsPtr> loadFrameAsync(float timestamp) const final;
+
     floatsPtr loadNeuron(const uint32_t gid) const final;
+    std::future<floatsPtr> loadNeuronAsync(uint32_t gid LB_UNUSED) const final;
+
     void updateMapping(const GIDSet& gids) final;
 
     void writeHeader(float startTime, float endTime, float timestep,
@@ -98,6 +103,7 @@ private:
 
     const std::string _path;
     lunchbox::MemoryMap _file;
+    int _fileDescriptor;
 
     HeaderInfo _header;
 

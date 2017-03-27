@@ -20,9 +20,12 @@
 #ifndef BRION_COMPARTMENTREPORT
 #define BRION_COMPARTMENTREPORT
 
-#include <boost/noncopyable.hpp>
 #include <brion/api.h>
 #include <brion/types.h>
+
+#include <boost/noncopyable.hpp>
+
+#include <future>
 
 namespace brion
 {
@@ -145,6 +148,8 @@ public:
      */
     BRION_API floatsPtr loadFrame(float timestamp) const;
 
+    BRION_API std::future<floatsPtr> loadFrameAsync(float timestamp) const;
+
     /**
      * @param gid the neuron report to be loaded.
      * @return the number of values of the given neuron report.
@@ -162,6 +167,8 @@ public:
      * @version 1.10
      */
     BRION_API floatsPtr loadNeuron(uint32_t gid) const;
+
+    BRION_API std::future<floatsPtr> loadNeuronAsync(uint32_t gid) const;
 
     /** Set the size of the stream buffer for loaded frames.
      *

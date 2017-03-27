@@ -23,8 +23,11 @@
 #include <brion/pluginInitData.h>
 #include <brion/types.h>
 
-#include <boost/noncopyable.hpp>
 #include <lunchbox/log.h>
+
+#include <boost/noncopyable.hpp>
+
+#include <future>
 
 namespace brion
 {
@@ -125,11 +128,18 @@ public:
     /** @copydoc brion::CompartmentReport::loadFrame */
     virtual floatsPtr loadFrame(float timestamp) const = 0;
 
+    /** @copydoc brion::CompartmentReport::loadFrameAsync */
+    virtual std::future<floatsPtr> loadFrameAsync(float timestamp) const = 0;
+
     /** @copydoc brion::CompartmentReport::loadNeuron */
     virtual floatsPtr loadNeuron(uint32_t gid LB_UNUSED) const
     {
         throw std::runtime_error("loadNeuron() not implemented");
     }
+
+    /** @copydoc brion::CompartmentReport::loadNeuronAsync */
+    virtual std::future<floatsPtr> loadNeuronAsync(
+        uint32_t gid LB_UNUSED) const = 0;
 
     /** @copydoc brion::CompartmentReport::updateMapping */
     virtual void updateMapping(const GIDSet& gids) = 0;
