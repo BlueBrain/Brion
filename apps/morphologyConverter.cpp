@@ -3,7 +3,6 @@
  *                          Stefan.Eilemann@epfl.ch
  */
 
-
 #include <brion/brion.h>
 
 #include <lunchbox/clock.h>
