@@ -104,6 +104,7 @@ struct CellInfo
 {
     int32_t gid;
     int32_t numCompartments;
+    uint64_t accumCompartments;
     uint64_t mappingOffset;
     uint64_t extraMappingOffset;
     uint64_t dataOffset;
@@ -637,6 +638,15 @@ bool CompartmentReportBinary::_parseMapping()
 
     size_t offset = _header.headerSize;
 
+    // According to Garik Suess, all compartments of a cell in a frame are next
+    // to each other, and all compartments of a section are next to each other.
+    // However, the sections are not necessarily sorted by their index in the
+    // frame. It could be that for cell with GID 50 while all data is
+    // contiguous, the sections are out of order so compartments for section 3 6
+    // 22 8 could be next to each other, while the compartments inside these
+    // sections are in order.
+
+    uint64_t totalCompartments = 0;
     CellInfos cells(_header.numCells);
     for (int32_t i = 0; i < _header.numCells; ++i)
     {
@@ -653,6 +663,10 @@ bool CompartmentReportBinary::_parseMapping()
 
         if (_header.byteswap)
             lunchbox::byteswap(cell);
+
+        cell.accumCompartments = totalCompartments;
+        totalCompartments += cell.numCompartments;
+        _originalGIDs.insert(cell.gid);
     }
 
     _header.dataBlockOffset = cells[0].dataOffset;
@@ -666,29 +680,25 @@ bool CompartmentReportBinary::_parseMapping()
     perCellOffsets.resize(cells.size());
     _perCellCounts.resize(cells.size());
 
-    // According to Garik Suess, all compartments of a cell in a frame are next
-    // to each other, and all compartments of a section are next to each other.
-    // However, the sections are not necessarily sorted by their index in the
-    // frame. It could be that for cell with GID 50 while all data is
-    // contiguous, the sections are out of order so compartments for section 3 6
-    // 22 8 could be next to each other, while the compartments inside these
-    // sections are in order.
-    size_t idx = 0;
-    size_t totalCompartments = 0;
-    for (const CellInfo& info : cells)
+// With 8 threads there's some speed up, but very small. We stick with 6
+// to avoid using more than 1 socket.
+#pragma omp parallel for num_threads(6)
+    for (size_t idx = 0; idx < cells.size(); ++idx)
     {
+        CellInfo& info = cells[idx];
         uint16_t current = LB_UNDEFINED_UINT16;
         uint16_t previous = LB_UNDEFINED_UINT16;
         uint16_t count = 0;
 
         // < sectionID, < frameIndex, numCompartments > >
-        typedef std::map<uint16_t, std::pair<uint64_t, uint16_t>>
+        typedef std::vector<std::pair<uint16_t, std::pair<uint64_t, uint16_t>>>
             SectionMapping;
+
         SectionMapping sectionsMapping;
+        sectionsMapping.reserve(info.numCompartments);
 
         _perCellCounts[idx] = info.numCompartments;
-        perCellOffsets[idx] = totalCompartments;
-        totalCompartments += info.numCompartments;
+        perCellOffsets[idx] = info.accumCompartments;
 
         for (int32_t j = 0; j < info.numCompartments; ++j)
         {
@@ -706,23 +716,23 @@ bool CompartmentReportBinary::_parseMapping()
                 const uint64_t frameIndex =
                     j + ((info.dataOffset - _header.dataBlockOffset) /
                          sizeof(float));
-
-                sectionsMapping.insert(
+                sectionsMapping.push_back(
                     std::make_pair(current, std::make_pair(frameIndex, 0)));
 
                 if (previous != LB_UNDEFINED_UINT16)
-                    sectionsMapping[previous].second = count;
+                    sectionsMapping[sectionsMapping.size() - 2].second.second =
+                        count;
 
                 count = 0;
             }
             ++count;
         }
-        sectionsMapping[current].second = count;
+        sectionsMapping.back().second.second = count;
+        std::sort(sectionsMapping.begin(), sectionsMapping.end());
 
         // now convert the maps into the desired mapping format
         uint64_ts& sectionOffsets = offsetMapping[idx];
         uint16_ts& sectionCompartmentCounts = perSectionCounts[idx];
-        ++idx;
 
         // get maximum section id
         const uint16_t maxID = sectionsMapping.rbegin()->first;
@@ -734,8 +744,6 @@ bool CompartmentReportBinary::_parseMapping()
             sectionOffsets[k.first] = k.second.first;
             sectionCompartmentCounts[k.first] = k.second.second;
         }
-
-        _originalGIDs.insert(info.gid);
     }
 
     return true;
