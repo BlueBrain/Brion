@@ -4,7 +4,8 @@ Changelog {#Changelog}
 # Release 2.0.0 (30-May-2017)
 
 * [157](https://github.com/BlueBrain/Brion/pull/157):
-  Improve synapse attribute reading performance
+  - Add Synapse.gid() python wrapping
+  - Improve synapse attribute reading performance
 * [154](https://github.com/BlueBrain/Brion/pull/154):
   - Improved help and command line inverface for spikeConverter and
     compartmentConverter.
