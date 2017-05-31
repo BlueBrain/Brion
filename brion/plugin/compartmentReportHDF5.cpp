@@ -597,8 +597,7 @@ void CompartmentReportHDF5::_createMetaData()
     H5::Group root = _file.openGroup("/");
 
     detail::addStringAttribute(root, "creator", "Brion");
-    detail::addStringAttribute(root, "software_version",
-                               brion::Version::getRevString());
+    detail::addStringAttribute(root, "software_version", BRION_REV_STRING);
 
     const time_t now = ::time(0);
 #ifdef _WIN32

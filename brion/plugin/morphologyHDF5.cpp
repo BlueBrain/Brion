@@ -718,7 +718,7 @@ void MorphologyHDF5::_writeV11Metadata(const MorphologyInitData& initData)
     detail::addStringAttribute(metadata, _a_creator, creator);
 
     detail::addStringAttribute(metadata, _a_software_version,
-                               Version::getString());
+                               BRION_VERSION_STRING);
 
     const time_t now = ::time(0);
 #ifdef _WIN32
@@ -815,8 +815,8 @@ void MorphologyHDF5::_writeV2Metadata()
     char gmtString[32];
     ::ctime_r(&now, gmtString);
 #endif
-    std::string creator =
-        "Brion " + Version::getString() + " brion::Morphology " + gmtString;
+    std::string creator = "Brion " + std::string(BRION_VERSION_STRING) +
+                          " brion::Morphology " + gmtString;
     creator = creator.substr(0, creator.size() - 1); // ctime_r ends with \n
     detail::addStringAttribute(root, _a_creator, creator);
 
