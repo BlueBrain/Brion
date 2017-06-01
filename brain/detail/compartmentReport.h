@@ -74,7 +74,7 @@ void CompartmentReportView::_initIndices()
     size_t indicesCount = 0;
     const auto& gids = report->getGIDs();
 
-    auto gidCount = gids.size();
+    const auto gidCount = gids.size();
     std::vector<size_t> indexPositions(gidCount);
     for (size_t i = 0; i < gids.size(); ++i)
     {
@@ -84,11 +84,8 @@ void CompartmentReportView::_initIndices()
 
     indices.resize(indicesCount);
 
-    std::vector<uint32_t> gidList(report->getGIDs().begin(),
-                                  report->getGIDs().end());
-// With 8 threads there's some speed up, but very small. We stick with 6
-// to avoid using more than 1 socket.
-#pragma omp parallel for num_threads(6)
+    const std::vector<uint32_t> gidList(report->getGIDs().begin(),
+                                        report->getGIDs().end());
     for (size_t i = 0; i < gids.size(); ++i)
     {
         const brion::uint16_ts& compartments =
@@ -104,11 +101,5 @@ void CompartmentReportView::_initIndices()
         }
     }
 }
-
-struct CompartmentReportFrame
-{
-    double timeStamp = -1.0;
-    brion::floats data;
-};
 }
 } // namespaces

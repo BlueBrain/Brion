@@ -42,6 +42,8 @@
 
 namespace
 {
+const size_t _mappingItemSize = 4;
+
 // Offsets of the header information in the file.
 enum HeaderPositions
 {
@@ -638,6 +640,16 @@ bool CompartmentReportBinary::_parseMapping()
 
     size_t offset = _header.headerSize;
 
+    // Prefetching the mapping data
+    uint64_t dataOffset = get<uint64_t>(ptr, DATA_INFO + offset);
+    if (_header.byteswap)
+        lunchbox::byteswap(dataOffset);
+    _header.dataBlockOffset = dataOffset;
+
+    std::unique_ptr<uint8_t[]> buffer(new uint8_t[_header.dataBlockOffset]);
+    std::copy(ptr, ptr + dataOffset, buffer.get());
+    ptr = buffer.get();
+
     // According to Garik Suess, all compartments of a cell in a frame are next
     // to each other, and all compartments of a section are next to each other.
     // However, the sections are not necessarily sorted by their index in the
@@ -659,6 +671,11 @@ bool CompartmentReportBinary::_parseMapping()
         cell.extraMappingOffset =
             get<uint64_t>(ptr, EXTRA_MAPPING_INFO + offset);
         cell.dataOffset = get<uint64_t>(ptr, DATA_INFO + offset);
+        if (cell.dataOffset < dataOffset)
+        {
+            LBERROR << "Bad offset in report mapping" << std::endl;
+            return false;
+        }
         offset += SIZE_CELL_INFO_LENGTH;
 
         if (_header.byteswap)
@@ -682,19 +699,17 @@ bool CompartmentReportBinary::_parseMapping()
 
 // With 8 threads there's some speed up, but very small. We stick with 6
 // to avoid using more than 1 socket.
-#pragma omp parallel for num_threads(6)
+#pragma omp parallel for num_threads(6) schedule(dynamic)
     for (size_t idx = 0; idx < cells.size(); ++idx)
     {
-        CellInfo& info = cells[idx];
+        const CellInfo& info = cells[idx];
         uint16_t current = LB_UNDEFINED_UINT16;
         uint16_t previous = LB_UNDEFINED_UINT16;
         uint16_t count = 0;
 
         // < sectionID, < frameIndex, numCompartments > >
-        typedef std::vector<std::pair<uint16_t, std::pair<uint64_t, uint16_t>>>
-            SectionMapping;
-
-        SectionMapping sectionsMapping;
+        std::vector<std::pair<uint16_t, std::pair<uint64_t, uint16_t>>>
+            sectionsMapping;
         sectionsMapping.reserve(info.numCompartments);
 
         _perCellCounts[idx] = info.numCompartments;
@@ -704,18 +719,19 @@ bool CompartmentReportBinary::_parseMapping()
         {
             previous = current;
             const size_t pos(info.mappingOffset +
-                             j * sizeof(float) * _header.mappingSize);
+                             j * _mappingItemSize * _header.mappingSize);
             float value = get<float>(ptr, pos);
             if (_header.byteswap)
                 lunchbox::byteswap(value);
+            assert(value < 65536);
             current = value;
 
             // in case this is the start of a new section
             if (current != previous)
             {
                 const uint64_t frameIndex =
-                    j + ((info.dataOffset - _header.dataBlockOffset) /
-                         sizeof(float));
+                    j + ((info.dataOffset - dataOffset) / _mappingItemSize);
+
                 sectionsMapping.push_back(
                     std::make_pair(current, std::make_pair(frameIndex, 0)));
 
@@ -731,18 +747,19 @@ bool CompartmentReportBinary::_parseMapping()
         std::sort(sectionsMapping.begin(), sectionsMapping.end());
 
         // now convert the maps into the desired mapping format
-        uint64_ts& sectionOffsets = offsetMapping[idx];
-        uint16_ts& sectionCompartmentCounts = perSectionCounts[idx];
+        auto& sectionOffsets = offsetMapping[idx];
+        auto& sectionCompartmentCounts = perSectionCounts[idx];
 
         // get maximum section id
         const uint16_t maxID = sectionsMapping.rbegin()->first;
         sectionOffsets.resize(maxID + 1, LB_UNDEFINED_UINT64);
         sectionCompartmentCounts.resize(maxID + 1, 0);
 
-        for (auto k : sectionsMapping)
+        for (auto sectionInfo : sectionsMapping)
         {
-            sectionOffsets[k.first] = k.second.first;
-            sectionCompartmentCounts[k.first] = k.second.second;
+            const auto id = sectionInfo.first;
+            sectionOffsets[id] = sectionInfo.second.first;
+            sectionCompartmentCounts[id] = sectionInfo.second.second;
         }
     }
 
