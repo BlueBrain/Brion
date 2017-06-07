@@ -43,7 +43,6 @@ set(BRION_SOURCES
   synapseSummary.cpp
   synapse.cpp
   target.cpp
-  detail/lockHDF5.cpp
   )
 
 if(MSVC)
