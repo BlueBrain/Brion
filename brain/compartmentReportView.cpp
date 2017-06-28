@@ -99,6 +99,36 @@ std::future<brion::Frames> CompartmentReportView::load(double start, double end)
     return _impl->report->loadFrames(start, end);
 }
 
+std::future<brion::Frames> CompartmentReportView::load(double start, double end,
+                                                       double stride)
+{
+    if (end <= start)
+        throw std::logic_error("Invalid interval");
+
+    if (stride < _impl->report->getTimestep())
+        throw std::logic_error("Invalid stride");
+
+    start = std::max(start, _impl->report->getStartTime());
+    end = std::min(end, _impl->report->getEndTime());
+
+    auto task = [this, start, end, stride] {
+
+        brion::Frames frames;
+        frames.timeStamps.reset(new brion::doubles);
+        frames.data.reset(new floats);
+        for (double t = start; t < end; t += stride)
+        {
+            auto frame = load(t).get();
+            frames.timeStamps->push_back(frame.timestamp);
+            std::copy(frame.data->begin(), frame.data->end(),
+                      std::back_inserter(*frames.data));
+        }
+        return frames;
+    };
+
+    return _impl->readerImpl->threadPool.post(task);
+}
+
 std::future<brion::Frames> CompartmentReportView::loadAll()
 {
     return load(_impl->report->getStartTime(), _impl->report->getEndTime());

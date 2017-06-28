@@ -78,6 +78,22 @@ public:
      */
     BRAIN_API std::future<brion::Frames> load(double start, double end);
 
+    /** Load frames between start and end time stamps.
+     *
+     * @param start the start time stamp
+     * @param end the end time stamp
+     * @param stride the time stride
+     * @return the frames overlapped by the given time window, spaced by a given
+     * stride. The start time
+     *         doesn't need to be aligned with the stride and the time
+     *         interval is open on the right. The result may be empty if the
+     *         time window falls out of the report window.
+     * @throw std::logic_error if invalid interval or stride < timeStep
+     * @version 2.1
+     */
+    BRAIN_API std::future<brion::Frames> load(double start, double end,
+                                              double stride);
+
     /** Load all the frames.
      * This is equivalent to call load(starTime, endTime)
      * @version 2.0

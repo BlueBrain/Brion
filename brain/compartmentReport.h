@@ -54,6 +54,18 @@ struct CompartmentReportMetaData
 
     /** The  data unit of the report */
     std::string dataUnit;
+
+    /** The cell count of the report */
+    size_t cellCount;
+
+    /** The gids in the report */
+    brion::GIDSet gids;
+
+    /** The total frame count in the report */
+    size_t frameCount;
+
+    /** The total compartment count in the report */
+    size_t compartmentCount;
 };
 
 /**
