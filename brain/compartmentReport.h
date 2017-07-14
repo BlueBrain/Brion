@@ -89,8 +89,13 @@ public:
     BRAIN_API CompartmentReport(const URI& uri);
     BRAIN_API ~CompartmentReport();
 
+#ifndef DOXYGEN_TO_BREATHE
     /** @return the metadata of the report */
     BRAIN_API const CompartmentReportMetaData& getMetaData() const;
+#else
+    /** @return the metadata of the report */
+    dict getMetaData() const;
+#endif
 
     /**
      * Create a view of a subset of neurons. An empty gid

@@ -114,7 +114,7 @@ std::future<brion::Frames> CompartmentReportView::load(double start, double end,
     // check step is multiple of timestep
     if (fmod(step, reportTimeStep) != 0.0)
         throw std::logic_error(
-            "Step should be amultiple of the report time step");
+            "Step should be a multiple of the report time step");
 
     /// check with Juan
     start = std::max(start, _impl->report->getStartTime());
