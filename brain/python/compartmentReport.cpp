@@ -90,9 +90,9 @@ bp::object CompartmentReport_getMetaData(const CompartmentReport& reader)
     dict["time_step"] = md.timeStep;
     dict["time_unit"] = md.timeUnit;
     dict["data_unit"] = md.dataUnit;
-    dict["num_cells"] = md.cellCount;
-    dict["num_compartments"] = md.compartmentCount;
-    dict["num_frames"] = md.frameCount;
+    dict["cell_count"] = md.cellCount;
+    dict["compartment_count"] = md.compartmentCount;
+    dict["frame_count"] = md.frameCount;
     dict["gids"] = toNumpy(toVector(md.gids));
 
     return dict;

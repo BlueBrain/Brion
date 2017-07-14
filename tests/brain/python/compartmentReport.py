@@ -25,6 +25,24 @@ import unittest
 from brain import *
 
 report_path = brain.test.root_data_path + "/local/simulations/may17_2011/Control/voltage.h5"
+all_compartments_report_path = brain.test.root_data_path + "/local/simulations/may17_2011/Control/allCompartments.h5"
+
+
+class TestMetaData(unittest.TestCase):
+    def setUp(self):
+        self.report = CompartmentReport(all_compartments_report_path)
+
+    def test_metadata(self):
+        metadata = self.report.metadata
+        assert(metadata['data_unit'] == 'mV')
+        assert(metadata['time_unit'] == 'ms')
+        assert(metadata['start_time'] == 0.0)
+        assert(metadata['end_time'] == 10.0)
+        assert(numpy.isclose(metadata['time_step'], 0.1))
+        assert(metadata['compartment_count'] == 20360)
+        assert(metadata['frame_count'] == 100)
+        assert(metadata['cell_count'] == 35)
+
 
 class TestReader(unittest.TestCase):
     def setUp(self):
@@ -37,9 +55,9 @@ class TestReader(unittest.TestCase):
         assert(metadata['start_time'] == 0.0)
         assert(metadata['end_time'] == 10.0)
         assert(numpy.isclose(metadata['time_step'], 0.1))
-        assert(metadata['num_compartments'] == 600)
-        assert(metadata['num_frames'] == 100)
-        assert(metadata['num_cells'] == 600)
+        assert(metadata['compartment_count'] == 600)
+        assert(metadata['frame_count'] == 100)
+        assert(metadata['cell_count'] == 600)
         assert((metadata['gids'] == numpy.arange(1, 601, 1)).all())
 
 

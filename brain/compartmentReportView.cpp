@@ -100,29 +100,47 @@ std::future<brion::Frames> CompartmentReportView::load(double start, double end)
 }
 
 std::future<brion::Frames> CompartmentReportView::load(double start, double end,
-                                                       double stride)
+                                                       const double step)
 {
+    const double reportTimeStep = _impl->report->getTimestep();
+    const double reportStartTime = _impl->report->getStartTime();
+
     if (end <= start)
         throw std::logic_error("Invalid interval");
 
-    if (stride < _impl->report->getTimestep())
-        throw std::logic_error("Invalid stride");
+    if (step < reportTimeStep || step <= 0.)
+        throw std::logic_error("Invalid step");
 
+    // check step is multiple of timestep
+    if (fmod(step, reportTimeStep) != 0.0)
+        throw std::logic_error(
+            "Step should be amultiple of the report time step");
+
+    /// check with Juan
     start = std::max(start, _impl->report->getStartTime());
+    size_t frameIndex = (start - reportStartTime) / reportTimeStep;
+    start = (frameIndex + 0.5) * reportTimeStep + reportStartTime;
+
     end = std::min(end, _impl->report->getEndTime());
 
-    auto task = [this, start, end, stride] {
+    auto task = [this, start, end, step] {
 
         brion::Frames frames;
         frames.timeStamps.reset(new brion::doubles);
         frames.data.reset(new floats);
-        for (double t = start; t < end; t += stride)
+
+        double t = start;
+        uint32_t i = 0;
+        while (t < end)
         {
             auto frame = load(t).get();
             frames.timeStamps->push_back(frame.timestamp);
             std::copy(frame.data->begin(), frame.data->end(),
                       std::back_inserter(*frames.data));
+            ++i;
+            t = start + i * step;
         }
+
         return frames;
     };
 
