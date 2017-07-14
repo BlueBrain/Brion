@@ -87,7 +87,8 @@ public:
      *         step. The start time doesn't need to be aligned with the step
      *         and the time interval is open on the right. The result may be
      *         empty if the time window falls out of the report window.
-     * @throw std::logic_error if invalid interval or stride < timeStep
+     * @throw std::logic_error if invalid interval or step < timeStep or step is
+     * not a multiple of timeStep
      * @version 2.1
      */
     BRAIN_API std::future<brion::Frames> load(double start, double end,

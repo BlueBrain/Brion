@@ -93,7 +93,18 @@ public:
     /** @return the metadata of the report */
     BRAIN_API const CompartmentReportMetaData& getMetaData() const;
 #else
-    /** @return the metadata of the report */
+    /** @return the metadata of the report
+     * - *start_time* (Numeric) : The  start time of the report
+     * - *end_time* (Numeric) : The  end time of the report
+     * - *time_step* (Numeric) : The sampling time interval of the report
+     * - *time_unit* (String) : The  time unit of the report
+     * - *data_unit* (String) : The  data unit of the report
+     * - *cell_count* (Numeric) : The cell count of the report
+     * - *compartment_count* (Numeric) : The total compartment count in the
+     * report
+     * - *frame_count* (Numeric) : The total frame count in the report
+     * - *gids* (Vector) : The gids in the report
+    */
     dict getMetaData() const;
 #endif
 

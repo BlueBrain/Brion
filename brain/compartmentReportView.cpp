@@ -112,11 +112,13 @@ std::future<brion::Frames> CompartmentReportView::load(double start, double end,
         throw std::logic_error("Invalid step");
 
     // check step is multiple of timestep
-    if (fmod(step, reportTimeStep) != 0.0)
+    if (fmod(step, reportTimeStep) > std::numeric_limits<double>::epsilon())
         throw std::logic_error(
             "Step should be a multiple of the report time step");
 
-    /// check with Juan
+    // Making sure the timestamps we are going to request always fall in the
+    // middle of a frame. For that we snap start to the beginning of the frame
+    // it's contained and then we add half the time step.
     start = std::max(start, _impl->report->getStartTime());
     size_t frameIndex = (start - reportStartTime) / reportTimeStep;
     start = (frameIndex + 0.5) * reportTimeStep + reportStartTime;

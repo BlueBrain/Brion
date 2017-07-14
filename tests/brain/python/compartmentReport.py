@@ -94,7 +94,7 @@ class TestReader(unittest.TestCase):
         assert(frames.shape == (2, 3))
 
 
-        ### load(start,end,stride)
+        ### load(start,end,step)
         timestamps, frames = view.load(0.0,1.0,0.2)
         assert(len(timestamps) == 5)
         assert(numpy.isclose(timestamps,[ 0.0, 0.2, 0.4, 0.6, 0.8]).all())
