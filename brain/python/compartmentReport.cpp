@@ -181,7 +181,7 @@ bp::class_<CompartmentReport, boost::noncopyable>(
          DOXY_FN(brain::CompartmentReport::CompartmentReport))
     .add_property("metadata", CompartmentReport_getMetaData,
                   DOXY_FN(brain::CompartmentReport::getMetaData))
-	  .add_property("gids", CompartmentReport_getGids,
+    .add_property("gids", CompartmentReport_getGids,
                   DOXY_FN(brain::CompartmentReport::getGIDs))
     .def("create_view", CompartmentReport_createView,
          (selfarg, bp::arg("gids")),
