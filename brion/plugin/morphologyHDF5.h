@@ -23,6 +23,9 @@
 
 #include "../morphologyPlugin.h"
 
+#include <highfive/H5DataSet.hpp>
+#include <highfive/H5File.hpp>
+
 namespace brion
 {
 namespace plugin
