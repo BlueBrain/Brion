@@ -55,7 +55,6 @@ class Soma
 {
 public:
     BRAIN_API Soma(const Soma& soma);
-    ~Soma();
 
     BRAIN_API Soma& operator=(const Soma& soma);
 

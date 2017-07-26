@@ -52,7 +52,6 @@ class Section
 {
 public:
     BRAIN_API Section(const Section& section);
-    BRAIN_API ~Section();
 
     BRAIN_API Section& operator=(const Section& section);
 

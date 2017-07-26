@@ -42,10 +42,6 @@ Soma::Soma(Morphology::ImplPtr morphology)
 {
 }
 
-Soma::~Soma()
-{
-}
-
 Soma::Soma(const Soma& soma)
     : _morphology(soma._morphology)
 {

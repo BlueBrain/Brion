@@ -95,13 +95,17 @@ public:
         : _data(data)
     {
     }
+
     virtual ~MorphologyPlugin() {}
+
     /** @name Read API */
     //@{
     /** @copydoc brion::Morphology::getCellFamily */
     CellFamily getCellFamily() const { return _data.family; }
+
     /** @copydoc brion::Morphology::getVersion */
     MorphologyVersion getVersion() const { return _data.version; }
+
     /** @copydoc brion::Morphology::readPoints */
     virtual Vector4fsPtr readPoints(MorphologyRepairStage stage) const = 0;
 

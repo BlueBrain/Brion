@@ -37,10 +37,6 @@ Section::Section(const uint32_t id, Morphology::ImplPtr morphology)
                << std::endl;
 }
 
-Section::~Section()
-{
-}
-
 Section::Section(const Section& section)
     : _id(section._id)
     , _morphology(section._morphology)
