@@ -48,6 +48,7 @@ class CompartmentReport;
 class CompartmentReportPlugin;
 class Mesh;
 class Morphology;
+class MorphologyInitData;
 class SpikeReport;
 class SpikeReportPlugin;
 class Synapse;
@@ -59,6 +60,7 @@ using vmml::Vector3f;
 using vmml::Vector4f;
 using vmml::Vector3d;
 using vmml::Vector4d;
+using servus::uint128_t;
 
 typedef std::vector<size_t> size_ts;
 typedef std::vector<int32_t> int32_ts;

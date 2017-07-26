@@ -97,6 +97,11 @@ MorphologyVersion Morphology::getVersion() const
     return _impl->plugin->getVersion();
 }
 
+const MorphologyInitData& Morphology::getInitData() const
+{
+    return _impl->plugin->getInitData();
+}
+
 void Morphology::writePoints(const Vector4fs& points)
 {
     _impl->plugin->writePoints(points);

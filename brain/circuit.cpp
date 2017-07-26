@@ -89,32 +89,34 @@ URIs Circuit::getMorphologyURIs(const GIDSet& gids) const
 neuron::Morphologies Circuit::loadMorphologies(const GIDSet& gids,
                                                const Coordinates coords) const
 {
-    const URIs& uris = getMorphologyURIs(gids);
+    URIs uris = getMorphologyURIs(gids);
     const auto circuitPath =
         // cache outside of loop, canonical does stat() which is slow on GPFS
         fs::canonical(_impl->getCircuitSource().getPath()).generic_string();
 
     // < GID, hash >
-    Strings gidHashes;
-    gidHashes.reserve(uris.size());
-    std::set<std::string> hashes;
+    Strings hashes;
+    hashes.reserve(uris.size());
+    std::set<std::string> hashSet;
     GIDSet::const_iterator gid = gids.begin();
-    for (size_t i = 0; i < uris.size(); ++i, ++gid)
+    for (auto& uri : uris)
     {
-        auto hash = uris[i].getPath();
-        if (hash[0] != '/') // opt: don't stat abs file path (see above)
-            hash = fs::canonical(hash).generic_string();
+        // opt: don't stat abs file path (see above)
+        if (uri.getScheme() == "file" && uri.getPath()[0] != '/')
+            uri.setPath(fs::canonical(uri.getPath()).generic_string());
 
+        auto hash = uri.getPath();
         if (coords == Coordinates::global)
             // store circuit + GID for transformed morphology
             hash += circuitPath + std::to_string(*gid);
 
         hash = servus::make_uint128(hash).getString();
-        gidHashes.push_back(hash);
-        hashes.insert(hash);
+        hashes.push_back(hash);
+        hashSet.insert(hash);
+        ++gid;
     }
 
-    CachedMorphologies cached = _impl->loadMorphologiesFromCache(hashes);
+    CachedMorphologies cached = _impl->loadMorphologiesFromCache(hashSet);
 
     // resolve missing morphologies and put them in GID-order into result
     neuron::Morphologies result;
@@ -125,17 +127,15 @@ neuron::Morphologies Circuit::loadMorphologies(const GIDSet& gids,
     for (size_t i = 0; i < uris.size(); ++i)
     {
         const URI& uri = uris[i];
-        const std::string& hash = gidHashes[i];
+        const std::string& hash = hashes[i];
 
         CachedMorphologies::const_iterator it = cached.find(hash);
         if (it == cached.end())
         {
-            neuron::MorphologyPtr morphology;
-            const brion::Morphology raw(uri.getPath());
-            if (transform)
-                morphology.reset(new neuron::Morphology(raw, transforms[i]));
-            else
-                morphology.reset(new neuron::Morphology(raw));
+            const brion::Morphology raw(std::to_string(uri));
+            neuron::MorphologyPtr morphology(
+                transform ? new neuron::Morphology(raw, transforms[i])
+                          : new neuron::Morphology(raw));
 
             _impl->saveMorphologyToCache(uri.getPath(), hash, morphology);
             cached.insert(std::make_pair(hash, morphology));

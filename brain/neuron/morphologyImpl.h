@@ -22,6 +22,7 @@
 #define BRAIN_NEURON_MORPHOLOGYIMPL
 
 #include "morphology.h"
+#include <brion/plugin/morphologyZeroEQ.h> // base class
 
 #include <lunchbox/lfVector.h>
 #include <vmmlib/matrix.hpp> // member
@@ -32,7 +33,7 @@ namespace neuron
 {
 typedef std::pair<size_t, size_t> SectionRange;
 
-class Morphology::Impl : public servus::Serializable
+class Morphology::Impl : public brion::plugin::MorphologyZeroEQ
 {
 public:
     brion::Vector4fsPtr points;
@@ -69,13 +70,6 @@ public:
     void transform(const Matrix4f& matrix);
 
 private:
-    std::string getTypeName() const final
-    {
-        return "brain::neuron::Morphology::Impl";
-    }
-    bool _fromBinary(const void* data, const size_t size) final;
-    servus::Serializable::Data _toBinary() const final;
-
     // Distances caches. These caches need to be thread-safe to follow the
     // recommendations for C++11 about mutable and const correctness.
     // (http://herbsutter.com/2013/05/24/gotw-6a-const-correctness-part-1-3/)

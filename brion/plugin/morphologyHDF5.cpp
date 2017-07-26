@@ -165,7 +165,11 @@ MorphologyHDF5::~MorphologyHDF5()
 
 bool MorphologyHDF5::handles(const MorphologyInitData& initData)
 {
-    const std::string path = initData.getURI().getPath();
+    const std::string& scheme = initData.getURI().getScheme();
+    if (scheme != "file" && !scheme.empty())
+        return false;
+
+    const std::string& path = initData.getURI().getPath();
     const size_t pos = path.find_last_of(".");
     if (pos == std::string::npos)
         return false;

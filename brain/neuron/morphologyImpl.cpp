@@ -31,41 +31,28 @@ namespace brain
 {
 namespace neuron
 {
-namespace
-{
-template <typename T>
-void _serializeArray(unsigned char*& dst,
-                     const std::shared_ptr<std::vector<T>>& src)
-{
-    const size_t arraySize = src->size();
-    *reinterpret_cast<size_t*>(dst) = arraySize;
-    dst += sizeof(size_t);
-    memcpy(dst, src->data(), sizeof(T) * src->size());
-    dst += sizeof(T) * src->size();
-}
-
-template <typename T>
-void _deserializeArray(std::shared_ptr<std::vector<T>>& dst,
-                       const unsigned char*& src)
-{
-    const size_t arraySize = *reinterpret_cast<const size_t*>(src);
-    src += sizeof(size_t);
-    const T* dstPtr = reinterpret_cast<const T*>(src);
-    dst.reset(new std::vector<T>(dstPtr, dstPtr + arraySize));
-    src += sizeof(T) * arraySize;
-}
-}
-
 Morphology::Impl::Impl(const void* data, const size_t size)
+    : brion::plugin::MorphologyZeroEQ(data, size)
+    , points(readPoints())
+    , sections(readSections())
+    , types(readSectionTypes())
+    , apicals(readApicals())
 {
-    _fromBinary(data, size);
+    _extractChildrenLists();
+
+    const uint32_ts ids = getSectionIDs({SectionType::soma}, false);
+    if (ids.size() != 1)
+        LBTHROW(std::runtime_error(
+            "Bad input morphology: none or multiple somas found"));
+    somaSection = ids[0];
 }
 
 Morphology::Impl::Impl(const brion::Morphology& morphology)
-    : points(morphology.readPoints())
-    , sections(morphology.readSections())
-    , types(morphology.readSectionTypes())
-    , apicals(morphology.readApicals())
+    : brion::plugin::MorphologyZeroEQ(morphology)
+    , points(readPoints())
+    , sections(readSections())
+    , types(readSectionTypes())
+    , apicals(readApicals())
 {
     _extractChildrenLists();
 
@@ -74,49 +61,6 @@ Morphology::Impl::Impl(const brion::Morphology& morphology)
         LBTHROW(std::runtime_error(
             "Bad input morphology: none or multiple somas found"));
     somaSection = ids[0];
-}
-
-bool Morphology::Impl::_fromBinary(const void* data, const size_t size)
-{
-    const unsigned char* ptr = reinterpret_cast<const unsigned char*>(data);
-
-    _deserializeArray(points, ptr);
-    _deserializeArray(sections, ptr);
-    _deserializeArray(types, ptr);
-    if (size_t(ptr - reinterpret_cast<const unsigned char*>(data)) < size)
-        _deserializeArray(apicals, ptr);
-
-    _extractChildrenLists();
-
-    const uint32_ts ids = getSectionIDs({SectionType::soma}, false);
-
-    if (ids.size() != 1)
-        LBTHROW(std::runtime_error(
-            "Bad input morphology: none or multiple somas found"));
-    somaSection = ids[0];
-    return true;
-}
-
-servus::Serializable::Data Morphology::Impl::_toBinary() const
-{
-    servus::Serializable::Data data;
-
-    data.size = sizeof(size_t) + sizeof(brion::Vector4f) * points->size() +
-                sizeof(size_t) + sizeof(brion::Vector2i) * sections->size() +
-                sizeof(size_t) + sizeof(uint32_t) * types->size();
-    if (!apicals->empty())
-        data.size += sizeof(size_t) + sizeof(brion::Vector2i) * apicals->size();
-
-    unsigned char* ptr = new unsigned char[data.size];
-    data.ptr.reset(ptr);
-
-    _serializeArray(ptr, points);
-    _serializeArray(ptr, sections);
-    _serializeArray(ptr, types);
-    if (!apicals->empty())
-        _serializeArray(ptr, apicals);
-
-    return data;
 }
 
 SectionRange Morphology::Impl::getSectionRange(const uint32_t sectionID) const

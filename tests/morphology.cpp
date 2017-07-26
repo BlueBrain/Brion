@@ -21,6 +21,12 @@
 #include <brion/brion.h>
 #include <tests/paths.h>
 
+#ifdef BRION_USE_ZEROEQ
+#include <brion/plugin/morphologyZeroEQ.h>
+#include <zeroeq/server.h>
+#include <zeroeq/uri.h>
+#endif
+
 #define BOOST_TEST_MODULE Morphology
 #include <boost/filesystem/operations.hpp>
 #include <boost/filesystem/path.hpp>
@@ -259,12 +265,10 @@ BOOST_AUTO_TEST_CASE(h5_write_invalid_neuron)
     }
 }
 
-BOOST_AUTO_TEST_CASE(h5_read_v2)
+namespace
 {
-    boost::filesystem::path path(BBP_TESTDATA);
-    path /= "local/morphologies/14.07.10_repaired/v2/C010398B-P2.h5";
-
-    const brion::Morphology morphology(path.string());
+void _checkH5V2(const brion::Morphology& morphology)
+{
     BOOST_CHECK_EQUAL(morphology.getCellFamily(), brion::FAMILY_NEURON);
 
     brion::Vector4fsPtr points = morphology.readPoints();
@@ -293,6 +297,47 @@ BOOST_AUTO_TEST_CASE(h5_read_v2)
 
     BOOST_CHECK(morphology.readPerimeters()->empty());
 }
+}
+
+BOOST_AUTO_TEST_CASE(h5_read_v2)
+{
+    boost::filesystem::path path(BBP_TESTDATA);
+    path /= "local/morphologies/14.07.10_repaired/v2/C010398B-P2.h5";
+
+    const brion::Morphology morphology(path.string());
+    _checkH5V2(morphology);
+}
+
+#ifdef BRION_USE_ZEROEQ
+BOOST_AUTO_TEST_CASE(zeroeq_read)
+{
+    zeroeq::Server server(zeroeq::NULL_SESSION);
+    server.handle(brion::ZEROEQ_GET_MORPHOLOGY, [](const void* data,
+                                                   const size_t size) {
+        if (!data || !size)
+            return zeroeq::ReplyData();
+
+        const std::string path((const char*)data, size);
+        const brion::Morphology morphology(path);
+        const brion::plugin::MorphologyZeroEQ serializable{morphology};
+        return zeroeq::ReplyData(serializable.getTypeIdentifier(),
+                                 serializable.toBinary().clone());
+    });
+    std::thread thread([&] { server.receive(); });
+
+    boost::filesystem::path path(BBP_TESTDATA);
+    path /= "local/morphologies/14.07.10_repaired/v2/C010398B-P2.h5";
+
+    const std::string uri =
+        std::string("zeroeq://") + server.getURI().getHost() + ":" +
+        std::to_string(int(server.getURI().getPort())) + path.string();
+
+    const brion::Morphology morphology(uri);
+    thread.join();
+
+    _checkH5V2(morphology);
+}
+#endif
 
 BOOST_AUTO_TEST_CASE(h5_write_v2)
 {

@@ -43,6 +43,7 @@ common_find_package(PythonLibs)
 common_find_package(Servus REQUIRED)
 common_find_package(Sphinx 1.3)
 common_find_package(vmmlib REQUIRED)
+common_find_package(ZeroEQ)
 common_find_package_post()
 
 list(APPEND BRION_DEPENDENT_LIBRARIES Boost Servus vmmlib)

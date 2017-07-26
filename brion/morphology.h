@@ -90,6 +90,9 @@ public:
 
     /** @internal */
     BRION_API MorphologyVersion getVersion() const;
+
+    /** @internal */
+    const MorphologyInitData& getInitData() const;
     //@}
 
     /** @name Write API */

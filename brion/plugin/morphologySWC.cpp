@@ -174,6 +174,10 @@ MorphologySWC::MorphologySWC(const MorphologyInitData& initData)
 
 bool MorphologySWC::handles(const MorphologyInitData& initData)
 {
+    const std::string& scheme = initData.getURI().getScheme();
+    if (scheme != "file" && !scheme.empty())
+        return false;
+
     const std::string path = initData.getURI().getPath();
     const size_t pos = path.find_last_of(".");
     if (pos == std::string::npos)
@@ -338,9 +342,9 @@ void MorphologySWC::_buildSampleTree(RawSWCInfo& info)
         {
             if (sample.parent == int(currentSample))
             {
-                LBTHROW(std::runtime_error("Reading swc morphology file: " +
-                                           info.filename +
-                                           ", found a sample point to itself"));
+                LBTHROW(std::runtime_error(
+                    "Reading swc morphology file: " + info.filename +
+                    ", found a sample point to itself"));
             }
             Sample* parent = &samples[sample.parent];
             if (!parent->valid)
@@ -408,9 +412,9 @@ void MorphologySWC::_buildSampleTree(RawSWCInfo& info)
                 if (info.roots.size() &&
                     samples[info.roots[0]].type == SWC_SECTION_SOMA)
                 {
-                    LBTHROW(std::runtime_error("Reading swc morphology file: " +
-                                               info.filename +
-                                               ", found two soma sections"));
+                    LBTHROW(std::runtime_error(
+                        "Reading swc morphology file: " + info.filename +
+                        ", found two soma sections"));
                 }
                 info.roots.insert(info.roots.begin(), currentSample);
                 hasSoma = true;

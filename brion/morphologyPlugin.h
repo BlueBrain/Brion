@@ -35,10 +35,12 @@ namespace brion
 class MorphologyInitData : public PluginInitData
 {
 public:
-    explicit MorphologyInitData(const URI& uri)
+    explicit MorphologyInitData(
+        const URI& uri, const MorphologyVersion v = MORPHOLOGY_VERSION_H5_1_1,
+        const CellFamily f = FAMILY_NEURON)
         : PluginInitData(uri, MODE_READ)
-        , version(MORPHOLOGY_VERSION_H5_1_1)
-        , family(FAMILY_NEURON)
+        , version(v)
+        , family(f)
     {
     }
 
@@ -86,12 +88,12 @@ class MorphologyPlugin
 {
 public:
     /** @internal Needed by the PluginRegisterer. */
-    typedef MorphologyPlugin InterfaceT;
+    using InterfaceT = MorphologyPlugin;
 
     /** @internal Needed by the PluginRegisterer. */
-    typedef MorphologyInitData InitDataT;
+    using InitDataT = MorphologyInitData;
 
-    MorphologyPlugin(const MorphologyInitData& data)
+    MorphologyPlugin(const InitDataT& data)
         : _data(data)
     {
     }
@@ -99,6 +101,8 @@ public:
     virtual ~MorphologyPlugin() {}
     /** @name Read API */
     //@{
+    /** @copydoc brion::Morphology::getInitData */
+    const InitDataT& getInitData() const { return _data; }
     /** @copydoc brion::Morphology::getCellFamily */
     CellFamily getCellFamily() const { return _data.family; }
     /** @copydoc brion::Morphology::getVersion */
@@ -142,7 +146,7 @@ public:
     //@}
 
 protected:
-    MorphologyInitData _data;
+    InitDataT _data;
 };
 }
 

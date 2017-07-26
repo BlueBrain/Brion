@@ -46,8 +46,7 @@ set(BRION_SOURCES
   )
 
 if(MSVC)
-  add_definitions(/wd4251 # missing dll-interface for H5::Exception
-    )
+  add_definitions(/wd4251) # missing dll-interface for H5::Exception
 endif()
 
 add_subdirectory(plugin)
