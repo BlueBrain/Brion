@@ -19,10 +19,11 @@ BOOST_AUTO_TEST_CASE(load_morphologies)
     }
 
     lunchbox::Clock clock;
-    const auto morphologies =
-        circuit.loadMorphologies(gids, brain::Circuit::Coordinates::local);
-    std::cout << "Loaded " << morphologies.size() / clock.getTimef() * 1000.f
+    {
+        const auto morphologies =
+            circuit.loadMorphologies(gids, brain::Circuit::Coordinates::local);
+        BOOST_CHECK_EQUAL(morphologies.size(), gids.size());
+    }
+    std::cout << "Loaded " << gids.size() / clock.getTimef() * 1000.f
               << " morphologies/s" << std::endl;
-
-    BOOST_CHECK_EQUAL(morphologies.size(), gids.size());
 }

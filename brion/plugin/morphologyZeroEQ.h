@@ -24,6 +24,8 @@
 
 #include <servus/serializable.h> // base class
 
+#include <future>
+
 namespace brion
 {
 namespace plugin
@@ -33,6 +35,7 @@ class MorphologyZeroEQ : public MorphologyPlugin, public servus::Serializable
 public:
     explicit MorphologyZeroEQ(const MorphologyInitData& initData);
     MorphologyZeroEQ(const void* data, size_t size);
+    virtual ~MorphologyZeroEQ();
 
     // Needs to be inline, otherwise we would need to link circulary to Brion
     explicit MorphologyZeroEQ(const brion::Morphology& m)
@@ -49,11 +52,12 @@ public:
     static bool handles(const MorphologyInitData& initData);
     static std::string getDescription();
 
-    Vector4fsPtr readPoints() const final { return _points; }
-    Vector2isPtr readSections() const final { return _sections; }
-    SectionTypesPtr readSectionTypes() const final { return _types; }
-    Vector2isPtr readApicals() const final { return _apicals; }
-    floatsPtr readPerimeters() const final { return _perimeters; }
+    Vector4fsPtr readPoints() const final;
+    Vector2isPtr readSections() const final;
+    SectionTypesPtr readSectionTypes() const final;
+    Vector2isPtr readApicals() const final;
+    floatsPtr readPerimeters() const final;
+
     void writePoints(const Vector4fs& points) final;
     void writeSections(const Vector2is& sections) final;
     void writeSectionTypes(const SectionTypes& types) final;
@@ -62,6 +66,8 @@ public:
     void flush() final;
 
 private:
+    void _load() const; // throws
+
     // Serializable API
     std::string getTypeName() const final
     {
@@ -80,6 +86,8 @@ private:
     SectionTypesPtr _types;
     Vector2isPtr _apicals;
     floatsPtr _perimeters;
+    ClientPtr _client;                 // during pending load requests
+    mutable std::future<void> _loader; // fulfilled by client loader thread pool
 };
 }
 }

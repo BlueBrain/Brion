@@ -37,6 +37,9 @@ public:
     /** Close morphology file. @version 1.0 */
     BRION_API ~Morphology();
 
+    BRION_API Morphology(Morphology&&);
+    BRION_API Morphology& operator=(Morphology&&);
+
     /** @name Read API */
     //@{
     /** Open the given source to a morphology file for reading.
@@ -178,12 +181,10 @@ public:
 
 private:
     Morphology(const Morphology&) = delete;
-    Morphology(Morphology&&) = delete;
     Morphology& operator=(const Morphology&) = delete;
-    Morphology& operator=(Morphology&&) = delete;
 
     class Impl;
-    Impl* const _impl;
+    std::unique_ptr<Impl> _impl;
 };
 }
 #endif

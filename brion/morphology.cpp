@@ -57,9 +57,11 @@ Morphology::Morphology(const std::string& file, const CellFamily family)
 {
 }
 
+Morphology::Morphology(Morphology&&) = default;
+Morphology& Morphology::operator=(Morphology&&) = default;
+
 Morphology::~Morphology()
 {
-    delete _impl;
 }
 
 CellFamily Morphology::getCellFamily() const

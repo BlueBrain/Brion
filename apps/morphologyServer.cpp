@@ -18,19 +18,21 @@ int main(const int argc, char* argv[])
     zeroeq::Server server(argc == 2 ? zeroeq::URI(argv[1]) : zeroeq::URI());
     const std::string address = server.getURI().getHost() + ":" +
                                 std::to_string(int(server.getURI().getPort()));
-    std::cout << "Morphology server reachable on:" << std::endl
-              << "  export ZEROEQ_SERVERS=\"" << address << ",$ZEROEQ_SERVERS\""
-              << std::endl << "  zeroeq://" << address << "/path/to/morphology"
-              << std::endl << std::endl
-              << "  [c]ache read, [d]isk read with cache update, disk read "
-                 "with cache [e]rror, [D]isk read uncached: " << std::flush;
-    // lunchbox::Log::setOutput(std::string(argv[0]) + ".log");
-    // lunchbox::daemonize();
+    std::cout
+        << "Morphology server reachable on:" << std::endl
+        << "  export ZEROEQ_SERVERS=\"" << address << ",$ZEROEQ_SERVERS\""
+        << std::endl
+        << "  zeroeq://" << address << "/path/to/morphology" << std::endl
+        << std::endl
+        << "  [c]ache read, [d]isk read with cache update, disk read "
+           "with cache [e]rror, [D]isk read uncached, morphology [l]oad error: "
+        << std::flush;
+    lunchbox::Log::setOutput(std::string(argv[0]) + ".log");
+
     auto cache = keyv::Map::createCache();
 
-    server.handle(brion::ZEROEQ_GET_MORPHOLOGY,
-                  [&](const void* data, const size_t size)
-    {
+    server.handle(brion::ZEROEQ_GET_MORPHOLOGY, [&](const void* data,
+                                                    const size_t size) {
         if (!data || !size)
             return zeroeq::ReplyData();
 
@@ -39,11 +41,10 @@ int main(const int argc, char* argv[])
         {
             servus::Serializable::Data value;
             cache->takeValues({path},
-                              [&](const std::string&, char* d, const size_t s)
-            {
-                value.ptr.reset(d);
-                value.size = s;
-            });
+                              [&](const std::string&, char* d, const size_t s) {
+                                  value.ptr.reset(d);
+                                  value.size = s;
+                              });
 
             if (value.ptr && value.size)
             {
@@ -51,22 +52,31 @@ int main(const int argc, char* argv[])
                 return zeroeq::ReplyData(brion::ZEROEQ_GET_MORPHOLOGY, value);
             }
         }
-
-        const brion::Morphology morphology(path);
-        const brion::plugin::MorphologyZeroEQ serializable{morphology};
-        servus::Serializable::Data bin = serializable.toBinary();
-        if (cache)
+        try
         {
-            if (cache->insert(path, bin.ptr.get(), bin.size))
-                std::cout << 'd' << std::flush;
+            const brion::Morphology morphology(path);
+            const brion::plugin::MorphologyZeroEQ serializable{morphology};
+            servus::Serializable::Data bin = serializable.toBinary();
+            if (cache)
+            {
+                if (cache->insert(path, bin.ptr.get(), bin.size))
+                    std::cout << 'd' << std::flush;
+                else
+                    std::cout << 'e' << std::flush;
+            }
             else
-                std::cout << 'e' << std::flush;
-        }
-        else
-            std::cout << 'D' << std::flush;
+                std::cout << 'D' << std::flush;
 
-        return zeroeq::ReplyData(serializable.getTypeIdentifier(),
-                                 serializable.toBinary().clone());
+            return zeroeq::ReplyData(serializable.getTypeIdentifier(),
+                                     serializable.toBinary().clone());
+        }
+        catch (const std::exception& e)
+        {
+            std::cout << 'l' << std::flush;
+            LBWARN << "Failed to load " << path << ": " << e.what()
+                   << std::endl;
+            return zeroeq::ReplyData();
+        }
     });
 
     while (true)

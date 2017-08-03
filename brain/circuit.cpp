@@ -117,8 +117,9 @@ neuron::Morphologies Circuit::loadMorphologies(const GIDSet& gids,
     }
 
     CachedMorphologies cached = _impl->loadMorphologiesFromCache(hashSet);
+    std::unordered_map<std::string, brion::Morphology> loading;
 
-    // resolve missing morphologies and put them in GID-order into result
+    // resolve missing morphologies
     neuron::Morphologies result;
     result.reserve(uris.size());
 
@@ -132,17 +133,32 @@ neuron::Morphologies Circuit::loadMorphologies(const GIDSet& gids,
         CachedMorphologies::const_iterator it = cached.find(hash);
         if (it == cached.end())
         {
-            const brion::Morphology raw(std::to_string(uri));
+            // delay data access to next loop to allow async loading
+            loading.insert(
+                std::make_pair(hash, brion::Morphology(std::to_string(uri))));
+            cached.insert(std::make_pair(hash, nullptr));
+        }
+    }
+
+    // load and transform missing and put them in GID-order into result
+    for (size_t i = 0; i < uris.size(); ++i)
+    {
+        const URI& uri = uris[i];
+        const std::string& hash = hashes[i];
+
+        CachedMorphologies::const_iterator it = cached.find(hash);
+        if (it->second)
+            result.push_back(it->second);
+        else
+        {
+            brion::Morphology& raw = loading.find(hash)->second;
             neuron::MorphologyPtr morphology(
                 transform ? new neuron::Morphology(raw, transforms[i])
                           : new neuron::Morphology(raw));
 
             _impl->saveMorphologyToCache(uri.getPath(), hash, morphology);
-            cached.insert(std::make_pair(hash, morphology));
             result.push_back(morphology);
         }
-        else
-            result.push_back(it->second);
     }
 
     return result;

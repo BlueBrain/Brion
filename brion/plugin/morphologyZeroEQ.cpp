@@ -24,6 +24,7 @@
 
 #include <lunchbox/pluginRegisterer.h>
 #ifdef BRION_USE_ZEROEQ
+#include <lunchbox/threadPool.h>
 #include <zeroeq/client.h>
 #include <zeroeq/uri.h>
 #endif
@@ -68,6 +69,14 @@ bool _deserializeArray(std::shared_ptr<std::vector<T>>& dst,
 
 #ifdef BRION_USE_ZEROEQ
 const std::string SERVER_SESSION("morphologyServer");
+namespace
+{
+lunchbox::ThreadPool& _getWorkers()
+{
+    static lunchbox::ThreadPool workers;
+    return workers;
+}
+}
 
 class MorphologyZeroEQ::Client // adds thread-safety to zeroeq::Client
 {
@@ -84,12 +93,6 @@ public:
     {
     }
 
-    bool request(const servus::Serializable& r, const zeroeq::ReplyFunc& func)
-    {
-        std::lock_guard<std::mutex> lock(_mutex);
-        return _client.request(r, func);
-    }
-
     bool request(const uint128_t& r, const void* data, size_t size,
                  const zeroeq::ReplyFunc& func)
     {
@@ -100,8 +103,11 @@ public:
     bool receive()
     {
         std::lock_guard<std::mutex> lock(_mutex);
-        return _client.receive(10);
+        return _client.receive(0);
     }
+
+    void lock() { _mutex.lock(); }
+    void unlock() { _mutex.unlock(); }
 
 private:
     std::mutex _mutex;
@@ -111,24 +117,25 @@ private:
 
 MorphologyZeroEQ::MorphologyZeroEQ(const MorphologyInitData& initData)
     : MorphologyPlugin(initData)
-    , _points(new Vector4fs)
-    , _sections(new Vector2is)
-    , _types(new SectionTypes)
-    , _apicals(new Vector2is)
-    , _perimeters(new floats)
+#ifdef BRION_USE_ZEROEQ
+    , _client(_getClient())
+#endif
 {
 #ifdef BRION_USE_ZEROEQ
+    ClientPtr client = _client; // keep ref for thread-safety
     const std::string path = initData.getURI().getPath();
-    ClientPtr client = _getClient();
-    bool received = false;
-    bool success = false;
     const auto handler = [&](const uint128_t& id, const void* data,
                              const size_t size) {
         if (id == 0)
             LBWARN << "Server could not load morphology" << std::endl;
         if (data && size)
-            success = _fromBinary(data, size);
-        received = true;
+        {
+            _client->unlock();
+            if (!_fromBinary(data, size))
+                _points.reset();
+            _client->lock();
+        }
+        _client.reset();
     };
 
     if (!client->request(ZEROEQ_GET_MORPHOLOGY, path.data(), path.size(),
@@ -137,12 +144,11 @@ MorphologyZeroEQ::MorphologyZeroEQ(const MorphologyInitData& initData)
         LBTHROW(std::runtime_error("Failed to request morphology data"));
     }
 
-    while (!received)
-        client->receive();
-
-    if (!success)
-        LBTHROW(std::runtime_error(
-            "Failed to construct morphology from binary data"));
+    _loader = _getWorkers().post([&] {
+        ClientPtr client_ = _client; // keep ref for thread-safety
+        while (_client)
+            client_->receive();
+    });
 #else
     LBTHROW(std::runtime_error("Missing ZeroEQ support"));
 #endif
@@ -156,6 +162,22 @@ MorphologyZeroEQ::MorphologyZeroEQ(const void* data, const size_t size)
             "Failed to construct morphology from binary data"));
 }
 
+MorphologyZeroEQ::~MorphologyZeroEQ()
+{
+    _load();
+}
+
+void MorphologyZeroEQ::_load() const
+{
+#ifdef BRION_USE_ZEROEQ
+    if (_loader.valid())
+        _loader.get();
+
+    if (!_points)
+        LBTHROW(std::runtime_error("Failed to load morphology from server"));
+#endif
+}
+
 bool MorphologyZeroEQ::handles(const MorphologyInitData& initData)
 {
     return initData.getURI().getScheme() == ZEROEQ_SCHEME;
@@ -165,6 +187,36 @@ std::string MorphologyZeroEQ::getDescription()
 {
     return "Morphology data server:\n"
            "  zeroeq://[server:port]/path/to/morphology";
+}
+
+Vector4fsPtr MorphologyZeroEQ::readPoints() const
+{
+    _load();
+    return _points;
+}
+
+Vector2isPtr MorphologyZeroEQ::readSections() const
+{
+    _load();
+    return _sections;
+}
+
+SectionTypesPtr MorphologyZeroEQ::readSectionTypes() const
+{
+    _load();
+    return _types;
+}
+
+Vector2isPtr MorphologyZeroEQ::readApicals() const
+{
+    _load();
+    return _apicals;
+}
+
+floatsPtr MorphologyZeroEQ::readPerimeters() const
+{
+    _load();
+    return _perimeters;
 }
 
 void MorphologyZeroEQ::writePoints(const Vector4fs& points)
@@ -204,8 +256,8 @@ MorphologyZeroEQ::ClientPtr MorphologyZeroEQ::_getClient()
     using ClientMap = std::unordered_map<std::string, std::weak_ptr<Client>>;
     static ClientMap clients;
 
-    // OPT: keep the last client alive, otherwise single-threaded constructions
-    // would recreate client for each morphology
+    // OPT: keep the last client alive, otherwise single-threaded
+    // constructions would recreate client for each morphology
     static ClientPtr client;
 
     const auto& uri = getInitData().getURI();
