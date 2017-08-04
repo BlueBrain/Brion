@@ -1,4 +1,4 @@
-# Copyright (c) 2013-2016, EPFL/Blue Brain Project
+# Copyright (c) 2013-2017, EPFL/Blue Brain Project
 #                          Juan Hernando <jhernando@fi.upm.es>
 #
 # This file is part of Brion <https://github.com/BlueBrain/Brion>
@@ -49,16 +49,13 @@ set(BRAIN_SOURCES
 set(BRAIN_PUBLIC_INCLUDE_DIRECTORIES ${Boost_INCLUDE_DIRS})
 set(BRAIN_LINK_LIBRARIES
   PUBLIC Brion vmmlib
-  PRIVATE Keyv ${Boost_FILESYSTEM_LIBRARIES}
+  PRIVATE BrionPlugins Keyv ${Boost_FILESYSTEM_LIBRARIES}
 )
 set(BRAIN_INCLUDE_NAME brain)
 set(BRAIN_NAMESPACE brain)
 
 if(TARGET MVDTool)
-  list(APPEND BRAIN_LINK_LIBRARIES PRIVATE MVDTool)
-endif()
-if(TARGET ZeroEQ)
-  list(APPEND BRAIN_LINK_LIBRARIES PRIVATE BrionPlugins)
+  list(APPEND BRAIN_LINK_LIBRARIES MVDTool)
 endif()
 
 common_library(Brain)

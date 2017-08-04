@@ -110,7 +110,7 @@ neuron::Morphologies Circuit::loadMorphologies(const GIDSet& gids,
             // store circuit + GID for transformed morphology
             hash += circuitPath + std::to_string(*gid);
 
-        hash = servus::make_uint128(hash).getString();
+        hash = servus::make_uint128(hash + "v2").getString();
         hashes.push_back(hash);
         hashSet.insert(hash);
         ++gid;

@@ -7,13 +7,14 @@
 
 BOOST_AUTO_TEST_CASE(load_morphologies)
 {
-    const brain::Circuit circuit((brion::URI(bbp::test::getBlueconfig())));
+    const brain::Circuit circuit(
+        (brion::URI("/home/eilemann/stable/Brion/BlueConfig")));
     auto gids = circuit.getGIDs();
-    if (gids.size() > 10000)
+    if (gids.size() > 50000)
     {
         brion::GIDSet subset;
         auto i = gids.begin();
-        while (subset.size() < 10000)
+        while (subset.size() < 50000)
             subset.insert(*(i++));
         subset.swap(gids);
     }
