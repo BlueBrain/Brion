@@ -27,7 +27,7 @@ endif()
 if(TARGET ZeroEQ)
   set(MORPHOLOGYSERVER_HEADERS)
   set(MORPHOLOGYSERVER_SOURCES morphologyServer.cpp)
-  set(MORPHOLOGYSERVER_LINK_LIBRARIES Brion BrionPlugins Lunchbox ZeroEQ Keyv)
+  set(MORPHOLOGYSERVER_LINK_LIBRARIES Brion Lunchbox ZeroEQ Keyv)
   common_application(morphologyServer)
 endif()
 

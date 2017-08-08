@@ -3,8 +3,9 @@ Changelog {#Changelog}
 
 # git master
 
-* [172](https://github.com/BlueBrain/Brion/pull/172):
-  zeroeq::Server/Client based morphology loader
+* [172](https://github.com/BlueBrain/Brion/pull/172): zeroeq::Server/Client
+  based morphology loader. Morphology read API made non-const to reflect the
+  fact that returned data is mutable and cached by certain implementations.
 * [171](https://github.com/BlueBrain/Brion/pull/171):
   Ban obsolete morphology repair stage from API: The stage parameter from
   certain Morphology methods has been removed. In the case of h5v2 morphologies,

@@ -41,15 +41,15 @@ public:
     static bool handles(const MorphologyInitData& initData);
     static std::string getDescription();
 
-    Vector4fsPtr readPoints() const final;
+    Vector4fsPtr readPoints() final;
 
-    Vector2isPtr readSections() const final;
+    Vector2isPtr readSections() final;
 
-    SectionTypesPtr readSectionTypes() const final;
+    SectionTypesPtr readSectionTypes() final;
 
-    Vector2isPtr readApicals() const final;
+    Vector2isPtr readApicals() final;
 
-    floatsPtr readPerimeters() const final;
+    floatsPtr readPerimeters() final;
 
     void writePoints(const Vector4fs& points) final;
 

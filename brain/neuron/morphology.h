@@ -71,7 +71,7 @@ public:
      *        Radii will not be affected by this transformation.
      * @throw runtime_error if an inconsistency is detected in the input file.
      */
-    BRAIN_API Morphology(const brion::Morphology& morphology,
+    BRAIN_API Morphology(brion::Morphology& morphology,
                          const Matrix4f& transform);
 
     /**
@@ -88,7 +88,7 @@ public:
      * @param morphology the brion::Morphology to load from.
      * @throw runtime_error if an inconsistency is detected in the input file.
      */
-    BRAIN_API explicit Morphology(const brion::Morphology& morphology);
+    BRAIN_API explicit Morphology(brion::Morphology& morphology);
 
     BRAIN_API ~Morphology();
 

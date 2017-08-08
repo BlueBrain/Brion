@@ -40,7 +40,15 @@ public:
     BRION_API Morphology(Morphology&&);
     BRION_API Morphology& operator=(Morphology&&);
 
-    /** @name Read API */
+    /**
+     * @name Read API
+     *
+     * Data returned by the read methods may or may not be cached by the
+     * implementation. If the returned vectors are modified this may be
+     * reflected in subsequent reads of the same data. Furthermore, calling read
+     * multiple times might be expensive. It is therefore recommended to call
+     * each read method at most once per instantiation.
+     */
     //@{
     /** Open the given source to a morphology file for reading.
      *
@@ -58,7 +66,7 @@ public:
      * @return x,y,z coords + diameter of all points of the morphology
      * @version 1.0
      */
-    BRION_API Vector4fsPtr readPoints() const;
+    BRION_API Vector4fsPtr readPoints();
 
     /** Read sections of morphology, representing section start index and index
      *  of the parent section.
@@ -67,21 +75,21 @@ public:
      *         morphology.
      * @version 1.0
      */
-    BRION_API Vector2isPtr readSections() const;
+    BRION_API Vector2isPtr readSections();
 
     /** Read section types of morphology.
      *
      * @return type of all sections of the morphology
      * @version 1.0
      */
-    BRION_API SectionTypesPtr readSectionTypes() const;
+    BRION_API SectionTypesPtr readSectionTypes();
 
     /** Read apical points of morphology, representing section and point index.
      *
      * @return section and point index of all apical points in the morphology
      * @version 1.0
      */
-    BRION_API Vector2isPtr readApicals() const;
+    BRION_API Vector2isPtr readApicals();
 
     /**
      * @return perimeters of the cross sections for each point of the morphology
@@ -89,7 +97,7 @@ public:
      * @throw std::runtime_error if empty for FAMILY_GLIA
      * @version 1.8
      */
-    BRION_API floatsPtr readPerimeters() const;
+    BRION_API floatsPtr readPerimeters();
 
     /** @internal */
     BRION_API MorphologyVersion getVersion() const;

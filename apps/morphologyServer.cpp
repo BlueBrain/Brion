@@ -5,8 +5,8 @@
  */
 
 #include <brion/constants.h>
+#include <brion/detail/serializableMorphology.h>
 #include <brion/morphology.h>
-#include <brion/plugin/morphologyZeroEQ.h>
 #include <keyv/Map.h>
 #include <lunchbox/daemon.h>
 #include <lunchbox/log.h>
@@ -54,9 +54,9 @@ int main(const int argc, char* argv[])
         }
         try
         {
-            const brion::Morphology morphology(path);
-            const brion::plugin::MorphologyZeroEQ serializable{morphology};
-            servus::Serializable::Data bin = serializable.toBinary();
+            brion::Morphology m(path);
+            const brion::detail::SerializableMorphology morphology{m};
+            servus::Serializable::Data bin = morphology.toBinary();
             if (cache)
             {
                 if (cache->insert(path, bin.ptr.get(), bin.size))
@@ -67,8 +67,8 @@ int main(const int argc, char* argv[])
             else
                 std::cout << 'D' << std::flush;
 
-            return zeroeq::ReplyData(serializable.getTypeIdentifier(),
-                                     serializable.toBinary().clone());
+            return zeroeq::ReplyData(morphology.getTypeIdentifier(),
+                                     morphology.toBinary().clone());
         }
         catch (const std::exception& e)
         {

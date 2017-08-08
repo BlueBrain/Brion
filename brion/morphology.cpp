@@ -69,27 +69,27 @@ CellFamily Morphology::getCellFamily() const
     return _impl->plugin->getCellFamily();
 }
 
-Vector4fsPtr Morphology::readPoints() const
+Vector4fsPtr Morphology::readPoints()
 {
     return _impl->plugin->readPoints();
 }
 
-Vector2isPtr Morphology::readSections() const
+Vector2isPtr Morphology::readSections()
 {
     return _impl->plugin->readSections();
 }
 
-SectionTypesPtr Morphology::readSectionTypes() const
+SectionTypesPtr Morphology::readSectionTypes()
 {
     return _impl->plugin->readSectionTypes();
 }
 
-Vector2isPtr Morphology::readApicals() const
+Vector2isPtr Morphology::readApicals()
 {
     return _impl->plugin->readApicals();
 }
 
-floatsPtr Morphology::readPerimeters() const
+floatsPtr Morphology::readPerimeters()
 {
     return _impl->plugin->readPerimeters();
 }

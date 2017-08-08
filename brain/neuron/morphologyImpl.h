@@ -22,7 +22,7 @@
 #define BRAIN_NEURON_MORPHOLOGYIMPL
 
 #include "morphology.h"
-#include <brion/plugin/morphologyZeroEQ.h> // base class
+#include <brion/detail/serializableMorphology.h> // member
 
 #include <lunchbox/lfVector.h>
 #include <vmmlib/matrix.hpp> // member
@@ -33,21 +33,18 @@ namespace neuron
 {
 typedef std::pair<size_t, size_t> SectionRange;
 
-class Morphology::Impl : public brion::plugin::MorphologyZeroEQ
+class Morphology::Impl
 {
 public:
-    brion::Vector4fsPtr points;
-    brion::Vector2isPtr sections;
-    brion::SectionTypesPtr types;
-    brion::Vector2isPtr apicals;
+    brion::detail::SerializableMorphology data;
 
     Matrix4f transformation;
 
     uint32_t somaSection;
 
+    explicit Impl(const URI& source);
+    explicit Impl(brion::Morphology& morphology);
     Impl(const void* data, const size_t size);
-
-    explicit Impl(const brion::Morphology& morphology);
 
     SectionRange getSectionRange(const uint32_t sectionID) const;
 
@@ -79,7 +76,7 @@ private:
 
     std::vector<uint32_ts> _sectionChildren;
 
-    void _extractChildrenLists();
+    void _extractInformation();
     float _computeSectionLength(const uint32_t sectionID) const;
     floats _computeAccumulatedLengths(const SectionRange& range) const;
 };

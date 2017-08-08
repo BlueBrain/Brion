@@ -31,25 +31,19 @@ namespace brain
 {
 namespace neuron
 {
-servus::Serializable::Data Morphology::toBinary() const
-{
-    return _impl->toBinary();
-}
-
 Morphology::Morphology(const void* data, const size_t size)
     : _impl(new Impl(data, size))
 {
 }
 
 Morphology::Morphology(const URI& source, const Matrix4f& transform)
-    : _impl(new Impl(brion::Morphology(source.getPath())))
+    : _impl(new Impl(source))
 {
     _impl->transform(transform);
     _impl->transformation = transform;
 }
 
-Morphology::Morphology(const brion::Morphology& morphology,
-                       const Matrix4f& transform)
+Morphology::Morphology(brion::Morphology& morphology, const Matrix4f& transform)
     : _impl(new Impl(morphology))
 {
     _impl->transform(transform);
@@ -57,11 +51,11 @@ Morphology::Morphology(const brion::Morphology& morphology,
 }
 
 Morphology::Morphology(const URI& source)
-    : _impl(new Impl(brion::Morphology(source.getPath())))
+    : _impl(new Impl(source))
 {
 }
 
-Morphology::Morphology(const brion::Morphology& morphology)
+Morphology::Morphology(brion::Morphology& morphology)
     : _impl(new Impl(morphology))
 {
 }
@@ -72,22 +66,23 @@ Morphology::~Morphology()
 
 const Vector4fs& Morphology::getPoints() const
 {
-    return *_impl->points;
+    return *_impl->data.getPoints();
 }
 
 const Vector2is& Morphology::getSections() const
 {
-    return *_impl->sections;
+    return *_impl->data.getSections();
 }
 
 const SectionTypes& Morphology::getSectionTypes() const
 {
-    return reinterpret_cast<std::vector<SectionType>&>(*_impl->types);
+    return reinterpret_cast<const std::vector<SectionType>&>(
+        *_impl->data.getSectionTypes());
 }
 
 const Vector2is& Morphology::getApicals() const
 {
-    return *_impl->apicals;
+    return *_impl->data.getApicals();
 }
 
 uint32_ts Morphology::getSectionIDs(const SectionTypes& types) const
@@ -116,10 +111,11 @@ Sections Morphology::getSections(const SectionTypes& types) const
 
 Section Morphology::getSection(const uint32_t& id) const
 {
-    if ((*_impl->types)[id] == brion::enums::SECTION_SOMA)
+    auto types = _impl->data.getSectionTypes();
+    if ((*types)[id] == brion::enums::SECTION_SOMA)
         LBTHROW(std::runtime_error("The soma cannot be accessed as a Section"));
 
-    if (_impl->sections->size() <= id)
+    if (getSections().size() <= id)
     {
         std::stringstream msg;
         msg << "Section ID out of range: " << id;
@@ -137,6 +133,11 @@ Soma Morphology::getSoma() const
 const Matrix4f& Morphology::getTransformation() const
 {
     return _impl->transformation;
+}
+
+servus::Serializable::Data Morphology::toBinary() const
+{
+    return _impl->data.toBinary();
 }
 }
 }

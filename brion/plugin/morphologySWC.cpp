@@ -191,28 +191,28 @@ std::string MorphologySWC::getDescription()
            "  [file://]/path/to/morphology.swc";
 }
 
-Vector4fsPtr MorphologySWC::readPoints() const
+Vector4fsPtr MorphologySWC::readPoints()
 {
     return _points;
 }
 
-Vector2isPtr MorphologySWC::readSections() const
+Vector2isPtr MorphologySWC::readSections()
 {
     return _sections;
 }
 
-SectionTypesPtr MorphologySWC::readSectionTypes() const
+SectionTypesPtr MorphologySWC::readSectionTypes()
 {
     return _types;
 }
 
-Vector2isPtr MorphologySWC::readApicals() const
+Vector2isPtr MorphologySWC::readApicals()
 {
     // Can these points be inferred? Should it be done at all?
     return Vector2isPtr(new Vector2is());
 }
 
-floatsPtr MorphologySWC::readPerimeters() const
+floatsPtr MorphologySWC::readPerimeters()
 {
     return floatsPtr(new floats());
 }

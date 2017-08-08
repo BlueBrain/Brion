@@ -22,7 +22,8 @@
 #include <tests/paths.h>
 
 #ifdef BRION_USE_ZEROEQ
-#include <brion/plugin/morphologyZeroEQ.h>
+#include <brion/constants.h>
+#include <brion/detail/serializableMorphology.h>
 #include <zeroeq/server.h>
 #include <zeroeq/uri.h>
 #endif
@@ -116,24 +117,24 @@ BOOST_AUTO_TEST_CASE(h5_read_v1)
     boost::filesystem::path path(BBP_TESTDATA);
     path /= "local/morphologies/01.07.08/h5/R-C010306G.h5";
 
-    const brion::Morphology morphology(path.string());
+    brion::Morphology morphology(path.string());
     BOOST_CHECK_EQUAL(morphology.getCellFamily(), brion::FAMILY_NEURON);
 
-    const brion::Vector4fsPtr points = morphology.readPoints();
+    const auto points = morphology.readPoints();
     BOOST_CHECK_EQUAL(points->size(), 3272);
     BOOST_CHECK_CLOSE((*points)[0].x(), -9.0625f, .000001f);
     BOOST_CHECK_CLOSE((*points)[0].y(), -4.97781f, .0001f);
     BOOST_CHECK_CLOSE((*points)[0].z(), 0.f, .000001f);
     BOOST_CHECK_CLOSE((*points)[0].w(), 0.37f, .000001f);
 
-    const brion::Vector2isPtr sections = morphology.readSections();
+    const auto sections = morphology.readSections();
     BOOST_CHECK_EQUAL(sections->size(), 138);
     BOOST_CHECK_EQUAL((*sections)[0].x(), 0);
     BOOST_CHECK_EQUAL((*sections)[0].y(), -1);
     BOOST_CHECK_EQUAL((*sections)[5].x(), 85);
     BOOST_CHECK_EQUAL((*sections)[5].y(), 4);
 
-    const brion::SectionTypesPtr types = morphology.readSectionTypes();
+    const auto types = morphology.readSectionTypes();
     BOOST_CHECK_EQUAL(types->size(), 138);
     BOOST_CHECK_EQUAL((*types)[0], 1);
     BOOST_CHECK_EQUAL((*types)[5], 2);
@@ -146,11 +147,10 @@ BOOST_AUTO_TEST_CASE(h5_write_v1)
     boost::filesystem::path path(BBP_TESTDATA);
     path /= "local/morphologies/01.07.08/h5/R-C010306G.h5";
 
-    const brion::Morphology source(path.string());
-
-    brion::Vector4fsPtr points = source.readPoints();
-    brion::Vector2isPtr sections = source.readSections();
-    brion::SectionTypesPtr types = source.readSectionTypes();
+    brion::Morphology source(path.string());
+    auto points = source.readPoints();
+    auto sections = source.readSections();
+    auto types = source.readSectionTypes();
 
     {
         brion::Morphology a("testv1.h5", brion::MORPHOLOGY_VERSION_H5_1, true);
@@ -163,10 +163,10 @@ BOOST_AUTO_TEST_CASE(h5_write_v1)
                           std::runtime_error);
     }
 
-    const brion::Morphology source2("testv1.h5");
-    brion::Vector4fsPtr points2 = source2.readPoints();
-    brion::Vector2isPtr sections2 = source2.readSections();
-    brion::SectionTypesPtr types2 = source2.readSectionTypes();
+    brion::Morphology source2("testv1.h5");
+    auto points2 = source2.readPoints();
+    auto sections2 = source2.readSections();
+    auto types2 = source2.readSectionTypes();
 
     BOOST_CHECK(*points == *points2);
     BOOST_CHECK(*sections == *sections2);
@@ -181,9 +181,9 @@ BOOST_AUTO_TEST_CASE(h5_write_v11_glia)
     boost::filesystem::path path(BBP_TESTDATA);
     path /= "local/morphologies/01.07.08/h5/R-C010306G.h5";
 
-    const brion::Morphology morphology(path.string());
+    brion::Morphology morphology(path.string());
     brion::floats perimeters;
-    brion::Vector4fsPtr points = morphology.readPoints();
+    auto points = morphology.readPoints();
     perimeters.reserve(points->size());
     for (size_t i = 0; i < points->size(); ++i)
         perimeters.push_back((*points)[i].w() * 4.f);
@@ -196,7 +196,7 @@ BOOST_AUTO_TEST_CASE(h5_write_v11_glia)
     BOOST_CHECK_THROW(glia.writeApicals(brion::Vector2is()),
                       std::runtime_error);
 
-    const brion::Morphology gliaRead(file);
+    brion::Morphology gliaRead(file);
     BOOST_CHECK_EQUAL(gliaRead.getCellFamily(), brion::FAMILY_GLIA);
     checkCloseArrays(*gliaRead.readPerimeters(), perimeters);
 
@@ -221,7 +221,7 @@ BOOST_AUTO_TEST_CASE(h5_write_v11_neuron)
     boost::filesystem::path path(BBP_TESTDATA);
     path /= "local/morphologies/01.07.08/h5/R-C010306G.h5";
 
-    const brion::Morphology morphology(path.string());
+    brion::Morphology morphology(path.string());
 
     brion::Morphology neuron(file, brion::FAMILY_NEURON);
     neuron.writePoints(*morphology.readPoints());
@@ -230,7 +230,7 @@ BOOST_AUTO_TEST_CASE(h5_write_v11_neuron)
     BOOST_CHECK_THROW(neuron.writeApicals(brion::Vector2is()),
                       std::runtime_error);
 
-    const brion::Morphology neuronRead(file);
+    brion::Morphology neuronRead(file);
     BOOST_CHECK_EQUAL(neuronRead.getCellFamily(), brion::FAMILY_NEURON);
     BOOST_CHECK(neuronRead.readPerimeters()->empty());
 
@@ -267,30 +267,30 @@ BOOST_AUTO_TEST_CASE(h5_write_invalid_neuron)
 
 namespace
 {
-void _checkH5V2(const brion::Morphology& morphology)
+void _checkH5V2(brion::Morphology& morphology)
 {
     BOOST_CHECK_EQUAL(morphology.getCellFamily(), brion::FAMILY_NEURON);
 
-    brion::Vector4fsPtr points = morphology.readPoints();
+    auto points = morphology.readPoints();
     BOOST_CHECK_EQUAL(points->size(), 1499);
     BOOST_CHECK_CLOSE((*points)[0].x(), 5.335999965667725f, .000001f);
     BOOST_CHECK_CLOSE((*points)[0].y(), 2.702667474746704f, .000001f);
     BOOST_CHECK_CLOSE((*points)[0].z(), -1.1733332872390747f, .000001f);
     BOOST_CHECK_CLOSE((*points)[0].w(), 0.f, .000001f);
 
-    brion::Vector2isPtr sections = morphology.readSections();
+    auto sections = morphology.readSections();
     BOOST_CHECK_EQUAL(sections->size(), 78);
     BOOST_CHECK_EQUAL((*sections)[0].x(), 0);
     BOOST_CHECK_EQUAL((*sections)[0].y(), -1);
     BOOST_CHECK_EQUAL((*sections)[5].x(), 49);
     BOOST_CHECK_EQUAL((*sections)[5].y(), 4);
 
-    brion::SectionTypesPtr types = morphology.readSectionTypes();
+    auto types = morphology.readSectionTypes();
     BOOST_CHECK_EQUAL(types->size(), 78);
     BOOST_CHECK_EQUAL((*types)[0], 1);
     BOOST_CHECK_EQUAL((*types)[5], 2);
 
-    brion::Vector2isPtr apicals = morphology.readApicals();
+    auto apicals = morphology.readApicals();
     BOOST_CHECK_EQUAL(apicals->size(), 1);
     BOOST_CHECK_EQUAL((*apicals)[0].x(), 67);
     BOOST_CHECK_EQUAL((*apicals)[0].y(), 76);
@@ -304,7 +304,7 @@ BOOST_AUTO_TEST_CASE(h5_read_v2)
     boost::filesystem::path path(BBP_TESTDATA);
     path /= "local/morphologies/14.07.10_repaired/v2/C010398B-P2.h5";
 
-    const brion::Morphology morphology(path.string());
+    brion::Morphology morphology(path.string());
     _checkH5V2(morphology);
 }
 
@@ -318,8 +318,8 @@ BOOST_AUTO_TEST_CASE(zeroeq_read)
             return zeroeq::ReplyData();
 
         const std::string path((const char*)data, size);
-        const brion::Morphology morphology(path);
-        const brion::plugin::MorphologyZeroEQ serializable{morphology};
+        brion::Morphology morphology(path);
+        const brion::detail::SerializableMorphology serializable{morphology};
         return zeroeq::ReplyData(serializable.getTypeIdentifier(),
                                  serializable.toBinary().clone());
     });
@@ -332,7 +332,7 @@ BOOST_AUTO_TEST_CASE(zeroeq_read)
         std::string("zeroeq://") + server.getURI().getHost() + ":" +
         std::to_string(int(server.getURI().getPort())) + path.string();
 
-    const brion::Morphology morphology(uri);
+    brion::Morphology morphology(uri);
     thread.join();
 
     _checkH5V2(morphology);
@@ -344,12 +344,11 @@ BOOST_AUTO_TEST_CASE(h5_write_v2)
     boost::filesystem::path path(BBP_TESTDATA);
     path /= "local/morphologies/14.07.10_repaired/v2/C010398B-P2.h5";
 
-    const brion::Morphology source(path.string());
-
-    brion::Vector4fsPtr points = source.readPoints();
-    brion::Vector2isPtr sections = source.readSections();
-    brion::SectionTypesPtr types = source.readSectionTypes();
-    brion::Vector2isPtr apicals = source.readApicals();
+    brion::Morphology source(path.string());
+    auto points = source.readPoints();
+    auto sections = source.readSections();
+    auto types = source.readSectionTypes();
+    auto apicals = source.readApicals();
 
     { // undefined should auto-select h5 v2
         brion::Morphology a("testv2.h5", brion::MORPHOLOGY_VERSION_UNDEFINED,
@@ -362,11 +361,11 @@ BOOST_AUTO_TEST_CASE(h5_write_v2)
                           std::runtime_error);
     }
 
-    const brion::Morphology source2("testv2.h5");
-    brion::Vector4fsPtr points2 = source2.readPoints();
-    brion::Vector2isPtr sections2 = source2.readSections();
-    brion::SectionTypesPtr types2 = source2.readSectionTypes();
-    brion::Vector2isPtr apicals2 = source2.readApicals();
+    brion::Morphology source2("testv2.h5");
+    auto points2 = source2.readPoints();
+    auto sections2 = source2.readSections();
+    auto types2 = source2.readSectionTypes();
+    auto apicals2 = source2.readApicals();
 
     BOOST_CHECK_EQUAL(source2.getVersion(), brion::MORPHOLOGY_VERSION_H5_2);
     BOOST_CHECK(*points == *points2);
@@ -485,7 +484,7 @@ BOOST_AUTO_TEST_CASE(swc_soma)
     boost::filesystem::path path(BRION_TESTDATA);
     path /= "swc/soma.swc";
 
-    const brion::Morphology source(path.string());
+    brion::Morphology source(path.string());
     checkEqualArrays(*source.readPoints(), 1, V4f(0, 0, 0, 20));
     checkEqualArrays(*source.readSections(), 1, V2i(0, -1));
     checkEqualArrays(*source.readSectionTypes(), 1, SOMA);
@@ -496,7 +495,7 @@ BOOST_AUTO_TEST_CASE(swc_soma_ring)
     boost::filesystem::path path(BRION_TESTDATA);
     path /= "swc/soma_ring.swc";
 
-    const brion::Morphology source(path.string());
+    brion::Morphology source(path.string());
     checkEqualArrays(*source.readPoints(), 5, V4f(0, 0, 0, 20),
                      V4f(0, 0, 1, 20), V4f(0, 1, 0, 20), V4f(0, 1, 1, 20),
                      V4f(1, 0, 0, 20));
@@ -525,7 +524,7 @@ BOOST_AUTO_TEST_CASE(swc_single_section)
     boost::filesystem::path path(BRION_TESTDATA);
     path /= "swc/single_section.swc";
 
-    const brion::Morphology source(path.string());
+    brion::Morphology source(path.string());
 
     checkEqualArrays(*source.readPoints(), 5, V4f(0, 0, 0, 20), V4f(0, 0, 1, 4),
                      V4f(0, 0, 2, 4), V4f(0, 0, 3, 4), V4f(0, 0, 4, 4));
@@ -538,7 +537,7 @@ BOOST_AUTO_TEST_CASE(swc_single_section_unordered)
     boost::filesystem::path path(BRION_TESTDATA);
     path /= "swc/single_section_unordered.swc";
 
-    const brion::Morphology source(path.string());
+    brion::Morphology source(path.string());
 
     checkEqualArrays(*source.readPoints(), 5, V4f(0, 0, 0, 20), V4f(0, 0, 1, 4),
                      V4f(0, 0, 2, 4), V4f(0, 0, 3, 4), V4f(0, 0, 4, 4));
@@ -559,7 +558,7 @@ BOOST_AUTO_TEST_CASE(swc_section_type_changes)
     boost::filesystem::path path(BRION_TESTDATA);
     path /= "swc/section_type_changes.swc";
 
-    const brion::Morphology source(path.string());
+    brion::Morphology source(path.string());
 
     checkEqualArrays(*source.readPoints(), 7, V4f(0, 0, 0, 20), V4f(0, 0, 1, 4),
                      V4f(0, 0, 2, 4), V4f(0, 0, 2, 4), V4f(0, 0, 3, 4),
@@ -575,7 +574,7 @@ BOOST_AUTO_TEST_CASE(swc_first_order_sections)
     boost::filesystem::path path(BRION_TESTDATA);
     path /= "swc/first_order_sections.swc";
 
-    const brion::Morphology source(path.string());
+    brion::Morphology source(path.string());
 
     checkEqualArrays(*source.readSections(), 4, V2i(0, -1), V2i(1, 0),
                      V2i(2, 0), V2i(3, 0));
@@ -592,7 +591,7 @@ BOOST_AUTO_TEST_CASE(swc_first_order_sections_from_arbitrary_points)
     boost::filesystem::path path(BRION_TESTDATA);
     path /= "swc/first_order_sections_ring.swc";
 
-    const brion::Morphology source(path.string());
+    brion::Morphology source(path.string());
 
     checkEqualArrays(*source.readSections(), 4, V2i(0, -1), V2i(5, 0),
                      V2i(8, 0), V2i(11, 0));
@@ -612,7 +611,7 @@ BOOST_AUTO_TEST_CASE(swc_bifurcation)
     boost::filesystem::path path(BRION_TESTDATA);
     path /= "swc/bifurcations.swc";
 
-    const brion::Morphology source(path.string());
+    brion::Morphology source(path.string());
 
     checkEqualArrays(*source.readPoints(), 9, V4f(0, 0, 0, 20), V4f(0, 0, 2, 4),
                      V4f(0, 0, 3, 4), V4f(0, 0, 3, 4), V4f(0, 0, 4, 4),
@@ -629,7 +628,7 @@ BOOST_AUTO_TEST_CASE(swc_end_points)
     boost::filesystem::path path(BRION_TESTDATA);
     path /= "swc/end_points.swc";
 
-    const brion::Morphology source(path.string());
+    brion::Morphology source(path.string());
 
     checkEqualArrays(*source.readSections(), 6, V2i(0, -1), V2i(1, 0),
                      V2i(2, 0), V2i(3, 0), V2i(4, 3), V2i(6, 3));
@@ -643,7 +642,7 @@ BOOST_AUTO_TEST_CASE(swc_fork_points)
     boost::filesystem::path path(BRION_TESTDATA);
     path /= "swc/fork_points.swc";
 
-    const brion::Morphology source(path.string());
+    brion::Morphology source(path.string());
 
     checkEqualArrays(*source.readSections(), 6, V2i(0, -1), V2i(1, 0),
                      V2i(2, 0), V2i(3, 0), V2i(4, 3), V2i(6, 3));

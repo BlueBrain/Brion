@@ -76,6 +76,7 @@ typedef std::vector<Vector3d> Vector3ds;
 typedef std::vector<Vector4d> Vector4ds;
 typedef std::vector<SectionType> SectionTypes;
 typedef std::vector<Target> Targets;
+
 typedef std::shared_ptr<int32_ts> int32_tsPtr;
 typedef std::shared_ptr<uint16_ts> uint16_tsPtr;
 typedef std::shared_ptr<uint32_ts> uint32_tsPtr;
@@ -87,6 +88,10 @@ typedef std::shared_ptr<Vector4fs> Vector4fsPtr;
 typedef std::shared_ptr<Vector3ds> Vector3dsPtr;
 typedef std::shared_ptr<Vector4ds> Vector4dsPtr;
 typedef std::shared_ptr<SectionTypes> SectionTypesPtr;
+
+typedef std::shared_ptr<const Vector4fs> ConstVector4fsPtr;
+typedef std::shared_ptr<const SectionTypes> ConstSectionTypesPtr;
+typedef std::shared_ptr<const Vector2is> ConstVector2isPtr;
 
 /** Ordered set of GIDs of neurons. */
 typedef std::set<uint32_t> GIDSet;

@@ -31,6 +31,8 @@ set(BRION_HEADERS
   detail/silenceHDF5.h
   detail/utilsHDF5.h
   detail/skipWhiteSpace.h
+  detail/serializableMorphology.h
+  detail/serializableMorphology.ipp
   )
 
 set(BRION_SOURCES

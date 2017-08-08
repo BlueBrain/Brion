@@ -108,19 +108,19 @@ public:
     /** @copydoc brion::Morphology::getVersion */
     MorphologyVersion getVersion() const { return _data.version; }
     /** @copydoc brion::Morphology::readPoints */
-    virtual Vector4fsPtr readPoints() const = 0;
+    virtual Vector4fsPtr readPoints() = 0;
 
     /** @copydoc brion::Morphology::readSections */
-    virtual Vector2isPtr readSections() const = 0;
+    virtual Vector2isPtr readSections() = 0;
 
     /** @copydoc brion::Morphology::readSectionTypes */
-    virtual SectionTypesPtr readSectionTypes() const = 0;
+    virtual SectionTypesPtr readSectionTypes() = 0;
 
     /** @copydoc brion::Morphology::readApicals */
-    virtual Vector2isPtr readApicals() const = 0;
+    virtual Vector2isPtr readApicals() = 0;
 
     /** @copydoc brion::Morphology::readPerimeters */
-    virtual floatsPtr readPerimeters() const = 0;
+    virtual floatsPtr readPerimeters() = 0;
 
     //@}
 

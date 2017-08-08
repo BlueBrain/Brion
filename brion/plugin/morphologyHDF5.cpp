@@ -183,7 +183,7 @@ std::string MorphologyHDF5::getDescription()
            "  [file://]/path/to/morphology.h5";
 }
 
-Vector4fsPtr MorphologyHDF5::readPoints() const
+Vector4fsPtr MorphologyHDF5::readPoints()
 {
     lunchbox::ScopedWrite mutex(detail::hdf5Lock());
 
@@ -224,7 +224,7 @@ Vector4fsPtr MorphologyHDF5::readPoints() const
     return data;
 }
 
-Vector2isPtr MorphologyHDF5::readSections() const
+Vector2isPtr MorphologyHDF5::readSections()
 {
     lunchbox::ScopedWrite mutex(detail::hdf5Lock());
 
@@ -275,7 +275,7 @@ Vector2isPtr MorphologyHDF5::readSections() const
     return data;
 }
 
-SectionTypesPtr MorphologyHDF5::readSectionTypes() const
+SectionTypesPtr MorphologyHDF5::readSectionTypes()
 {
     lunchbox::ScopedWrite mutex(detail::hdf5Lock());
 
@@ -312,7 +312,7 @@ SectionTypesPtr MorphologyHDF5::readSectionTypes() const
     return data;
 }
 
-Vector2isPtr MorphologyHDF5::readApicals() const
+Vector2isPtr MorphologyHDF5::readApicals()
 {
     lunchbox::ScopedWrite mutex(detail::hdf5Lock());
 
@@ -340,7 +340,7 @@ Vector2isPtr MorphologyHDF5::readApicals() const
     return data;
 }
 
-floatsPtr MorphologyHDF5::readPerimeters() const
+floatsPtr MorphologyHDF5::readPerimeters()
 {
     if (_data.version != MORPHOLOGY_VERSION_H5_1_1)
         return floatsPtr(new floats());

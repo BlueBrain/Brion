@@ -75,7 +75,7 @@ int main(int argc, char* argv[])
         outVersion = brion::MORPHOLOGY_VERSION_H5_1;
 
     lunchbox::Clock clock;
-    const brion::Morphology in(input);
+    brion::Morphology in(input);
 
     float readTime = clock.resetTimef();
     float writeTime = 0.f;

@@ -20,7 +20,6 @@
 #include "morphologyZeroEQ.h"
 
 #include "../constants.h"
-#include "../detail/skipWhiteSpace.h"
 
 #include <lunchbox/pluginRegisterer.h>
 #ifdef BRION_USE_ZEROEQ
@@ -38,33 +37,6 @@ namespace plugin
 namespace
 {
 lunchbox::PluginRegisterer<MorphologyZeroEQ> registerer;
-
-template <typename T>
-void _serializeArray(uint8_t*& dst, const std::shared_ptr<std::vector<T>>& src)
-{
-    const uint64_t arraySize = src->size();
-    *reinterpret_cast<uint64_t*>(dst) = arraySize;
-    dst += sizeof(uint64_t);
-    memcpy(dst, src->data(), sizeof(T) * src->size());
-    dst += sizeof(T) * src->size();
-}
-
-template <typename T>
-bool _deserializeArray(std::shared_ptr<std::vector<T>>& dst,
-                       const uint8_t*& src, const uint8_t* end)
-{
-    if (src + sizeof(uint64_t) > end)
-        return false;
-    const uint64_t arraySize = *reinterpret_cast<const uint64_t*>(src);
-    src += sizeof(uint64_t);
-
-    if (src + sizeof(T) * arraySize > end)
-        return false;
-    const T* dstPtr = reinterpret_cast<const T*>(src);
-    dst.reset(new std::vector<T>(dstPtr, dstPtr + arraySize));
-    src += sizeof(T) * arraySize;
-    return true;
-}
 }
 
 #ifdef BRION_USE_ZEROEQ
@@ -108,7 +80,6 @@ public:
 
     void lock() { _mutex.lock(); }
     void unlock() { _mutex.unlock(); }
-
 private:
     std::mutex _mutex;
     zeroeq::Client _client;
@@ -131,8 +102,7 @@ MorphologyZeroEQ::MorphologyZeroEQ(const MorphologyInitData& initData)
         if (data && size)
         {
             _client->unlock();
-            if (!_fromBinary(data, size))
-                _points.reset();
+            _data.fromBinary(data, size);
             _client->lock();
         }
         _client.reset();
@@ -148,18 +118,11 @@ MorphologyZeroEQ::MorphologyZeroEQ(const MorphologyInitData& initData)
         ClientPtr client_ = _client; // keep ref for thread-safety
         while (_client)
             client_->receive();
+        return _data.hasData();
     });
 #else
     LBTHROW(std::runtime_error("Missing ZeroEQ support"));
 #endif
-}
-
-MorphologyZeroEQ::MorphologyZeroEQ(const void* data, const size_t size)
-    : MorphologyPlugin(MorphologyInitData({}))
-{
-    if (!_fromBinary(data, size))
-        LBTHROW(std::runtime_error(
-            "Failed to construct morphology from binary data"));
 }
 
 MorphologyZeroEQ::~MorphologyZeroEQ()
@@ -167,13 +130,10 @@ MorphologyZeroEQ::~MorphologyZeroEQ()
     _load();
 }
 
-void MorphologyZeroEQ::_load() const
+void MorphologyZeroEQ::_load()
 {
 #ifdef BRION_USE_ZEROEQ
-    if (_loader.valid())
-        _loader.get();
-
-    if (!_points)
+    if (_loader.valid() && !_loader.get())
         LBTHROW(std::runtime_error("Failed to load morphology from server"));
 #endif
 }
@@ -189,59 +149,59 @@ std::string MorphologyZeroEQ::getDescription()
            "  zeroeq://[server:port]/path/to/morphology";
 }
 
-Vector4fsPtr MorphologyZeroEQ::readPoints() const
+Vector4fsPtr MorphologyZeroEQ::readPoints()
 {
     _load();
-    return _points;
+    return _data.getPoints();
 }
 
-Vector2isPtr MorphologyZeroEQ::readSections() const
+Vector2isPtr MorphologyZeroEQ::readSections()
 {
     _load();
-    return _sections;
+    return _data.getSections();
 }
 
-SectionTypesPtr MorphologyZeroEQ::readSectionTypes() const
+SectionTypesPtr MorphologyZeroEQ::readSectionTypes()
 {
     _load();
-    return _types;
+    return _data.getSectionTypes();
 }
 
-Vector2isPtr MorphologyZeroEQ::readApicals() const
+Vector2isPtr MorphologyZeroEQ::readApicals()
 {
     _load();
-    return _apicals;
+    return _data.getApicals();
 }
 
-floatsPtr MorphologyZeroEQ::readPerimeters() const
+floatsPtr MorphologyZeroEQ::readPerimeters()
 {
     _load();
-    return _perimeters;
+    return _data.getPerimeters();
 }
 
 void MorphologyZeroEQ::writePoints(const Vector4fs& points)
 {
-    _points.reset(new Vector4fs(points));
+    _data.setPoints(points);
 }
 
 void MorphologyZeroEQ::writeSections(const Vector2is& sections)
 {
-    _sections.reset(new Vector2is(sections));
+    _data.setSections(sections);
 }
 
 void MorphologyZeroEQ::writeSectionTypes(const SectionTypes& types)
 {
-    _types.reset(new SectionTypes(types));
+    _data.setSectionTypes(types);
 }
 
 void MorphologyZeroEQ::writeApicals(const Vector2is& apicals)
 {
-    _apicals.reset(new Vector2is(apicals));
+    _data.setApicals(apicals);
 }
 
 void MorphologyZeroEQ::writePerimeters(const floats& perimeters)
 {
-    _perimeters.reset(new floats(perimeters));
+    _data.setPerimeters(perimeters);
 }
 
 void MorphologyZeroEQ::flush()
@@ -279,53 +239,5 @@ MorphologyZeroEQ::ClientPtr MorphologyZeroEQ::_getClient()
     return client;
 }
 #endif
-
-servus::Serializable::Data MorphologyZeroEQ::_toBinary() const
-{
-    servus::Serializable::Data data;
-
-    data.size = sizeof(MorphologyVersion) + sizeof(CellFamily) +
-                sizeof(uint64_t) + sizeof(brion::Vector4f) * _points->size() +
-                sizeof(uint64_t) + sizeof(brion::Vector2i) * _sections->size() +
-                sizeof(uint64_t) + sizeof(uint32_t) * _types->size() +
-                sizeof(uint64_t) + sizeof(brion::Vector2i) * _apicals->size() +
-                sizeof(uint64_t) + sizeof(float) * _perimeters->size();
-
-    uint8_t* ptr = new uint8_t[data.size];
-    data.ptr.reset(ptr, std::default_delete<uint8_t[]>());
-
-    *reinterpret_cast<MorphologyVersion*>(ptr) = getVersion();
-    ptr += sizeof(MorphologyVersion);
-
-    *reinterpret_cast<CellFamily*>(ptr) = getCellFamily();
-    ptr += sizeof(CellFamily);
-
-    _serializeArray(ptr, _points);
-    _serializeArray(ptr, _sections);
-    _serializeArray(ptr, _types);
-    _serializeArray(ptr, _apicals);
-    _serializeArray(ptr, _perimeters);
-    return data;
-}
-
-bool MorphologyZeroEQ::_fromBinary(const void* data, const size_t size)
-{
-    const uint8_t* ptr = reinterpret_cast<const uint8_t*>(data);
-    const uint8_t* const end = ptr + size;
-    if (size < sizeof(MorphologyVersion) + sizeof(CellFamily))
-        return false;
-
-    _data.version = *reinterpret_cast<const MorphologyVersion*>(ptr);
-    ptr += sizeof(MorphologyVersion);
-
-    _data.family = *reinterpret_cast<const CellFamily*>(ptr);
-    ptr += sizeof(CellFamily);
-
-    return _deserializeArray(_points, ptr, end) &&
-           _deserializeArray(_sections, ptr, end) &&
-           _deserializeArray(_types, ptr, end) &&
-           _deserializeArray(_apicals, ptr, end) &&
-           _deserializeArray(_perimeters, ptr, end);
-}
 }
 }

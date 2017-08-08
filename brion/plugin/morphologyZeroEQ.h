@@ -19,10 +19,8 @@
 
 #pragma once
 
-#include "../constants.h"        // used inline
-#include "../morphologyPlugin.h" // base class
-
-#include <servus/serializable.h> // base class
+#include "../detail/serializableMorphology.h" // member
+#include "../morphologyPlugin.h"              // base class
 
 #include <future>
 
@@ -30,33 +28,21 @@ namespace brion
 {
 namespace plugin
 {
-class MorphologyZeroEQ : public MorphologyPlugin, public servus::Serializable
+class MorphologyZeroEQ : public MorphologyPlugin
 {
 public:
     explicit MorphologyZeroEQ(const MorphologyInitData& initData);
-    MorphologyZeroEQ(const void* data, size_t size);
     virtual ~MorphologyZeroEQ();
-
-    // Needs to be inline, otherwise we would need to link circulary to Brion
-    explicit MorphologyZeroEQ(const brion::Morphology& m)
-        : MorphologyPlugin(m.getInitData())
-        , _points(m.readPoints())
-        , _sections(m.readSections())
-        , _types(m.readSectionTypes())
-        , _apicals(m.readApicals())
-        , _perimeters(m.readPerimeters())
-    {
-    }
 
     /** Check if this plugin can handle the given uri. */
     static bool handles(const MorphologyInitData& initData);
     static std::string getDescription();
 
-    Vector4fsPtr readPoints() const final;
-    Vector2isPtr readSections() const final;
-    SectionTypesPtr readSectionTypes() const final;
-    Vector2isPtr readApicals() const final;
-    floatsPtr readPerimeters() const final;
+    Vector4fsPtr readPoints() final;
+    Vector2isPtr readSections() final;
+    SectionTypesPtr readSectionTypes() final;
+    Vector2isPtr readApicals() final;
+    floatsPtr readPerimeters() final;
 
     void writePoints(const Vector4fs& points) final;
     void writeSections(const Vector2is& sections) final;
@@ -66,28 +52,15 @@ public:
     void flush() final;
 
 private:
-    void _load() const; // throws
-
-    // Serializable API
-    std::string getTypeName() const final
-    {
-        return "brion::plugin::MorphologyZeroEQ";
-    }
-    bool _fromBinary(const void* data, const size_t size) final;
-    servus::Serializable::Data _toBinary() const final;
-
     // ZeroEQ API
     class Client;
     using ClientPtr = std::shared_ptr<Client>;
     ClientPtr _getClient();
+    void _load(); // throws
 
-    Vector4fsPtr _points;
-    Vector2isPtr _sections;
-    SectionTypesPtr _types;
-    Vector2isPtr _apicals;
-    floatsPtr _perimeters;
-    ClientPtr _client;                 // during pending load requests
-    mutable std::future<void> _loader; // fulfilled by client loader thread pool
+    detail::SerializableMorphology _data;
+    ClientPtr _client;         // during pending load requests
+    std::future<bool> _loader; // fulfilled by client loader thread pool
 };
 }
 }
