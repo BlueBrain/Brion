@@ -320,7 +320,7 @@ BOOST_AUTO_TEST_CASE(zeroeq_read)
         const std::string path((const char*)data, size);
         brion::Morphology morphology(path);
         const brion::detail::SerializableMorphology serializable{morphology};
-        return zeroeq::ReplyData(serializable.getTypeIdentifier(),
+        return zeroeq::ReplyData(brion::ZEROEQ_GET_MORPHOLOGY,
                                  serializable.toBinary().clone());
     });
     std::thread thread([&] { server.receive(); });

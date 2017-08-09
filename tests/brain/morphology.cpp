@@ -93,7 +93,7 @@ const std::string TEST_MORPHOLOGY_FILENAME =
 const brion::URI TEST_MORPHOLOGY_URI =
     brion::URI("file://" + TEST_MORPHOLOGY_FILENAME);
 
-void checkEqualMorphologies(brain::neuron::Morphology& first,
+void checkEqualMorphologies(const brain::neuron::Morphology& first,
                             brion::Morphology& second)
 {
     BOOST_CHECK(*second.readPoints() == first.getPoints());
@@ -109,11 +109,11 @@ BOOST_AUTO_TEST_CASE(v2_morphology_constructors)
 {
     brion::Morphology raw(TEST_MORPHOLOGY_FILENAME);
 
-    brain::neuron::Morphology morphology1(TEST_MORPHOLOGY_URI);
+    const brain::neuron::Morphology morphology1(TEST_MORPHOLOGY_URI);
     BOOST_CHECK_EQUAL(morphology1.getTransformation(), brain::Matrix4f());
     checkEqualMorphologies(morphology1, raw);
 
-    brain::neuron::Morphology morphology2(raw);
+    const brain::neuron::Morphology morphology2(raw);
     checkEqualMorphologies(morphology2, raw);
 
     BOOST_CHECK_THROW(brain::neuron::Morphology(brion::URI("/mars")),

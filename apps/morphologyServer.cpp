@@ -25,7 +25,7 @@ int main(const int argc, char* argv[])
         << "  zeroeq://" << address << "/path/to/morphology" << std::endl
         << std::endl
         << "  [c]ache read, [d]isk read with cache update, disk read "
-           "with cache [e]rror, [D]isk read uncached, morphology [l]oad error: "
+           "with cache [e]rror, [u]ncached disk read, morphology [l]oad error: "
         << std::flush;
     lunchbox::Log::setOutput(std::string(argv[0]) + ".log");
 
@@ -65,7 +65,7 @@ int main(const int argc, char* argv[])
                     std::cout << 'e' << std::flush;
             }
             else
-                std::cout << 'D' << std::flush;
+                std::cout << 'u' << std::flush;
 
             return zeroeq::ReplyData(morphology.getTypeIdentifier(),
                                      morphology.toBinary().clone());

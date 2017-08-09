@@ -22,11 +22,9 @@
 #include "../constants.h"
 
 #include <lunchbox/pluginRegisterer.h>
-#ifdef BRION_USE_ZEROEQ
 #include <lunchbox/threadPool.h>
 #include <zeroeq/client.h>
 #include <zeroeq/uri.h>
-#endif
 
 #include <mutex>
 
@@ -39,7 +37,6 @@ namespace
 lunchbox::PluginRegisterer<MorphologyZeroEQ> registerer;
 }
 
-#ifdef BRION_USE_ZEROEQ
 const std::string SERVER_SESSION("morphologyServer");
 namespace
 {
@@ -80,19 +77,16 @@ public:
 
     void lock() { _mutex.lock(); }
     void unlock() { _mutex.unlock(); }
+
 private:
     std::mutex _mutex;
     zeroeq::Client _client;
 };
-#endif
 
 MorphologyZeroEQ::MorphologyZeroEQ(const MorphologyInitData& initData)
     : MorphologyPlugin(initData)
-#ifdef BRION_USE_ZEROEQ
     , _client(_getClient())
-#endif
 {
-#ifdef BRION_USE_ZEROEQ
     ClientPtr client = _client; // keep ref for thread-safety
     const std::string path = initData.getURI().getPath();
     const auto handler = [&](const uint128_t& id, const void* data,
@@ -114,28 +108,24 @@ MorphologyZeroEQ::MorphologyZeroEQ(const MorphologyInitData& initData)
         LBTHROW(std::runtime_error("Failed to request morphology data"));
     }
 
-    _loader = _getWorkers().post([&] {
+    _loadFuture = _getWorkers().post([&] {
         ClientPtr client_ = _client; // keep ref for thread-safety
         while (_client)
             client_->receive();
         return _data.hasData();
     });
-#else
-    LBTHROW(std::runtime_error("Missing ZeroEQ support"));
-#endif
 }
 
 MorphologyZeroEQ::~MorphologyZeroEQ()
 {
-    _load();
+    if (_loadFuture.valid())
+        _loadFuture.get();
 }
 
-void MorphologyZeroEQ::_load()
+void MorphologyZeroEQ::_finishLoading()
 {
-#ifdef BRION_USE_ZEROEQ
-    if (_loader.valid() && !_loader.get())
+    if (_loadFuture.valid() && !_loadFuture.get())
         LBTHROW(std::runtime_error("Failed to load morphology from server"));
-#endif
 }
 
 bool MorphologyZeroEQ::handles(const MorphologyInitData& initData)
@@ -151,65 +141,64 @@ std::string MorphologyZeroEQ::getDescription()
 
 Vector4fsPtr MorphologyZeroEQ::readPoints()
 {
-    _load();
+    _finishLoading();
     return _data.getPoints();
 }
 
 Vector2isPtr MorphologyZeroEQ::readSections()
 {
-    _load();
+    _finishLoading();
     return _data.getSections();
 }
 
 SectionTypesPtr MorphologyZeroEQ::readSectionTypes()
 {
-    _load();
+    _finishLoading();
     return _data.getSectionTypes();
 }
 
 Vector2isPtr MorphologyZeroEQ::readApicals()
 {
-    _load();
+    _finishLoading();
     return _data.getApicals();
 }
 
 floatsPtr MorphologyZeroEQ::readPerimeters()
 {
-    _load();
+    _finishLoading();
     return _data.getPerimeters();
 }
 
-void MorphologyZeroEQ::writePoints(const Vector4fs& points)
+void MorphologyZeroEQ::writePoints(const Vector4fs&)
 {
-    _data.setPoints(points);
+    LBUNIMPLEMENTED;
 }
 
-void MorphologyZeroEQ::writeSections(const Vector2is& sections)
+void MorphologyZeroEQ::writeSections(const Vector2is&)
 {
-    _data.setSections(sections);
+    LBUNIMPLEMENTED;
 }
 
-void MorphologyZeroEQ::writeSectionTypes(const SectionTypes& types)
+void MorphologyZeroEQ::writeSectionTypes(const SectionTypes&)
 {
-    _data.setSectionTypes(types);
+    LBUNIMPLEMENTED;
 }
 
-void MorphologyZeroEQ::writeApicals(const Vector2is& apicals)
+void MorphologyZeroEQ::writeApicals(const Vector2is&)
 {
-    _data.setApicals(apicals);
+    LBUNIMPLEMENTED;
 }
 
-void MorphologyZeroEQ::writePerimeters(const floats& perimeters)
+void MorphologyZeroEQ::writePerimeters(const floats&)
 {
-    _data.setPerimeters(perimeters);
+    LBUNIMPLEMENTED;
 }
 
 void MorphologyZeroEQ::flush()
 {
-    LBUNIMPLEMENTED; // implement set request
+    LBUNIMPLEMENTED;
 }
 
-#ifdef BRION_USE_ZEROEQ
 MorphologyZeroEQ::ClientPtr MorphologyZeroEQ::_getClient()
 {
     // static factory reusing Clients for all instances of the same URI
@@ -238,6 +227,5 @@ MorphologyZeroEQ::ClientPtr MorphologyZeroEQ::_getClient()
 
     return client;
 }
-#endif
 }
 }

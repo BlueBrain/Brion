@@ -42,16 +42,10 @@ public:
     SectionTypesPtr getSectionTypes() { return _types; }
     Vector2isPtr getApicals() { return _apicals; }
     floatsPtr getPerimeters() { return _perimeters; }
+
     ConstVector4fsPtr getPoints() const { return _points; }
     ConstVector2isPtr getSections() const { return _sections; }
     ConstSectionTypesPtr getSectionTypes() const { return _types; }
-    void setVersion(const MorphologyVersion version) { _version = version; }
-    void getFamily(const CellFamily family) { _family = family; }
-    void setPoints(const Vector4fs& points);
-    void setSections(const Vector2is& sections);
-    void setSectionTypes(const SectionTypes& types);
-    void setApicals(const Vector2is& apicals);
-    void setPerimeters(const floats& perimeters);
 
     bool hasData() const
     {

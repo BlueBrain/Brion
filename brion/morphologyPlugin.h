@@ -25,6 +25,7 @@
 #include <brion/morphology.h> // Needed by doxygen
 #include <brion/pluginInitData.h>
 #include <brion/types.h>
+#include <lunchbox/debug.h>
 
 namespace brion
 {
@@ -42,6 +43,9 @@ public:
         , version(v)
         , family(f)
     {
+        if (f == FAMILY_GLIA && v != MORPHOLOGY_VERSION_H5_1_1)
+            LBTHROW(
+                std::runtime_error("Glia cells only support HDF5 version 1.1"));
     }
 
     MorphologyInitData(const URI& uri, const MorphologyVersion v,

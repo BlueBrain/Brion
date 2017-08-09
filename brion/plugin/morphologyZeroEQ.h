@@ -28,6 +28,19 @@ namespace brion
 {
 namespace plugin
 {
+/**
+ * Loads morphologies from a morphologyServer.
+ *
+ * Treats URIs in the from zeroeq://[server:port]/path/to/morphology. The path
+ * is assumed to be available on the server to load the data. If server:port are
+ * given, loads data only from the given server. Otherwise loads data from
+ * servers found announcing the session 'morphologyServer' (or
+ * $ZEROEQ_SERVER_SESSION) and servers specified in $ZEROEQ_SERVERS.
+ *
+ * The data is requested in the ctor, loaded asynchronously, and synchronized in
+ * any read function. Writing data is not yet implemented, but should be
+ * straight-forward by sending a save request in flush().
+ */
 class MorphologyZeroEQ : public MorphologyPlugin
 {
 public:
@@ -56,11 +69,12 @@ private:
     class Client;
     using ClientPtr = std::shared_ptr<Client>;
     ClientPtr _getClient();
-    void _load(); // throws
+    void _finishLoading();
 
     detail::SerializableMorphology _data;
-    ClientPtr _client;         // during pending load requests
-    std::future<bool> _loader; // fulfilled by client loader thread pool
+    ClientPtr _client;                     // during pending load requests
+    mutable std::future<bool> _loadFuture; // fulfilled by client loader thread
+                                           // pool
 };
 }
 }

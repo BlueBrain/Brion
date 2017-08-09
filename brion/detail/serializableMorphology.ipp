@@ -29,13 +29,24 @@ namespace detail
 namespace
 {
 template <typename T>
+size_t _getSerializationSize(const std::shared_ptr<std::vector<T>>& vector)
+{
+    return vector ? sizeof(uint64_t) + vector->size() * sizeof(T)
+                  : sizeof(uint64_t);
+}
+
+template <typename T>
 void _serializeArray(uint8_t*& dst, const std::shared_ptr<std::vector<T>>& src)
 {
-    const uint64_t arraySize = src->size();
+    const uint64_t arraySize = src ? src->size() : 0;
     *reinterpret_cast<uint64_t*>(dst) = arraySize;
     dst += sizeof(uint64_t);
-    memcpy(dst, src->data(), sizeof(T) * src->size());
-    dst += sizeof(T) * src->size();
+
+    if (arraySize > 0)
+    {
+        memcpy(dst, src->data(), sizeof(T) * src->size());
+        dst += sizeof(T) * src->size();
+    }
 }
 
 template <typename T>
@@ -47,10 +58,16 @@ bool _deserializeArray(std::shared_ptr<std::vector<T>>& dst,
     const uint64_t arraySize = *reinterpret_cast<const uint64_t*>(src);
     src += sizeof(uint64_t);
 
+    if (arraySize == 0)
+    {
+        dst.reset(new std::vector<T>);
+        return true;
+    }
+
     if (src + sizeof(T) * arraySize > end)
         return false;
-    const T* dstPtr = reinterpret_cast<const T*>(src);
-    dst.reset(new std::vector<T>(dstPtr, dstPtr + arraySize));
+    const T* srcPtr = reinterpret_cast<const T*>(src);
+    dst.reset(new std::vector<T>(srcPtr, srcPtr + arraySize));
     src += sizeof(T) * arraySize;
     return true;
 }
@@ -77,41 +94,14 @@ inline SerializableMorphology::~SerializableMorphology()
 {
 }
 
-void inline SerializableMorphology::setPoints(const Vector4fs& points)
-{
-    _points.reset(new Vector4fs(points));
-}
-
-void inline SerializableMorphology::setSections(const Vector2is& sections)
-{
-    _sections.reset(new Vector2is(sections));
-}
-
-void inline SerializableMorphology::setSectionTypes(const SectionTypes& types)
-{
-    _types.reset(new SectionTypes(types));
-}
-
-void inline SerializableMorphology::setApicals(const Vector2is& apicals)
-{
-    _apicals.reset(new Vector2is(apicals));
-}
-
-void inline SerializableMorphology::setPerimeters(const floats& perimeters)
-{
-    _perimeters.reset(new floats(perimeters));
-}
-
 servus::Serializable::Data inline SerializableMorphology::_toBinary() const
 {
     servus::Serializable::Data data;
-
-    data.size = sizeof(MorphologyVersion) + sizeof(CellFamily) +
-                sizeof(uint64_t) + sizeof(brion::Vector4f) * _points->size() +
-                sizeof(uint64_t) + sizeof(brion::Vector2i) * _sections->size() +
-                sizeof(uint64_t) + sizeof(uint32_t) * _types->size() +
-                sizeof(uint64_t) + sizeof(brion::Vector2i) * _apicals->size() +
-                sizeof(uint64_t) + sizeof(float) * _perimeters->size();
+    data.size =
+        sizeof(MorphologyVersion) + sizeof(CellFamily) +
+        _getSerializationSize(_points) + _getSerializationSize(_sections) +
+        _getSerializationSize(_types) + _getSerializationSize(_apicals) +
+        _getSerializationSize(_perimeters);
 
     uint8_t* ptr = new uint8_t[data.size];
     data.ptr.reset(ptr, std::default_delete<uint8_t[]>());
