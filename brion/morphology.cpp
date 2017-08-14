@@ -44,19 +44,6 @@ Morphology::Morphology(const std::string& source)
 {
 }
 
-Morphology::Morphology(const std::string& target,
-                       const MorphologyVersion version, const bool overwrite)
-    : _impl(
-          new Impl(MorphologyInitData(URI(target), version,
-                                      overwrite ? MODE_OVERWRITE : MODE_WRITE)))
-{
-}
-
-Morphology::Morphology(const std::string& file, const CellFamily family)
-    : _impl(new Impl(MorphologyInitData(URI(file), family)))
-{
-}
-
 Morphology::Morphology(Morphology&&) = default;
 Morphology& Morphology::operator=(Morphology&&) = default;
 
@@ -84,11 +71,6 @@ SectionTypesPtr Morphology::readSectionTypes()
     return _impl->plugin->readSectionTypes();
 }
 
-Vector2isPtr Morphology::readApicals()
-{
-    return _impl->plugin->readApicals();
-}
-
 floatsPtr Morphology::readPerimeters()
 {
     return _impl->plugin->readPerimeters();
@@ -102,35 +84,5 @@ MorphologyVersion Morphology::getVersion() const
 const MorphologyInitData& Morphology::getInitData() const
 {
     return _impl->plugin->getInitData();
-}
-
-void Morphology::writePoints(const Vector4fs& points)
-{
-    _impl->plugin->writePoints(points);
-}
-
-void Morphology::writeSections(const Vector2is& sections)
-{
-    _impl->plugin->writeSections(sections);
-}
-
-void Morphology::writeSectionTypes(const SectionTypes& types)
-{
-    _impl->plugin->writeSectionTypes(types);
-}
-
-void Morphology::writeApicals(const Vector2is& apicals)
-{
-    _impl->plugin->writeApicals(apicals);
-}
-
-void Morphology::writePerimeters(const floats& perimeters)
-{
-    _impl->plugin->writePerimeters(perimeters);
-}
-
-void Morphology::flush()
-{
-    _impl->plugin->flush();
 }
 }

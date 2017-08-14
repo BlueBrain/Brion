@@ -58,6 +58,7 @@ public:
      * @version 1.4
      */
     int getAccessMode() const { return _accessMode; }
+
 protected:
     URI _uri;
     int _accessMode;

@@ -84,13 +84,6 @@ public:
      */
     BRION_API SectionTypesPtr readSectionTypes();
 
-    /** Read apical points of morphology, representing section and point index.
-     *
-     * @return section and point index of all apical points in the morphology
-     * @version 1.0
-     */
-    BRION_API Vector2isPtr readApicals();
-
     /**
      * @return perimeters of the cross sections for each point of the morphology
      *         in micrometers.
@@ -104,87 +97,6 @@ public:
 
     /** @internal */
     const MorphologyInitData& getInitData() const;
-    //@}
-
-    /** @name Write API */
-    //@{
-    /** Open the given morphology file for write access.
-     *
-     * @param target filepath of the output morphology file
-     * @param version the output file format version, automatically chosen if
-     *                undefined.
-     * @param overwrite true to allow overwrite of existing file
-     * @throw std::runtime_error if file could not be created
-     * @version 1.0
-     * @deprecated
-     */
-    BRION_API Morphology(const std::string& target, MorphologyVersion version,
-                         bool overwrite = false);
-
-    /**
-     * Open the given morphology file for write access.
-     *
-     * @param file filename of the output morphology file
-     * @param family the cell family that this morphology represents
-     * @throw std::runtime_error if file could not be created
-     * @version 1.8
-     */
-    BRION_API Morphology(const std::string& file, CellFamily family);
-
-    /** Write points of morphology, representing x,y,z coordinates + diameter.
-     *
-     * @param points x,y,z coords + diameter of all points of the morphology
-     * @throw std::runtime_error if object not writable
-     * @throw std::runtime_error points already written
-     * @throw std::runtime_error number of points does not match number of
-     *                           perimeters
-     * @version 1.0
-     */
-    BRION_API void writePoints(const Vector4fs& points);
-
-    /** Write sections of morphology, representing section start index and index
-     *  of parent the section.
-     *
-     * @param sections index and parent index of all sections of the morphology
-     * @throw std::runtime_error if object not writable
-     * @version 1.0
-     */
-    BRION_API void writeSections(const Vector2is& sections);
-
-    /** Write section types of morphology.
-     *
-     * @param types type of each section of the morphology
-     * @throw std::runtime_error if object not writable
-     * @version 1.0
-     */
-    BRION_API void writeSectionTypes(const SectionTypes& types);
-
-    /** Write apical points of morphology, representing section and point index.
-     *
-     * @param apicals section and point index of all apical points
-     * @throw std::runtime_error if object not created with write ctor
-     * @throw std::runtime_error if not supported by implementation
-     * @version 1.0
-     * @deprecated
-     */
-    BRION_API void writeApicals(const Vector2is& apicals);
-
-    /**
-     * Write perimeters of morphology.
-     *
-     * @param perimeters perimeters of the cross sections for each point of
-     *                   the morphology in micrometers
-     * @throw std::runtime_error if object not writable
-     * @throw std::runtime_error perimeters already written
-     * @throw std::runtime_error number of points does not match number of
-     *                           perimeters
-     * @throw std::runtime_error if not supported by implementation
-     * @version 1.8
-     */
-    BRION_API void writePerimeters(const floats& perimeters);
-
-    /** Flush data to output. @version 1.0 */
-    BRION_API void flush();
     //@}
 
 private:

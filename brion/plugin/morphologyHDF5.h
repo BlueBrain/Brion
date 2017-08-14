@@ -42,26 +42,9 @@ public:
     static std::string getDescription();
 
     Vector4fsPtr readPoints() final;
-
     Vector2isPtr readSections() final;
-
     SectionTypesPtr readSectionTypes() final;
-
-    Vector2isPtr readApicals() final;
-
     floatsPtr readPerimeters() final;
-
-    void writePoints(const Vector4fs& points) final;
-
-    void writeSections(const Vector2is& sections) final;
-
-    void writeSectionTypes(const SectionTypes& types) final;
-
-    void writeApicals(const Vector2is& apicals) final;
-
-    void writePerimeters(const floats& perimeters) final;
-
-    void flush() final;
 
 private:
     H5::H5File _file;
@@ -73,18 +56,13 @@ private:
     hsize_t _sectionsDims[2];
 
     std::string _stage;
-    bool _write;
 
     void _checkVersion(const std::string& source);
     void _selectRepairStage();
 
     void _resolveV1();
-
-    void _writeV11Metadata();
     bool _readV11Metadata();
-
     bool _readV2Metadata();
-    void _writeV2Metadata();
 
     H5::DataSet _getStructureDataSet(size_t nSections);
 };

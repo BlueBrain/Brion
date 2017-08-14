@@ -103,14 +103,16 @@ public:
     }
 
     virtual ~MorphologyPlugin() {}
-    /** @name Read API */
-    //@{
+
     /** @copydoc brion::Morphology::getInitData */
     const InitDataT& getInitData() const { return _data; }
+
     /** @copydoc brion::Morphology::getCellFamily */
     CellFamily getCellFamily() const { return _data.family; }
+
     /** @copydoc brion::Morphology::getVersion */
     MorphologyVersion getVersion() const { return _data.version; }
+
     /** @copydoc brion::Morphology::readPoints */
     virtual Vector4fsPtr readPoints() = 0;
 
@@ -120,34 +122,8 @@ public:
     /** @copydoc brion::Morphology::readSectionTypes */
     virtual SectionTypesPtr readSectionTypes() = 0;
 
-    /** @copydoc brion::Morphology::readApicals */
-    virtual Vector2isPtr readApicals() = 0;
-
     /** @copydoc brion::Morphology::readPerimeters */
     virtual floatsPtr readPerimeters() = 0;
-
-    //@}
-
-    /** @name Write API */
-    //@{
-    /** @copydoc brion::Morphology::writePoints */
-    virtual void writePoints(const Vector4fs& points) = 0;
-
-    /** @copydoc brion::Morphology::writeSections */
-    virtual void writeSections(const Vector2is& sections) = 0;
-
-    /** @copydoc brion::Morphology::writeSectionTypes */
-    virtual void writeSectionTypes(const SectionTypes& types) = 0;
-
-    /** @copydoc brion::Morphology::writeApicals */
-    virtual void writeApicals(const Vector2is& apicals) = 0;
-
-    /** @copydoc brion::Morphology::writePerimeters */
-    virtual void writePerimeters(const floats& perimeters) = 0;
-
-    /** @copydoc brion::Morphology::flush */
-    virtual void flush() = 0;
-    //@}
 
 protected:
     InitDataT _data;

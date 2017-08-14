@@ -37,26 +37,9 @@ public:
     static std::string getDescription();
 
     Vector4fsPtr readPoints() final;
-
     Vector2isPtr readSections() final;
-
     SectionTypesPtr readSectionTypes() final;
-
-    Vector2isPtr readApicals() final;
-
     floatsPtr readPerimeters() final;
-
-    void writePoints(const Vector4fs& points) final;
-
-    void writeSections(const Vector2is& sections) final;
-
-    void writeSectionTypes(const SectionTypes& types) final;
-
-    void writeApicals(const Vector2is& apicals) final;
-
-    void writePerimeters(const floats& perimeters) final;
-
-    void flush() final;
 
 private:
     struct RawSWCInfo;

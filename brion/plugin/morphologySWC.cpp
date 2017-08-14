@@ -206,45 +206,9 @@ SectionTypesPtr MorphologySWC::readSectionTypes()
     return _types;
 }
 
-Vector2isPtr MorphologySWC::readApicals()
-{
-    // Can these points be inferred? Should it be done at all?
-    return Vector2isPtr(new Vector2is());
-}
-
 floatsPtr MorphologySWC::readPerimeters()
 {
     return floatsPtr(new floats());
-}
-
-void MorphologySWC::writePoints(const Vector4fs&)
-{
-    LBUNIMPLEMENTED
-}
-
-void MorphologySWC::writeSections(const Vector2is&)
-{
-    LBUNIMPLEMENTED
-}
-
-void MorphologySWC::writeSectionTypes(const SectionTypes&)
-{
-    LBUNIMPLEMENTED
-}
-
-void MorphologySWC::writeApicals(const Vector2is&)
-{
-    LBUNIMPLEMENTED
-}
-
-void MorphologySWC::writePerimeters(const floats&)
-{
-    LBUNIMPLEMENTED
-}
-
-void MorphologySWC::flush()
-{
-    LBUNIMPLEMENTED
 }
 
 void MorphologySWC::_readSamples(RawSWCInfo& info)

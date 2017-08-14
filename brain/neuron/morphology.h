@@ -103,9 +103,6 @@ public:
         is not convertible to brain::neuron::SectionType. */
     BRAIN_API const SectionTypes& getSectionTypes() const;
 
-    /** @sa brion::Morphology::readApicals */
-    BRAIN_API const Vector2is& getApicals() const;
-
     /** Return the list of ids for the given section types. */
     BRAIN_API uint32_ts getSectionIDs(const SectionTypes& types) const;
 

@@ -101,7 +101,6 @@ void checkEqualMorphologies(const brain::neuron::Morphology& first,
     BOOST_CHECK(
         *second.readSectionTypes() ==
         reinterpret_cast<const brion::SectionTypes&>(first.getSectionTypes()));
-    BOOST_CHECK(*second.readApicals() == first.getApicals());
 }
 } // namespace
 

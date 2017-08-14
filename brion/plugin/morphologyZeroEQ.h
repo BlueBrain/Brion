@@ -54,15 +54,7 @@ public:
     Vector4fsPtr readPoints() final;
     Vector2isPtr readSections() final;
     SectionTypesPtr readSectionTypes() final;
-    Vector2isPtr readApicals() final;
     floatsPtr readPerimeters() final;
-
-    void writePoints(const Vector4fs& points) final;
-    void writeSections(const Vector2is& sections) final;
-    void writeSectionTypes(const SectionTypes& types) final;
-    void writeApicals(const Vector2is& apicals) final;
-    void writePerimeters(const floats& perimeters) final;
-    void flush() final;
 
 private:
     // ZeroEQ API
@@ -73,7 +65,7 @@ private:
 
     detail::SerializableMorphology _data;
     ClientPtr _client;                     // during pending load requests
-    mutable std::future<bool> _loadFuture; // fulfilled by client loader thread
+    mutable std::future<void> _loadFuture; // fulfilled by client loader thread
                                            // pool
 };
 }

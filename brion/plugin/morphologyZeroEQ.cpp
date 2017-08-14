@@ -112,20 +112,27 @@ MorphologyZeroEQ::MorphologyZeroEQ(const MorphologyInitData& initData)
         ClientPtr client_ = _client; // keep ref for thread-safety
         while (_client)
             client_->receive();
-        return _data.hasData();
+        if (_data.hasData())
+            LBTHROW(
+                std::runtime_error("Failed to load morphology from server"));
     });
 }
 
 MorphologyZeroEQ::~MorphologyZeroEQ()
 {
-    if (_loadFuture.valid())
-        _loadFuture.get();
+    try
+    {
+        _loadFuture.wait();
+    }
+    catch (const std::exception& e)
+    {
+        LBERROR << e.what() << std::endl;
+    }
 }
 
 void MorphologyZeroEQ::_finishLoading()
 {
-    if (_loadFuture.valid() && !_loadFuture.get())
-        LBTHROW(std::runtime_error("Failed to load morphology from server"));
+    _loadFuture.wait();
 }
 
 bool MorphologyZeroEQ::handles(const MorphologyInitData& initData)
@@ -157,48 +164,11 @@ SectionTypesPtr MorphologyZeroEQ::readSectionTypes()
     return _data.getSectionTypes();
 }
 
-Vector2isPtr MorphologyZeroEQ::readApicals()
-{
-    _finishLoading();
-    return _data.getApicals();
-}
-
 floatsPtr MorphologyZeroEQ::readPerimeters()
 {
     _finishLoading();
     return _data.getPerimeters();
 }
-
-void MorphologyZeroEQ::writePoints(const Vector4fs&)
-{
-    LBUNIMPLEMENTED;
-}
-
-void MorphologyZeroEQ::writeSections(const Vector2is&)
-{
-    LBUNIMPLEMENTED;
-}
-
-void MorphologyZeroEQ::writeSectionTypes(const SectionTypes&)
-{
-    LBUNIMPLEMENTED;
-}
-
-void MorphologyZeroEQ::writeApicals(const Vector2is&)
-{
-    LBUNIMPLEMENTED;
-}
-
-void MorphologyZeroEQ::writePerimeters(const floats&)
-{
-    LBUNIMPLEMENTED;
-}
-
-void MorphologyZeroEQ::flush()
-{
-    LBUNIMPLEMENTED;
-}
-
 MorphologyZeroEQ::ClientPtr MorphologyZeroEQ::_getClient()
 {
     // static factory reusing Clients for all instances of the same URI

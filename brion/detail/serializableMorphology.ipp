@@ -85,7 +85,6 @@ inline SerializableMorphology::SerializableMorphology(brion::Morphology& m)
     : _points(m.readPoints())
     , _sections(m.readSections())
     , _types(m.readSectionTypes())
-    , _apicals(m.readApicals())
     , _perimeters(m.readPerimeters())
 {
 }
@@ -100,8 +99,7 @@ servus::Serializable::Data inline SerializableMorphology::_toBinary() const
     data.size =
         sizeof(MorphologyVersion) + sizeof(CellFamily) +
         _getSerializationSize(_points) + _getSerializationSize(_sections) +
-        _getSerializationSize(_types) + _getSerializationSize(_apicals) +
-        _getSerializationSize(_perimeters);
+        _getSerializationSize(_types) + _getSerializationSize(_perimeters);
 
     uint8_t* ptr = new uint8_t[data.size];
     data.ptr.reset(ptr, std::default_delete<uint8_t[]>());
@@ -115,7 +113,6 @@ servus::Serializable::Data inline SerializableMorphology::_toBinary() const
     _serializeArray(ptr, _points);
     _serializeArray(ptr, _sections);
     _serializeArray(ptr, _types);
-    _serializeArray(ptr, _apicals);
     _serializeArray(ptr, _perimeters);
     return data;
 }
@@ -137,7 +134,6 @@ bool inline SerializableMorphology::_fromBinary(const void* data,
     if (_deserializeArray(_points, ptr, end) &&
         _deserializeArray(_sections, ptr, end) &&
         _deserializeArray(_types, ptr, end) &&
-        _deserializeArray(_apicals, ptr, end) &&
         _deserializeArray(_perimeters, ptr, end))
     {
         return true;
@@ -146,7 +142,6 @@ bool inline SerializableMorphology::_fromBinary(const void* data,
     _points.reset();
     _sections.reset();
     _types.reset();
-    _apicals.reset();
     _perimeters.reset();
     return false;
 }

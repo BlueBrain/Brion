@@ -80,11 +80,6 @@ const SectionTypes& Morphology::getSectionTypes() const
         *_impl->data.getSectionTypes());
 }
 
-const Vector2is& Morphology::getApicals() const
-{
-    return *_impl->data.getApicals();
-}
-
 uint32_ts Morphology::getSectionIDs(const SectionTypes& types) const
 {
     return _impl->getSectionIDs(types, false);

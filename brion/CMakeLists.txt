@@ -26,13 +26,14 @@ set(BRION_HEADERS
   constants.h
   detail/mesh.h
   detail/meshBinary.h
-  detail/meshHDF5.h
   detail/lockHDF5.h
+  detail/meshHDF5.h
+  detail/morphologyHDF5.h
   detail/silenceHDF5.h
-  detail/utilsHDF5.h
   detail/skipWhiteSpace.h
   detail/serializableMorphology.h
   detail/serializableMorphology.ipp
+  detail/utilsHDF5.h
   )
 
 set(BRION_SOURCES

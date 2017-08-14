@@ -40,7 +40,6 @@ public:
     Vector4fsPtr getPoints() { return _points; }
     Vector2isPtr getSections() { return _sections; }
     SectionTypesPtr getSectionTypes() { return _types; }
-    Vector2isPtr getApicals() { return _apicals; }
     floatsPtr getPerimeters() { return _perimeters; }
 
     ConstVector4fsPtr getPoints() const { return _points; }
@@ -49,14 +48,14 @@ public:
 
     bool hasData() const
     {
-        return _points || _sections || _types || _apicals || _perimeters;
+        return _points || _sections || _types || _perimeters;
     }
 
 private:
     // Serializable API
     std::string getTypeName() const final
     {
-        return "brion::SerializableMorphology";
+        return "brion::SerializableMorphology::v2";
     }
     bool _fromBinary(const void* data, const size_t size) final;
     servus::Serializable::Data _toBinary() const final;
@@ -66,7 +65,6 @@ private:
     Vector4fsPtr _points;
     Vector2isPtr _sections;
     SectionTypesPtr _types;
-    Vector2isPtr _apicals;
     floatsPtr _perimeters;
 };
 }
