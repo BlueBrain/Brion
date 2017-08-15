@@ -19,7 +19,7 @@
 
 namespace po = boost::program_options;
 using boost::lexical_cast;
-void writeMorphology(brion::Morphology& in, const std::string& output);
+void writeMorphology(const brion::Morphology& in, const std::string& output);
 
 int main(int argc, char* argv[])
 {
@@ -61,33 +61,22 @@ int main(int argc, char* argv[])
         return EXIT_SUCCESS;
     }
 
-    const std::string& input =
-        vm.count("input") == 1 ? vm["input"].as<std::string>() : std::string();
-    const std::string& output = vm.count("output") == 1
-                                    ? vm["output"].as<std::string>()
-                                    : std::string();
-
-    if (input.empty() || output.empty())
+    if (vm.count("input") != 1 || vm.count("output") != 1)
     {
         std::cout << options << std::endl;
         return EXIT_FAILURE;
     }
 
+    const brion::URI input(vm["input"].as<std::string>());
+    const std::string output(vm["output"].as<std::string>());
+
     lunchbox::Clock clock;
-    brion::Morphology in(input);
-    auto points = in.readPoints();
-    auto sections = in.readSections();
-    auto types = in.readSectionTypes();
-    auto perimeters = in.readPerimeters();
+    const brion::Morphology in(input);
+    in.getPoints(); // sync loading
     const float readTime = clock.resetTimef();
 
     writeMorphology(in, output);
     const float writeTime = clock.resetTimef();
-
-    LBDEBUG << points->size() << " points, " << sections->size()
-            << " sections, " << types->size() << " section types, "
-            << (perimeters ? perimeters->size() : 0) << " perimeters in "
-            << input << std::endl;
 
     LBINFO << "Converted " << input << " (" << in.getVersion() << ") => "
            << output << " in " << readTime << " + " << writeTime << " ms"
@@ -214,14 +203,12 @@ void _writePerimeters(H5::H5File& file, const brion::floats& perimeters)
 }
 }
 
-void writeMorphology(brion::Morphology& in, const std::string& output)
+void writeMorphology(const brion::Morphology& in, const std::string& output)
 {
     H5::H5File file(output, H5F_ACC_TRUNC);
     _writeMetadata(file, in.getCellFamily());
-    _writePoints(file, *in.readPoints());
-    _writeSections(file, *in.readSections());
-    _writeSectionTypes(file, *in.readSectionTypes());
-    auto perimeters = in.readPerimeters();
-    if (perimeters)
-        _writePerimeters(file, *perimeters);
+    _writePoints(file, in.getPoints());
+    _writeSections(file, in.getSections());
+    _writeSectionTypes(file, in.getSectionTypes());
+    _writePerimeters(file, in.getPerimeters());
 }

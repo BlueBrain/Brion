@@ -82,16 +82,12 @@ typedef std::shared_ptr<uint16_ts> uint16_tsPtr;
 typedef std::shared_ptr<uint32_ts> uint32_tsPtr;
 typedef std::shared_ptr<floats> floatsPtr;
 typedef std::shared_ptr<doubles> doublesPtr;
-typedef std::shared_ptr<Vector2is> Vector2isPtr;
 typedef std::shared_ptr<Vector3fs> Vector3fsPtr;
-typedef std::shared_ptr<Vector4fs> Vector4fsPtr;
 typedef std::shared_ptr<Vector3ds> Vector3dsPtr;
 typedef std::shared_ptr<Vector4ds> Vector4dsPtr;
-typedef std::shared_ptr<SectionTypes> SectionTypesPtr;
 
-typedef std::shared_ptr<const Vector4fs> ConstVector4fsPtr;
-typedef std::shared_ptr<const SectionTypes> ConstSectionTypesPtr;
-typedef std::shared_ptr<const Vector2is> ConstVector2isPtr;
+using MorphologyPtr = std::shared_ptr<Morphology>;
+using ConstMorphologyPtr = std::shared_ptr<const Morphology>;
 
 /** Ordered set of GIDs of neurons. */
 typedef std::set<uint32_t> GIDSet;

@@ -19,8 +19,7 @@
 
 #pragma once
 
-#include "../detail/serializableMorphology.h" // member
-#include "../morphologyPlugin.h"              // base class
+#include "../morphologyPlugin.h" // base class
 
 #include <future>
 
@@ -51,22 +50,17 @@ public:
     static bool handles(const MorphologyInitData& initData);
     static std::string getDescription();
 
-    Vector4fsPtr readPoints() final;
-    Vector2isPtr readSections() final;
-    SectionTypesPtr readSectionTypes() final;
-    floatsPtr readPerimeters() final;
-
 private:
+    // Plugin API
+    void load() final;
+
     // ZeroEQ API
     class Client;
     using ClientPtr = std::shared_ptr<Client>;
     ClientPtr _getClient();
     void _finishLoading();
 
-    detail::SerializableMorphology _data;
-    ClientPtr _client;                     // during pending load requests
-    mutable std::future<void> _loadFuture; // fulfilled by client loader thread
-                                           // pool
+    ClientPtr _client; // during pending load requests
 };
 }
 }

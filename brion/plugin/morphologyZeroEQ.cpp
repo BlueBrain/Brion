@@ -35,16 +35,7 @@ namespace plugin
 namespace
 {
 lunchbox::PluginRegisterer<MorphologyZeroEQ> registerer;
-}
-
 const std::string SERVER_SESSION("morphologyServer");
-namespace
-{
-lunchbox::ThreadPool& _getWorkers()
-{
-    static lunchbox::ThreadPool workers;
-    return workers;
-}
 }
 
 class MorphologyZeroEQ::Client // adds thread-safety to zeroeq::Client
@@ -96,7 +87,7 @@ MorphologyZeroEQ::MorphologyZeroEQ(const MorphologyInitData& initData)
         if (data && size)
         {
             _client->unlock();
-            _data.fromBinary(data, size);
+            fromBinary(data, size);
             _client->lock();
         }
         _client.reset();
@@ -107,32 +98,17 @@ MorphologyZeroEQ::MorphologyZeroEQ(const MorphologyInitData& initData)
     {
         LBTHROW(std::runtime_error("Failed to request morphology data"));
     }
+}
 
-    _loadFuture = _getWorkers().post([&] {
-        ClientPtr client_ = _client; // keep ref for thread-safety
-        while (_client)
-            client_->receive();
-        if (_data.hasData())
-            LBTHROW(
-                std::runtime_error("Failed to load morphology from server"));
-    });
+void MorphologyZeroEQ::load()
+{
+    ClientPtr client = _client; // keep ref for thread-safety
+    while (_client)
+        client->receive();
 }
 
 MorphologyZeroEQ::~MorphologyZeroEQ()
 {
-    try
-    {
-        _loadFuture.wait();
-    }
-    catch (const std::exception& e)
-    {
-        LBERROR << e.what() << std::endl;
-    }
-}
-
-void MorphologyZeroEQ::_finishLoading()
-{
-    _loadFuture.wait();
 }
 
 bool MorphologyZeroEQ::handles(const MorphologyInitData& initData)
@@ -146,29 +122,6 @@ std::string MorphologyZeroEQ::getDescription()
            "  zeroeq://[server:port]/path/to/morphology";
 }
 
-Vector4fsPtr MorphologyZeroEQ::readPoints()
-{
-    _finishLoading();
-    return _data.getPoints();
-}
-
-Vector2isPtr MorphologyZeroEQ::readSections()
-{
-    _finishLoading();
-    return _data.getSections();
-}
-
-SectionTypesPtr MorphologyZeroEQ::readSectionTypes()
-{
-    _finishLoading();
-    return _data.getSectionTypes();
-}
-
-floatsPtr MorphologyZeroEQ::readPerimeters()
-{
-    _finishLoading();
-    return _data.getPerimeters();
-}
 MorphologyZeroEQ::ClientPtr MorphologyZeroEQ::_getClient()
 {
     // static factory reusing Clients for all instances of the same URI

@@ -37,17 +37,14 @@ Morphology::Morphology(const void* data, const size_t size)
 }
 
 Morphology::Morphology(const URI& source, const Matrix4f& transform)
-    : _impl(new Impl(source))
+    : _impl(new Impl(source, transform))
 {
-    _impl->transform(transform);
-    _impl->transformation = transform;
 }
 
-Morphology::Morphology(brion::Morphology& morphology, const Matrix4f& transform)
-    : _impl(new Impl(morphology))
+Morphology::Morphology(brion::MorphologyPtr morphology,
+                       const Matrix4f& transform)
+    : _impl(new Impl(morphology, transform))
 {
-    _impl->transform(transform);
-    _impl->transformation = transform;
 }
 
 Morphology::Morphology(const URI& source)
@@ -55,7 +52,7 @@ Morphology::Morphology(const URI& source)
 {
 }
 
-Morphology::Morphology(brion::Morphology& morphology)
+Morphology::Morphology(brion::ConstMorphologyPtr morphology)
     : _impl(new Impl(morphology))
 {
 }
@@ -66,18 +63,18 @@ Morphology::~Morphology()
 
 const Vector4fs& Morphology::getPoints() const
 {
-    return *_impl->data.getPoints();
+    return _impl->data->getPoints();
 }
 
 const Vector2is& Morphology::getSections() const
 {
-    return *_impl->data.getSections();
+    return _impl->data->getSections();
 }
 
 const SectionTypes& Morphology::getSectionTypes() const
 {
-    return reinterpret_cast<const std::vector<SectionType>&>(
-        *_impl->data.getSectionTypes());
+    return reinterpret_cast<const SectionTypes&>(
+        _impl->data->getSectionTypes());
 }
 
 uint32_ts Morphology::getSectionIDs(const SectionTypes& types) const
@@ -106,8 +103,8 @@ Sections Morphology::getSections(const SectionTypes& types) const
 
 Section Morphology::getSection(const uint32_t& id) const
 {
-    auto types = _impl->data.getSectionTypes();
-    if ((*types)[id] == brion::enums::SECTION_SOMA)
+    auto& types = _impl->data->getSectionTypes();
+    if (types[id] == brion::enums::SECTION_SOMA)
         LBTHROW(std::runtime_error("The soma cannot be accessed as a Section"));
 
     if (getSections().size() <= id)
@@ -132,7 +129,7 @@ const Matrix4f& Morphology::getTransformation() const
 
 servus::Serializable::Data Morphology::toBinary() const
 {
-    return _impl->data.toBinary();
+    return _impl->data->toBinary();
 }
 }
 }

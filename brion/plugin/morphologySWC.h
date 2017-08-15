@@ -36,22 +36,13 @@ public:
     static bool handles(const MorphologyInitData& initData);
     static std::string getDescription();
 
-    Vector4fsPtr readPoints() final;
-    Vector2isPtr readSections() final;
-    SectionTypesPtr readSectionTypes() final;
-    floatsPtr readPerimeters() final;
-
 private:
+    // Plugin API
+    void load() final;
+
     struct RawSWCInfo;
-
-    Vector4fsPtr _points;
-    Vector2isPtr _sections;
-    SectionTypesPtr _types;
-
     void _readSamples(RawSWCInfo& info);
-
     void _buildSampleTree(RawSWCInfo& info);
-
     void _buildStructure(RawSWCInfo& info);
 };
 }

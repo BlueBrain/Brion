@@ -23,9 +23,45 @@
 
 #include <lunchbox/plugin.h>
 #include <lunchbox/pluginFactory.h>
+#include <lunchbox/threadPool.h>
 
 namespace brion
 {
+namespace
+{
+lunchbox::ThreadPool& _getWorkers()
+{
+    static lunchbox::ThreadPool workers;
+    return workers;
+}
+
+/**
+ * "Plugin" for copied and deserialized morphologies.
+ *
+ * Does not actually load any data, but holds the data gathered from the copy or
+ * deserialization.
+ */
+class BinaryMorphology : public MorphologyPlugin
+{
+public:
+    BinaryMorphology(const Morphology& from)
+        : MorphologyPlugin(from.getInitData())
+    {
+        _points = from.getPoints();
+        _sections = from.getSections();
+        _sectionTypes = from.getSectionTypes();
+        _perimeters = from.getPerimeters();
+    }
+
+    BinaryMorphology(const void* data, size_t size)
+        : MorphologyPlugin(data, size)
+    {
+    }
+
+    void load() final { /*NOP*/}
+};
+}
+
 class Morphology::Impl
 {
 public:
@@ -36,12 +72,57 @@ public:
     {
     }
 
+    Impl(const Morphology& from)
+        : plugin(new BinaryMorphology(from))
+    {
+    }
+
+    Impl(const void* data, size_t size)
+        : plugin(new BinaryMorphology(data, size))
+    {
+    }
+
+    void finishLoad() const
+    {
+        std::lock_guard<std::mutex> lock(futureMutex);
+        if (!loadFuture.valid())
+            return;
+
+        loadFuture.wait();
+        loadFuture.get();
+    }
+
     std::unique_ptr<MorphologyPlugin> plugin;
+    mutable std::future<void> loadFuture; // fulfilled by worker thread pool
+    mutable std::mutex futureMutex;
 };
 
-Morphology::Morphology(const std::string& source)
-    : _impl(new Impl(MorphologyInitData(URI(source))))
+Morphology::Morphology(const URI& source)
+    : _impl(new Impl(MorphologyInitData(source)))
 {
+    _impl->loadFuture = _getWorkers().post([&] {
+        _impl->plugin->load();
+        if (_impl->plugin->getPoints().empty())
+            LBTHROW(std::runtime_error("Failed to load morphology " +
+                                       std::to_string(source)));
+    });
+}
+
+Morphology::Morphology(const void* data, size_t size)
+    : _impl(new Impl(data, size))
+{
+}
+
+Morphology::Morphology(const Morphology& from)
+    : _impl(new Impl(from))
+{
+}
+
+Morphology& Morphology::operator=(const Morphology& from)
+{
+    if (this != &from)
+        _impl.reset(new Impl(from));
+    return *this;
 }
 
 Morphology::Morphology(Morphology&&) = default;
@@ -49,40 +130,85 @@ Morphology& Morphology::operator=(Morphology&&) = default;
 
 Morphology::~Morphology()
 {
+    try
+    {
+        _impl->finishLoad();
+    }
+    catch (const std::exception& e)
+    {
+        LBERROR << e.what() << std::endl;
+    }
 }
 
 CellFamily Morphology::getCellFamily() const
 {
+    _impl->finishLoad();
     return _impl->plugin->getCellFamily();
 }
 
-Vector4fsPtr Morphology::readPoints()
+Vector4fs& Morphology::getPoints()
 {
-    return _impl->plugin->readPoints();
+    _impl->finishLoad();
+    return _impl->plugin->getPoints();
 }
 
-Vector2isPtr Morphology::readSections()
+const Vector4fs& Morphology::getPoints() const
 {
-    return _impl->plugin->readSections();
+    _impl->finishLoad();
+    return _impl->plugin->getPoints();
 }
 
-SectionTypesPtr Morphology::readSectionTypes()
+Vector2is& Morphology::getSections()
 {
-    return _impl->plugin->readSectionTypes();
+    _impl->finishLoad();
+    return _impl->plugin->getSections();
 }
 
-floatsPtr Morphology::readPerimeters()
+const Vector2is& Morphology::getSections() const
 {
-    return _impl->plugin->readPerimeters();
+    _impl->finishLoad();
+    return _impl->plugin->getSections();
+}
+
+SectionTypes& Morphology::getSectionTypes()
+{
+    _impl->finishLoad();
+    return _impl->plugin->getSectionTypes();
+}
+
+const SectionTypes& Morphology::getSectionTypes() const
+{
+    _impl->finishLoad();
+    return _impl->plugin->getSectionTypes();
+}
+
+floats& Morphology::getPerimeters()
+{
+    _impl->finishLoad();
+    return _impl->plugin->getPerimeters();
+}
+
+const floats& Morphology::getPerimeters() const
+{
+    _impl->finishLoad();
+    return _impl->plugin->getPerimeters();
 }
 
 MorphologyVersion Morphology::getVersion() const
 {
+    _impl->finishLoad();
     return _impl->plugin->getVersion();
 }
 
 const MorphologyInitData& Morphology::getInitData() const
 {
+    _impl->finishLoad();
     return _impl->plugin->getInitData();
+}
+
+servus::Serializable::Data Morphology::toBinary() const
+{
+    _impl->finishLoad();
+    return _impl->plugin->toBinary();
 }
 }

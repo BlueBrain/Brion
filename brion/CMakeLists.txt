@@ -13,6 +13,7 @@ set(BRION_PUBLIC_HEADERS
   mesh.h
   morphology.h
   morphologyPlugin.h
+  morphologyPlugin.ipp
   pluginInitData.h
   spikeReport.h
   spikeReportPlugin.h
@@ -31,8 +32,6 @@ set(BRION_HEADERS
   detail/morphologyHDF5.h
   detail/silenceHDF5.h
   detail/skipWhiteSpace.h
-  detail/serializableMorphology.h
-  detail/serializableMorphology.ipp
   detail/utilsHDF5.h
   )
 

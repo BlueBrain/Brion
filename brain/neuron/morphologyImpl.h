@@ -22,8 +22,8 @@
 #define BRAIN_NEURON_MORPHOLOGYIMPL
 
 #include "morphology.h"
-#include <brion/detail/serializableMorphology.h> // member
 
+#include <brion/morphology.h>
 #include <lunchbox/lfVector.h>
 #include <vmmlib/matrix.hpp> // member
 
@@ -36,14 +36,16 @@ typedef std::pair<size_t, size_t> SectionRange;
 class Morphology::Impl
 {
 public:
-    brion::detail::SerializableMorphology data;
+    const brion::ConstMorphologyPtr data;
 
-    Matrix4f transformation;
+    const Matrix4f transformation;
 
     uint32_t somaSection;
 
     explicit Impl(const URI& source);
-    explicit Impl(brion::Morphology& morphology);
+    Impl(const URI& source, const Matrix4f& transform);
+    explicit Impl(brion::ConstMorphologyPtr morphology);
+    Impl(brion::MorphologyPtr morphology, const Matrix4f& transform);
     Impl(const void* data, const size_t size);
 
     SectionRange getSectionRange(const uint32_t sectionID) const;
@@ -64,8 +66,6 @@ public:
 
     const uint32_ts& getChildren(const uint32_t sectionID) const;
 
-    void transform(const Matrix4f& matrix);
-
 private:
     // Distances caches. These caches need to be thread-safe to follow the
     // recommendations for C++11 about mutable and const correctness.
@@ -76,6 +76,7 @@ private:
 
     std::vector<uint32_ts> _sectionChildren;
 
+    void _transform(brion::MorphologyPtr morphology);
     void _extractInformation();
     float _computeSectionLength(const uint32_t sectionID) const;
     floats _computeAccumulatedLengths(const SectionRange& range) const;

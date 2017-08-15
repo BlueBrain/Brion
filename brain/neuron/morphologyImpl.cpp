@@ -22,6 +22,7 @@
 #include "section.h"
 
 #include <brion/morphology.h>
+#include <brion/morphologyPlugin.h>
 
 #include <lunchbox/log.h>
 
@@ -32,32 +33,44 @@ namespace brain
 namespace neuron
 {
 Morphology::Impl::Impl(const void* ptr, const size_t size)
-    : data(ptr, size)
+    : Impl(brion::ConstMorphologyPtr(new brion::Morphology(ptr, size)))
 {
-    _extractInformation();
 }
 
 Morphology::Impl::Impl(const URI& source)
+    : Impl(brion::ConstMorphologyPtr(new brion::Morphology(source)))
 {
-    brion::Morphology morphology(std::to_string(source));
-    data = brion::detail::SerializableMorphology(morphology);
-    _extractInformation();
 }
 
-Morphology::Impl::Impl(brion::Morphology& morphology)
+Morphology::Impl::Impl(const URI& source, const Matrix4f& transform)
+    : Impl(brion::MorphologyPtr(new brion::Morphology(source)), transform)
+{
+}
+
+Morphology::Impl::Impl(brion::ConstMorphologyPtr morphology)
     : data(morphology)
 {
     _extractInformation();
 }
 
+Morphology::Impl::Impl(brion::MorphologyPtr morphology,
+                       const Matrix4f& transform)
+    : data(morphology)
+    , transformation(transform)
+
+{
+    _transform(morphology);
+    _extractInformation();
+}
+
 SectionRange Morphology::Impl::getSectionRange(const uint32_t sectionID) const
 {
-    auto points = data.getPoints();
-    auto sections = data.getSections();
-    const size_t start = (*sections)[sectionID][0];
-    const size_t end = sectionID == sections->size() - 1
-                           ? points->size()
-                           : (*sections)[sectionID + 1][0];
+    const auto& points = data->getPoints();
+    const auto& sections = data->getSections();
+    const size_t start = sections[sectionID][0];
+    const size_t end = sectionID == sections.size() - 1
+                           ? points.size()
+                           : sections[sectionID + 1][0];
     return std::make_pair(start, end);
 }
 
@@ -72,10 +85,10 @@ uint32_ts Morphology::Impl::getSectionIDs(const SectionTypes& requestedTypes,
     }
 
     uint32_ts result;
-    auto types = data.getSectionTypes();
-    for (size_t i = 0; i != types->size(); ++i)
+    const auto& types = data->getSectionTypes();
+    for (size_t i = 0; i != types.size(); ++i)
     {
-        const SectionType type = static_cast<SectionType>((*types)[i]);
+        const SectionType type = static_cast<SectionType>(types[i]);
         if (bits[size_t(type)])
             result.push_back(i);
     }
@@ -88,9 +101,9 @@ float Morphology::Impl::getSectionLength(const uint32_t sectionID) const
         _sectionLengths.resize(sectionID + 1);
 
     float& length = _sectionLengths[sectionID];
-    auto types = data.getSectionTypes();
+    const auto& types = data->getSectionTypes();
 
-    if (length == 0 && (*types)[sectionID] != brion::enums::SECTION_SOMA)
+    if (length == 0 && types[sectionID] != brion::enums::SECTION_SOMA)
         length = _computeSectionLength(sectionID);
     return length;
 }
@@ -98,12 +111,12 @@ float Morphology::Impl::getSectionLength(const uint32_t sectionID) const
 Vector4fs Morphology::Impl::getSectionSamples(const uint32_t sectionID) const
 {
     const SectionRange range = getSectionRange(sectionID);
-    auto points = data.getPoints();
+    const auto& points = data->getPoints();
 
     Vector4fs result;
     result.reserve(range.second - range.first);
-    result.insert(result.end(), points->begin() + range.first,
-                  points->begin() + range.second);
+    result.insert(result.end(), points.begin() + range.first,
+                  points.begin() + range.second);
     return result;
 }
 
@@ -111,17 +124,17 @@ Vector4fs Morphology::Impl::getSectionSamples(const uint32_t sectionID,
                                               const floats& samplePoints) const
 {
     const SectionRange range = getSectionRange(sectionID);
-    auto types = data.getSectionTypes();
+    const auto& types = data->getSectionTypes();
 
     // If the section is the soma return directly the soma position.
-    if ((*types)[sectionID] == brion::enums::SECTION_SOMA)
+    if (types[sectionID] == brion::enums::SECTION_SOMA)
         // This code shouldn't be reached.
         LBTHROW(std::runtime_error("Invalid method called on soma section"));
 
     // Dealing with the degenerate case of single point sections.
-    auto points = data.getPoints();
+    const auto& points = data->getPoints();
     if (range.first + 1 == range.second)
-        return Vector4fs(samplePoints.size(), (*points)[range.first]);
+        return Vector4fs(samplePoints.size(), points[range.first]);
 
     Vector4fs result;
     result.reserve(samplePoints.size());
@@ -147,7 +160,7 @@ Vector4fs Morphology::Impl::getSectionSamples(const uint32_t sectionID,
         const size_t start = range.first + index;
         if (length == accumLengths[index])
         {
-            result.push_back((*points)[start]);
+            result.push_back(points[start]);
             continue;
         }
 
@@ -155,7 +168,7 @@ Vector4fs Morphology::Impl::getSectionSamples(const uint32_t sectionID,
         const float alpha = (length - accumLengths[index]) /
                             (accumLengths[index + 1] - accumLengths[index]);
         const Vector4f sample =
-            (*points)[start + 1] * alpha + (*points)[start] * (1 - alpha);
+            points[start + 1] * alpha + points[start] * (1 - alpha);
         result.push_back(sample);
     }
 
@@ -173,10 +186,10 @@ float Morphology::Impl::getDistanceToSoma(const uint32_t sectionID) const
         // This is the soma, a first order section or the distance hasn't
         // been computed yet. Soma and first order sections are cheap
         // to detect and compute.
-        auto sections = data.getSections();
-        auto types = data.getSectionTypes();
-        const int32_t parent = (*sections)[sectionID][1];
-        if (parent == -1 || (*types)[parent] == brion::enums::SECTION_SOMA)
+        const auto& sections = data->getSections();
+        const auto& types = data->getSectionTypes();
+        const int32_t parent = sections[sectionID][1];
+        if (parent == -1 || types[parent] == brion::enums::SECTION_SOMA)
             return 0;
         // For the other cases it doesn't matter to have concurrent updates
         // because they will yield the same result (and it's probably
@@ -206,14 +219,14 @@ const uint32_ts& Morphology::Impl::getChildren(const uint32_t sectionID) const
     return _sectionChildren[sectionID];
 }
 
-void Morphology::Impl::transform(const Matrix4f& matrix)
+void Morphology::Impl::_transform(brion::MorphologyPtr morphology)
 {
-    auto points = data.getPoints();
+    auto& points = morphology->getPoints();
 #pragma omp parallel for
-    for (size_t i = 0; i < points->size(); ++i)
+    for (size_t i = 0; i < points.size(); ++i)
     {
-        Vector4f& p = (*points)[i];
-        const Vector3f& pp = matrix * p.get_sub_vector<3, 0>();
+        auto& p = points[i];
+        const Vector3f& pp = transformation * p.get_sub_vector<3, 0>();
         p.set_sub_vector<3, 0>(pp);
     }
 }
@@ -221,17 +234,16 @@ void Morphology::Impl::transform(const Matrix4f& matrix)
 void Morphology::Impl::_extractInformation()
 {
     // children list
-    typedef std::map<uint32_t, uint32_ts> ChildrenMap;
-    ChildrenMap children;
-    auto sections = data.getSections();
-    for (size_t i = 0; i < sections->size(); ++i)
+    std::map<uint32_t, uint32_ts> children;
+    const auto& sections = data->getSections();
+    for (size_t i = 0; i < sections.size(); ++i)
     {
-        const int32_t parent = (*sections)[i][1];
+        const int32_t parent = sections[i][1];
         if (parent != -1)
             children[parent].push_back(i);
     }
-    _sectionChildren.resize(sections->size());
-    for (ChildrenMap::value_type& sectionAndChildren : children)
+    _sectionChildren.resize(sections.size());
+    for (auto& sectionAndChildren : children)
     {
         _sectionChildren[sectionAndChildren.first].swap(
             sectionAndChildren.second);
@@ -241,19 +253,21 @@ void Morphology::Impl::_extractInformation()
     const uint32_ts ids = getSectionIDs({SectionType::soma}, false);
     if (ids.size() != 1)
         LBTHROW(std::runtime_error(
-            "Bad input morphology: none or multiple somas found"));
+            "Bad input morphology '" +
+            std::to_string(data->getInitData().getURI()) +
+            "': " + std::to_string(ids.size()) + " somas found"));
     somaSection = ids[0];
 }
 
 float Morphology::Impl::_computeSectionLength(const uint32_t sectionID) const
 {
-    auto points = data.getPoints();
+    const auto& points = data->getPoints();
     const SectionRange range = getSectionRange(sectionID);
     float length = 0;
     for (size_t i = range.first; i != range.second - 1; ++i)
     {
-        const Vector4f& start = (*points)[i];
-        const Vector4f& end = (*points)[i + 1];
+        const Vector4f& start = points[i];
+        const Vector4f& end = points[i + 1];
         const Vector3f& diff = (end - start).get_sub_vector<3, 0>();
         length += diff.length();
     }
@@ -263,14 +277,14 @@ float Morphology::Impl::_computeSectionLength(const uint32_t sectionID) const
 floats Morphology::Impl::_computeAccumulatedLengths(
     const SectionRange& range) const
 {
-    auto points = data.getPoints();
+    const auto& points = data->getPoints();
     floats result;
     result.reserve(range.second - range.first);
     result.push_back(0);
     for (size_t i = range.first; i != range.second - 1; ++i)
     {
-        const Vector4f& start = (*points)[i];
-        const Vector4f& end = (*points)[i + 1];
+        const Vector4f& start = points[i];
+        const Vector4f& end = points[i + 1];
         const Vector3f& diff = (end - start).get_sub_vector<3, 0>();
         result.push_back(result.back() + diff.length());
     }

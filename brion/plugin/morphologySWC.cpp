@@ -147,9 +147,10 @@ struct MorphologySWC::RawSWCInfo
 
 MorphologySWC::MorphologySWC(const MorphologyInitData& initData)
     : MorphologyPlugin(initData)
-    , _points(new Vector4fs)
-    , _sections(new Vector2is)
-    , _types(new SectionTypes)
+{
+}
+
+void MorphologySWC::load()
 {
     // Parsing SWC according to this specification:
     // http://www.neuronland.org/NLMorphologyConverter/MorphologyFormats/SWC/Spec.html
@@ -159,11 +160,7 @@ MorphologySWC::MorphologySWC(const MorphologyInitData& initData)
     // This code takes that possibility into account.
 
     RawSWCInfo info;
-    info.filename = initData.getURI().getPath();
-
-    if (initData.getAccessMode() != MODE_READ)
-        LBTHROW(std::runtime_error("Could not open morphology file " +
-                                   info.filename + ": Invalid access mode"));
+    info.filename = _data.getURI().getPath();
 
     _readSamples(info);
     _buildSampleTree(info);
@@ -189,26 +186,6 @@ std::string MorphologySWC::getDescription()
 {
     return "SWC morphologies:\n"
            "  [file://]/path/to/morphology.swc";
-}
-
-Vector4fsPtr MorphologySWC::readPoints()
-{
-    return _points;
-}
-
-Vector2isPtr MorphologySWC::readSections()
-{
-    return _sections;
-}
-
-SectionTypesPtr MorphologySWC::readSectionTypes()
-{
-    return _types;
-}
-
-floatsPtr MorphologySWC::readPerimeters()
-{
-    return floatsPtr(new floats());
 }
 
 void MorphologySWC::_readSamples(RawSWCInfo& info)
@@ -434,19 +411,19 @@ void MorphologySWC::_buildStructure(RawSWCInfo& info)
     // The size reservation is an upper estimate because it's not easy to
     // detect all first order sections (some may connect to the soma point
     // or ring and some may not).
-    _points->reserve(info.totalValidSamples + info.numSections -
+    _points.reserve(info.totalValidSamples + info.numSections -
                      info.roots.size());
-    _sections->reserve(info.numSections);
-    _types->reserve(info.numSections);
+    _sections.reserve(info.numSections);
+    _sectionTypes.reserve(info.numSections);
     Samples& samples = info.samples;
 
     Sample* sample = &samples[sectionQueue.front()];
     sectionQueue.pop_front();
     while (sample)
     {
-        _sections->push_back(
-            Vector2i(int(_points->size()), sample->parentSection));
-        _types->push_back(SectionType(sample->type));
+        _sections.push_back(
+            Vector2i(int(_points.size()), sample->parentSection));
+        _sectionTypes.push_back(SectionType(sample->type));
 
         // Pushing first point of the section using the parent sample
         // if necessary
@@ -459,7 +436,7 @@ void MorphologySWC::_buildStructure(RawSWCInfo& info)
             if (parent->type != SWC_SECTION_SOMA || parent->nextID != -1 ||
                 parent->parent != -1)
             {
-                _points->push_back(parent->point);
+                _points.push_back(parent->point);
             }
         }
 
@@ -470,9 +447,9 @@ void MorphologySWC::_buildStructure(RawSWCInfo& info)
                // There are degenerated cases where this is absolutely
                // needed (e.g. a morphology with only one first order
                // section a point soma).
-               sample->type == SWCSectionType(_types->back()))
+               sample->type == SWCSectionType(_sectionTypes.back()))
         {
-            _points->push_back(sample->point);
+            _points.push_back(sample->point);
             sample = sample->nextID == -1 ? 0 : &samples[sample->nextID];
         }
 
@@ -483,7 +460,7 @@ void MorphologySWC::_buildStructure(RawSWCInfo& info)
             // the sibling (if any) to the sectionQeueue and continuing
             // traversing the current section
             assert(sample->siblingID != -1 ||
-                   sample->type != SWCSectionType(_types->back()));
+                   sample->type != SWCSectionType(_sectionTypes.back()));
 
             // Assigning the parent section to the current sample, this
             // will be stored in the section array at the beginning of

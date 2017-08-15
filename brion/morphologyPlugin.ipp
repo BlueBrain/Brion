@@ -17,41 +17,35 @@
  * 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
  */
 
-#include "serializableMorphology.h"
-
-#include <brion/morphology.h>
 #include <lunchbox/debug.h>
 
 namespace brion
 {
-namespace detail
-{
 namespace
 {
 template <typename T>
-size_t _getSerializationSize(const std::shared_ptr<std::vector<T>>& vector)
+size_t _getSerializationSize(const std::vector<T>& vector)
 {
-    return vector ? sizeof(uint64_t) + vector->size() * sizeof(T)
-                  : sizeof(uint64_t);
+    return sizeof(uint64_t) + vector.size() * sizeof(T);
 }
 
 template <typename T>
-void _serializeArray(uint8_t*& dst, const std::shared_ptr<std::vector<T>>& src)
+void _serializeArray(uint8_t*& dst, const std::vector<T>& src)
 {
-    const uint64_t arraySize = src ? src->size() : 0;
+    const uint64_t arraySize = src.size();
     *reinterpret_cast<uint64_t*>(dst) = arraySize;
     dst += sizeof(uint64_t);
 
     if (arraySize > 0)
     {
-        memcpy(dst, src->data(), sizeof(T) * src->size());
-        dst += sizeof(T) * src->size();
+        memcpy(dst, src.data(), sizeof(T) * src.size());
+        dst += sizeof(T) * src.size();
     }
 }
 
 template <typename T>
-bool _deserializeArray(std::shared_ptr<std::vector<T>>& dst,
-                       const uint8_t*& src, const uint8_t* end)
+bool _deserializeArray(std::vector<T>& dst, const uint8_t*& src,
+                       const uint8_t* end)
 {
     if (src + sizeof(uint64_t) > end)
         return false;
@@ -60,90 +54,77 @@ bool _deserializeArray(std::shared_ptr<std::vector<T>>& dst,
 
     if (arraySize == 0)
     {
-        dst.reset(new std::vector<T>);
+        dst.clear();
         return true;
     }
 
     if (src + sizeof(T) * arraySize > end)
         return false;
     const T* srcPtr = reinterpret_cast<const T*>(src);
-    dst.reset(new std::vector<T>(srcPtr, srcPtr + arraySize));
+    dst.assign(srcPtr, srcPtr + arraySize);
     src += sizeof(T) * arraySize;
     return true;
 }
 }
 
-inline SerializableMorphology::SerializableMorphology(const void* data,
-                                                      const size_t size)
+inline MorphologyPlugin::MorphologyPlugin(const void* data, const size_t size)
+    : _data({})
 {
     if (!_fromBinary(data, size))
         LBTHROW(std::runtime_error(
             "Failed to construct morphology from binary data"));
 }
 
-inline SerializableMorphology::SerializableMorphology(brion::Morphology& m)
-    : _points(m.readPoints())
-    , _sections(m.readSections())
-    , _types(m.readSectionTypes())
-    , _perimeters(m.readPerimeters())
-{
-}
-
-inline SerializableMorphology::~SerializableMorphology()
-{
-}
-
-servus::Serializable::Data inline SerializableMorphology::_toBinary() const
+servus::Serializable::Data inline MorphologyPlugin::_toBinary() const
 {
     servus::Serializable::Data data;
-    data.size =
-        sizeof(MorphologyVersion) + sizeof(CellFamily) +
-        _getSerializationSize(_points) + _getSerializationSize(_sections) +
-        _getSerializationSize(_types) + _getSerializationSize(_perimeters);
+    data.size = sizeof(MorphologyVersion) + sizeof(CellFamily) +
+                _getSerializationSize(_points) +
+                _getSerializationSize(_sections) +
+                _getSerializationSize(_sectionTypes) +
+                _getSerializationSize(_perimeters);
 
     uint8_t* ptr = new uint8_t[data.size];
     data.ptr.reset(ptr, std::default_delete<uint8_t[]>());
 
-    *reinterpret_cast<MorphologyVersion*>(ptr) = _version;
+    *reinterpret_cast<MorphologyVersion*>(ptr) = _data.version;
     ptr += sizeof(MorphologyVersion);
 
-    *reinterpret_cast<CellFamily*>(ptr) = _family;
+    *reinterpret_cast<CellFamily*>(ptr) = _data.family;
     ptr += sizeof(CellFamily);
 
     _serializeArray(ptr, _points);
     _serializeArray(ptr, _sections);
-    _serializeArray(ptr, _types);
+    _serializeArray(ptr, _sectionTypes);
     _serializeArray(ptr, _perimeters);
     return data;
 }
 
-bool inline SerializableMorphology::_fromBinary(const void* data,
-                                                const size_t size)
+bool inline MorphologyPlugin::_fromBinary(const void* data, const size_t size)
 {
     const uint8_t* ptr = reinterpret_cast<const uint8_t*>(data);
     const uint8_t* const end = ptr + size;
     if (size < sizeof(MorphologyVersion) + sizeof(CellFamily))
         return false;
 
-    _version = *reinterpret_cast<const MorphologyVersion*>(ptr);
+    _data.version = *reinterpret_cast<const MorphologyVersion*>(ptr);
     ptr += sizeof(MorphologyVersion);
 
-    _family = *reinterpret_cast<const CellFamily*>(ptr);
+    _data.family = *reinterpret_cast<const CellFamily*>(ptr);
     ptr += sizeof(CellFamily);
 
     if (_deserializeArray(_points, ptr, end) &&
         _deserializeArray(_sections, ptr, end) &&
-        _deserializeArray(_types, ptr, end) &&
+        _deserializeArray(_sectionTypes, ptr, end) &&
         _deserializeArray(_perimeters, ptr, end))
     {
         return true;
     }
 
-    _points.reset();
-    _sections.reset();
-    _types.reset();
-    _perimeters.reset();
+    _points.clear();
+    _sections.clear();
+    _sectionTypes.clear();
+    _perimeters.clear();
     return false;
-}
 }
 }

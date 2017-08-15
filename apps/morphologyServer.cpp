@@ -5,7 +5,6 @@
  */
 
 #include <brion/constants.h>
-#include <brion/detail/serializableMorphology.h>
 #include <brion/morphology.h>
 #include <keyv/Map.h>
 #include <lunchbox/daemon.h>
@@ -54,8 +53,7 @@ int main(const int argc, char* argv[])
         }
         try
         {
-            brion::Morphology m(path);
-            const brion::detail::SerializableMorphology morphology{m};
+            const brion::Morphology morphology{brion::URI(path)};
             servus::Serializable::Data bin = morphology.toBinary();
             if (cache)
             {
@@ -67,7 +65,7 @@ int main(const int argc, char* argv[])
             else
                 std::cout << 'u' << std::flush;
 
-            return zeroeq::ReplyData(morphology.getTypeIdentifier(),
+            return zeroeq::ReplyData(brion::ZEROEQ_GET_MORPHOLOGY,
                                      morphology.toBinary().clone());
         }
         catch (const std::exception& e)

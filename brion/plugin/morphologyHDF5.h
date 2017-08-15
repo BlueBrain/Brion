@@ -23,8 +23,6 @@
 
 #include "../morphologyPlugin.h"
 
-#include <H5Cpp.h>
-
 namespace brion
 {
 namespace plugin
@@ -41,30 +39,8 @@ public:
     static bool handles(const MorphologyInitData& initData);
     static std::string getDescription();
 
-    Vector4fsPtr readPoints() final;
-    Vector2isPtr readSections() final;
-    SectionTypesPtr readSectionTypes() final;
-    floatsPtr readPerimeters() final;
-
 private:
-    H5::H5File _file;
-
-    H5::DataSet _points;
-    hsize_t _pointsDims[2];
-
-    H5::DataSet _sections;
-    hsize_t _sectionsDims[2];
-
-    std::string _stage;
-
-    void _checkVersion(const std::string& source);
-    void _selectRepairStage();
-
-    void _resolveV1();
-    bool _readV11Metadata();
-    bool _readV2Metadata();
-
-    H5::DataSet _getStructureDataSet(size_t nSections);
+    void load() final;
 };
 }
 }

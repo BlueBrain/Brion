@@ -22,11 +22,12 @@
 
 #include <brion/api.h>
 #include <brion/types.h>
-#include <vmmlib/vector.hpp> // return value
+#include <servus/serializable.h> // return value
+#include <vmmlib/vector.hpp>     // return value
 
 namespace brion
 {
-/** Read & write access to a Morphology file.
+/** Read access a Morphology file.
  *
  * Following RAII, this class is ready to use after the creation and will ensure
  * release of resources upon destruction.
@@ -37,72 +38,75 @@ public:
     /** Close morphology file. @version 1.0 */
     BRION_API ~Morphology();
 
+    BRION_API Morphology(const void* data, size_t size);
+    BRION_API Morphology(const Morphology&);
+    BRION_API Morphology& operator=(const Morphology&);
     BRION_API Morphology(Morphology&&);
     BRION_API Morphology& operator=(Morphology&&);
 
-    /**
-     * @name Read API
-     *
-     * Data returned by the read methods may or may not be cached by the
-     * implementation. If the returned vectors are modified this may be
-     * reflected in subsequent reads of the same data. Furthermore, calling read
-     * multiple times might be expensive. It is therefore recommended to call
-     * each read method at most once per instantiation.
-     */
+    /** @name Read API */
     //@{
-    /** Open the given source to a morphology file for reading.
+    /** Open the given source to a morphology file and parse it.
      *
-     * @param source filepath to morphology file
+     * The actual data loading happens in a background thread and is lazily
+     * finalised in any get method. It is therefore faster to construct a set
+     * of morphologies and then read their data over a serial construct-and-read
+     * approach.
+     *
+     * @param source URI to load the morphology
      * @throw std::runtime_error if file is not a valid morphology file
-     * @version 1.0
+     * @version 3.0
      */
-    BRION_API explicit Morphology(const std::string& source);
+    BRION_API explicit Morphology(const URI& source);
 
     /** @return the cell family of that morphology. @version 1.8 */
     BRION_API CellFamily getCellFamily() const;
 
-    /** Read points of morphology, representing x,y,z coordinates + diameter.
+    /** Get points of morphology, representing x,y,z coordinates + diameter.
      *
      * @return x,y,z coords + diameter of all points of the morphology
-     * @version 1.0
+     * @version 3.0
      */
-    BRION_API Vector4fsPtr readPoints();
+    BRION_API Vector4fs& getPoints();
+    BRION_API const Vector4fs& getPoints() const;
 
-    /** Read sections of morphology, representing section start index and index
+    /** Get sections of morphology, representing section start index and index
      *  of the parent section.
      *
      * @return First point and parent indices of all the sections of the
      *         morphology.
-     * @version 1.0
+     * @version 3.0
      */
-    BRION_API Vector2isPtr readSections();
+    BRION_API Vector2is& getSections();
+    BRION_API const Vector2is& getSections() const;
 
-    /** Read section types of morphology.
+    /** Get section types of morphology.
      *
      * @return type of all sections of the morphology
-     * @version 1.0
+     * @version 3.0
      */
-    BRION_API SectionTypesPtr readSectionTypes();
+    BRION_API SectionTypes& getSectionTypes();
+    BRION_API const SectionTypes& getSectionTypes() const;
 
     /**
      * @return perimeters of the cross sections for each point of the morphology
      *         in micrometers.
      * @throw std::runtime_error if empty for FAMILY_GLIA
-     * @version 1.8
+     * @version 3.0
      */
-    BRION_API floatsPtr readPerimeters();
+    BRION_API floats& getPerimeters();
+    BRION_API const floats& getPerimeters() const;
 
     /** @internal */
     BRION_API MorphologyVersion getVersion() const;
 
     /** @internal */
     const MorphologyInitData& getInitData() const;
-    //@}
+
+    servus::Serializable::Data toBinary() const; //!< @internal
+                                                 //@}
 
 private:
-    Morphology(const Morphology&) = delete;
-    Morphology& operator=(const Morphology&) = delete;
-
     class Impl;
     std::unique_ptr<Impl> _impl;
 };
