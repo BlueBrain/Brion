@@ -67,14 +67,6 @@ bool _deserializeArray(std::vector<T>& dst, const uint8_t*& src,
 }
 }
 
-inline MorphologyPlugin::MorphologyPlugin(const void* data, const size_t size)
-    : _data({})
-{
-    if (!_fromBinary(data, size))
-        LBTHROW(std::runtime_error(
-            "Failed to construct morphology from binary data"));
-}
-
 servus::Serializable::Data inline MorphologyPlugin::_toBinary() const
 {
     servus::Serializable::Data data;

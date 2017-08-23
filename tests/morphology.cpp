@@ -147,6 +147,37 @@ BOOST_AUTO_TEST_CASE(h5_read_v2)
     _checkH5V2(morphology);
 }
 
+BOOST_AUTO_TEST_CASE(copy_morphology)
+{
+    boost::filesystem::path path(BBP_TESTDATA);
+    path /= "local/morphologies/14.07.10_repaired/v2/C010398B-P2.h5";
+
+    const brion::Morphology morphology{brion::URI(path.string())};
+    const brion::Morphology copy(morphology);
+
+    boost::filesystem::path v1(BBP_TESTDATA);
+    v1 /= "local/morphologies/01.07.08/h5/R-C010306G.h5";
+    brion::Morphology assign{brion::URI(v1.string())};
+    assign = copy;
+
+    _checkH5V2(morphology);
+    _checkH5V2(copy);
+    _checkH5V2(assign);
+}
+
+BOOST_AUTO_TEST_CASE(move_morphology)
+{
+    boost::filesystem::path path(BBP_TESTDATA);
+    path /= "local/morphologies/14.07.10_repaired/v2/C010398B-P2.h5";
+
+    brion::Morphology morphology{brion::URI(path.string())};
+    const brion::Morphology move(std::move(morphology));
+    _checkH5V2(move);
+
+    morphology = std::move(move);
+    _checkH5V2(morphology);
+}
+
 #ifdef BRION_USE_ZEROEQ
 BOOST_AUTO_TEST_CASE(zeroeq_read)
 {

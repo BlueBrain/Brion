@@ -141,20 +141,6 @@ struct Loader
     {
         try
         {
-            const H5::Group& root = file.openGroup(_g_root);
-            const H5::Attribute& attr = root.openAttribute(_a_version);
-
-            attr.read(H5::PredType::NATIVE_INT, &initData.version);
-
-            if (initData.version == MORPHOLOGY_VERSION_H5_2)
-                return true;
-        }
-        catch (const H5::Exception&)
-        {
-        }
-
-        try
-        {
             file.openGroup(_g_root);
             initData.version = MORPHOLOGY_VERSION_H5_2;
             return true;

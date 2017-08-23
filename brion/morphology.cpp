@@ -54,8 +54,11 @@ public:
     }
 
     BinaryMorphology(const void* data, size_t size)
-        : MorphologyPlugin(data, size)
+        : MorphologyPlugin(MorphologyInitData({}))
     {
+        if (!fromBinary(data, size))
+            LBTHROW(std::runtime_error(
+                "Failed to construct morphology from binary data"));
     }
 
     void load() final { /*NOP*/}
@@ -70,6 +73,13 @@ public:
     explicit Impl(const MorphologyInitData& initData)
         : plugin(MorphologyPluginFactory::getInstance().create(initData))
     {
+        loadFuture = _getWorkers().post([&] {
+            plugin->load();
+            if (plugin->getPoints().empty())
+                LBTHROW(std::runtime_error(
+                    "Failed to load morphology " +
+                    std::to_string(plugin->getInitData().getURI())));
+        });
     }
 
     Impl(const Morphology& from)
@@ -80,6 +90,22 @@ public:
     Impl(const void* data, size_t size)
         : plugin(new BinaryMorphology(data, size))
     {
+    }
+
+    ~Impl()
+    {
+        try
+        {
+            finishLoad();
+        }
+        catch (const std::exception& e)
+        {
+            LBERROR << e.what() << std::endl;
+        }
+        catch (...)
+        {
+            LBERROR << "Unknown exception during load" << std::endl;
+        }
     }
 
     void finishLoad() const
@@ -100,12 +126,6 @@ public:
 Morphology::Morphology(const URI& source)
     : _impl(new Impl(MorphologyInitData(source)))
 {
-    _impl->loadFuture = _getWorkers().post([&] {
-        _impl->plugin->load();
-        if (_impl->plugin->getPoints().empty())
-            LBTHROW(std::runtime_error("Failed to load morphology " +
-                                       std::to_string(source)));
-    });
 }
 
 Morphology::Morphology(const void* data, size_t size)
@@ -130,14 +150,6 @@ Morphology& Morphology::operator=(Morphology&&) = default;
 
 Morphology::~Morphology()
 {
-    try
-    {
-        _impl->finishLoad();
-    }
-    catch (const std::exception& e)
-    {
-        LBERROR << e.what() << std::endl;
-    }
 }
 
 CellFamily Morphology::getCellFamily() const

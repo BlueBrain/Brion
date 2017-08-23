@@ -102,22 +102,20 @@ public:
     {
     }
 
-    MorphologyPlugin(const void* data, size_t size);
-
     virtual ~MorphologyPlugin() {}
     /** Load all data of the morphology.
      *  Needs to be thread-safe wrt other instances. May throw std::exception.
      */
     virtual void load() = 0;
 
-    /** @copydoc brion::Morphology::getInitData */
+    /** @internal */
     InitDataT& getInitData() { return _data; }
     const InitDataT& getInitData() const { return _data; }
 
     /** @copydoc brion::Morphology::getCellFamily */
     CellFamily getCellFamily() const { return _data.family; }
 
-    /** @copydoc brion::Morphology::getVersion */
+    /** @internal */
     MorphologyVersion getVersion() const { return _data.version; }
 
     /** @copydoc brion::Morphology::getPoints */
