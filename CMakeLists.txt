@@ -1,11 +1,11 @@
-# Copyright (c) 2013-2016, EPFL/Blue Brain Project
+# Copyright (c) 2013-2017, EPFL/Blue Brain Project
 #                          Daniel Nachbaur <daniel.nachbaur@epfl.ch>
 #
 # This file is part of Brion <https://github.com/BlueBrain/Brion>
 #
 
 cmake_minimum_required(VERSION 3.1 FATAL_ERROR)
-project(Brion VERSION 2.1.0)
+project(Brion VERSION 3.0.0)
 set(Brion_VERSION_ABI 9)
 
 list(APPEND CMAKE_MODULE_PATH ${PROJECT_SOURCE_DIR}/CMake

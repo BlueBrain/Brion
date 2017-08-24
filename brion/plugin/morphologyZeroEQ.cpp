@@ -63,6 +63,10 @@ public:
     bool receive()
     {
         std::lock_guard<std::mutex> lock(_mutex);
+        // While this is polling, it has shown to be the fastest implementation
+        // since the ctor is not blocked for an arbitrary amount of time, and
+        // different load threads get an early chance to do work since the
+        // handler function unlocks during deserialization.
         return _client.receive(0);
     }
 

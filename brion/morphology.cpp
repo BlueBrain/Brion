@@ -104,7 +104,7 @@ public:
         }
         catch (...)
         {
-            LBERROR << "Unknown exception during load" << std::endl;
+            LBERROR << "Unknown exception during morphology load" << std::endl;
         }
     }
 
@@ -114,7 +114,6 @@ public:
         if (!loadFuture.valid())
             return;
 
-        loadFuture.wait();
         loadFuture.get();
     }
 
