@@ -22,10 +22,10 @@
 #include "synapseSummary.h"
 
 #include "detail/lockHDF5.h"
-#include "detail/silenceHDF5.h"
 
 #include <highfive/H5DataSet.hpp>
 #include <highfive/H5File.hpp>
+#include <highfive/util.hpp>
 
 #include <boost/lexical_cast.hpp>
 
@@ -50,7 +50,7 @@ public:
 
         try
         {
-            SilenceHDF5 silence;
+            HighFive::SilenceHDF5 silence;
             _file.reset(
                 new HighFive::File(source, H5F_ACC_RDONLY, H5P_DEFAULT));
         }
@@ -63,7 +63,7 @@ public:
 
         try
         {
-            // SilenceHDF5 silence;
+            HighFive::SilenceHDF5 silence;
             const std::string& datasetName = _file->getObjectName(0);
             const uint32_t gid =
                 boost::lexical_cast<uint32_t>(datasetName.substr(1));
@@ -109,7 +109,7 @@ private:
 
         try
         {
-            SilenceHDF5 silence;
+            HighFive::SilenceHDF5 silence;
             _dataset.reset(
                 new HighFive::DataSet(_file->getDataSet(name.str())));
         }

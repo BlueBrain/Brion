@@ -22,7 +22,6 @@
 
 #include "../detail/lockHDF5.h"
 #include "../detail/morphologyHDF5.h"
-#include "../detail/silenceHDF5.h"
 #include "../detail/utilsHDF5.h"
 
 #include <brion/version.h>
@@ -32,6 +31,8 @@
 #include <lunchbox/scopedMutex.h>
 
 #include <highfive/H5DataSet.hpp>
+#include <highfive/H5File.hpp>
+#include <highfive/util.hpp>
 
 namespace brion
 {
@@ -53,7 +54,7 @@ struct Loader
 
         try
         {
-            detail::SilenceHDF5 silence;
+            HighFive::SilenceHDF5 silence;
             _file.reset(new HighFive::File(path, HighFive::File::ReadOnly));
         }
         catch (const HighFive::FileException& exc)
@@ -126,7 +127,7 @@ private:
         {
             try
             {
-                detail::SilenceHDF5 silence;
+                HighFive::SilenceHDF5 silence;
                 _file->getDataSet("/" + _g_root + "/" + stage + "/" +
                                   _d_points);
                 _stage = stage;
@@ -141,7 +142,7 @@ private:
 
     void _resolveV1()
     {
-        detail::SilenceHDF5 silence;
+        HighFive::SilenceHDF5 silence;
         _points.reset(
             new HighFive::DataSet(_file->getDataSet("/" + _d_points)));
         auto dataspace = _points->getSpace();
@@ -172,7 +173,7 @@ private:
     {
         try
         {
-            detail::SilenceHDF5 silence;
+            HighFive::SilenceHDF5 silence;
             const auto metadata = _file->getGroup(_g_metadata);
             const auto attr = metadata.getAttribute(_a_version);
 
@@ -209,7 +210,7 @@ private:
     {
         try
         {
-            detail::SilenceHDF5 silence;
+            HighFive::SilenceHDF5 silence;
             const auto root = _file->getGroup(_g_root);
             const auto attr = root.getAttribute(_a_version);
             attr.read(_initData.version);
@@ -222,7 +223,7 @@ private:
 
         try
         {
-            detail::SilenceHDF5 silence;
+            HighFive::SilenceHDF5 silence;
             _file->getGroup(_g_root);
             _initData.version = MORPHOLOGY_VERSION_H5_2;
             return true;
@@ -237,7 +238,7 @@ private:
     {
         try
         {
-            detail::SilenceHDF5 silence;
+            HighFive::SilenceHDF5 silence;
             return _file->getDataSet(_d_structure);
         }
         catch (const HighFive::DataSetException&)
@@ -369,7 +370,7 @@ private:
 
         try
         {
-            detail::SilenceHDF5 silence;
+            HighFive::SilenceHDF5 silence;
             HighFive::DataSet dataset = _file->getDataSet(_d_perimeters);
 
             auto dims = dataset.getSpace().getDimensions();

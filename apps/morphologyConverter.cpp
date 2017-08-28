@@ -5,7 +5,6 @@
 
 #include <brion/brion.h>
 #include <brion/detail/morphologyHDF5.h>
-#include <brion/detail/silenceHDF5.h>
 #include <brion/detail/utilsHDF5.h>
 
 #include <lunchbox/clock.h>
@@ -123,7 +122,8 @@ void _writeMetadata(HighFive::File& file, const brion::CellFamily& family)
     H5Tenum_insert(familyEnum.getId(), "GLIA", &enumValue);
 
     auto familyAttr =
-        metadata.createAttribute(_a_family, HighFive::DataSpace({1}),
+        metadata.createAttribute(_a_family,
+                                 HighFive::DataSpace(std::vector<size_t>({1})),
                                  familyEnum);
     H5Awrite(familyAttr.getId(), familyEnum.getId(), &family);
 
@@ -146,8 +146,8 @@ void _writeMetadata(HighFive::File& file, const brion::CellFamily& family)
     brion::detail::addStringAttribute(metadata, _a_creation_time,
                                       creation_time);
 
-    auto version = metadata.createAttribute<uint32_t>(_a_version,
-                                                      HighFive::DataSpace({2}));
+    auto version = metadata.createAttribute<uint32_t>(
+        _a_version, HighFive::DataSpace(std::vector<size_t>({2})));
     version.write(std::vector<uint32_t>{1, 1});
 }
 
@@ -182,7 +182,8 @@ void _writePerimeters(HighFive::File& file, const brion::floats& perimeters)
     if (perimeters.empty())
         return;
 
-    const auto dspace = HighFive::DataSpace({perimeters.size()});
+    const auto dspace =
+        HighFive::DataSpace(std::vector<size_t>({perimeters.size()}));
     auto dataset = file.createDataSet<float>(_d_perimeters, dspace);
     dataset.write(perimeters);
 }

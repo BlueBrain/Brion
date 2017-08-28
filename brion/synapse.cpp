@@ -22,10 +22,10 @@
 
 #include "synapse.h"
 #include "detail/lockHDF5.h"
-#include "detail/silenceHDF5.h"
 
 #include <highfive/H5DataSet.hpp>
 #include <highfive/H5File.hpp>
+#include <highfive/util.hpp>
 
 #include <boost/filesystem.hpp>
 #include <boost/lexical_cast.hpp>
@@ -47,7 +47,7 @@ namespace
 struct Dataset
 {
     std::unique_ptr<HighFive::DataSet> dataset;
-    std::vector<size_t> dims;
+    std::pair<size_t, size_t> dims;
 };
 
 bool _openDataset(const HighFive::File& file, const std::string& name,
@@ -55,7 +55,7 @@ bool _openDataset(const HighFive::File& file, const std::string& name,
 {
     try
     {
-        SilenceHDF5 silence;
+        HighFive::SilenceHDF5 silence;
         dataset.dataset.reset(new HighFive::DataSet(file.getDataSet(name)));
     }
     catch (const HighFive::DataSetException&)
@@ -65,13 +65,15 @@ bool _openDataset(const HighFive::File& file, const std::string& name,
         return false;
     }
 
-    dataset.dims = dataset.dataset->getSpace().getDimensions();
+    auto dims = dataset.dataset->getSpace().getDimensions();
 
-    if (dataset.dims.size() != 2)
+    if (dims.size() != 2)
     {
         LBERROR << "Synapse dataset is not 2 dimensional" << std::endl;
         return false;
     }
+    dataset.dims = std::make_pair(dims[0], dims[1]);
+
     return true;
 }
 }
@@ -87,7 +89,7 @@ public:
 
         try
         {
-            SilenceHDF5 silence;
+            HighFive::SilenceHDF5 silence;
             _file.reset(new HighFive::File(source, H5F_ACC_RDONLY));
         }
         catch (const HighFive::FileException& exc)
@@ -102,7 +104,7 @@ public:
             LBTHROW(std::runtime_error("Cannot open dataset " + datasetName +
                                        " in synapse file " + source));
 
-        _numAttributes = dataset.dims[1];
+        _numAttributes = dataset.dims.second;
         if (_numAttributes != SYNAPSE_ALL &&
             _numAttributes != SYNAPSE_POSITION_ALL &&
             _numAttributes != SYNAPSE_OLD_POSITION_ALL &&
@@ -131,7 +133,7 @@ public:
             return SynapseMatrix();
 
         std::vector<size_t> columns;
-        columns.reserve(32);
+        columns.reserve(SYNAPSE_ALL);
         for (size_t i = 0; i < bits.size(); ++i)
         {
             if (bits.test(i))
@@ -139,7 +141,7 @@ public:
         }
         const auto selection = dataset.dataset->select(columns);
 
-        SynapseMatrix values(boost::extents[dataset.dims[0]][bits.count()]);
+        SynapseMatrix values(boost::extents[dataset.dims.first][bits.count()]);
         selection.read(values);
         return values;
     }
@@ -154,7 +156,7 @@ public:
             Dataset dataset;
             if (!_openDataset(gid, dataset))
                 continue;
-            numSynapses += dataset.dims[0];
+            numSynapses += dataset.dims.first;
         }
         return numSynapses;
     }
@@ -262,13 +264,13 @@ public:
 
         try
         {
-            SilenceHDF5 silence;
+            HighFive::SilenceHDF5 silence;
             HighFive::File file(filename, H5F_ACC_RDONLY);
             Dataset dataset;
             if (!_openDataset(file, file.getObjectName(0), dataset))
                 LBTHROW(std::runtime_error(
                     "Cannot open dataset in synapse file " + filename));
-            return dataset.dims[1];
+            return dataset.dims.second;
         }
         catch (const HighFive::FileException& exc)
         {
@@ -375,7 +377,7 @@ private:
         // to HDF5
 
         lunchbox::ScopedWrite mutex(detail::hdf5Lock());
-        SilenceHDF5 silence;
+        HighFive::SilenceHDF5 silence;
 
         // this trial-and-error is the 'fastest' path found
         for (const std::string& candidate : _fileNames)

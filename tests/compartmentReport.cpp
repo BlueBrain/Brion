@@ -411,10 +411,7 @@ BOOST_AUTO_TEST_CASE(test_write_hdf5)
         {
         }
 
-        ~Fixture()
-        {
-            // boost::filesystem::remove(lexical_cast<std::string>(h5));
-        }
+        ~Fixture() { boost::filesystem::remove(lexical_cast<std::string>(h5)); }
         boost::filesystem::path temp;
         const brion::URI h5;
     } fixture;

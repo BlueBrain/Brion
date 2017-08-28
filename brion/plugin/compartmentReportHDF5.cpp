@@ -19,12 +19,13 @@
 
 #include "compartmentReportHDF5.h"
 #include "../detail/lockHDF5.h"
-#include "../detail/silenceHDF5.h"
 #include "../detail/utilsHDF5.h"
 #include <brion/version.h>
 
 #include <boost/filesystem.hpp>
 #include <boost/scoped_array.hpp>
+
+#include <highfive/util.hpp>
 
 #include <lunchbox/debug.h>
 #include <lunchbox/log.h>
@@ -121,7 +122,7 @@ CompartmentReportHDF5::CompartmentReportHDF5(
 
     {
         lunchbox::ScopedWrite mutex(detail::hdf5Lock());
-
+        HighFive::SilenceHDF5 silence;
         namespace fs = boost::filesystem;
 
         if (accessMode & MODE_WRITE)
@@ -221,7 +222,7 @@ bool CompartmentReportHDF5::_loadFrame(const size_t frameNumber,
         const auto& selection =
             dataset.select({frameNumber, 0}, {1, compartments});
 
-        // Deceiving HighFive into beleiving this is a two dimensional buffer
+        // Deceiving HighFive into believing this is a two dimensional buffer
         float* ptr = buffer + destOffset;
         selection.read(ptr);
 
@@ -294,7 +295,7 @@ void CompartmentReportHDF5::updateMapping(const GIDSet& gids)
         }
 
         boost::scoped_array<float> buffer(new float[dims[1]]);
-        float* ptr = buffer.get(); // HighFive is picky with argument passing
+        float* ptr = buffer.get(); // HighFive requires an l-value for read
         dataset.read(ptr);
 
         // Getting the last section id;
@@ -403,9 +404,9 @@ bool CompartmentReportHDF5::writeCompartments(const uint32_t gid,
         dataset.write(mapping);
         return true;
     }
-    catch (HighFive::Exception& e)
+    catch (const HighFive::Exception& e)
     {
-        LBERROR << "CompartmenrReportHDF5: error writing mapping: " << e.what()
+        LBERROR << "CompartmentReportHDF5: error writing mapping: " << e.what()
                 << std::endl;
     }
     return false;
@@ -427,9 +428,9 @@ bool CompartmentReportHDF5::writeFrame(const uint32_t gid, const float* values,
         selection.write(const_cast<float*>(values));
         return true;
     }
-    catch (HighFive::Exception& e)
+    catch (const HighFive::Exception& e)
     {
-        LBERROR << "CompartmenrReportHDF5: error writing frame: " << e.what()
+        LBERROR << "CompartmentReportHDF5: error writing frame: " << e.what()
                 << std::endl;
     }
     return false;
@@ -457,12 +458,12 @@ void CompartmentReportHDF5::_openFile(const uint32_t cellID)
 
     try
     {
-        detail::SilenceHDF5 silence;
+        HighFive::SilenceHDF5 silence;
         _files.emplace(
             std::make_pair(cellID, HighFive::File(filename.string().c_str(),
                                                   H5F_ACC_RDONLY)));
     }
-    catch (HighFive::FileException&)
+    catch (const HighFive::FileException&)
     {
         LBTHROW(std::runtime_error(
             "CompartmentReportHDF5: error opening file:" + filename.string()));
@@ -481,7 +482,7 @@ HighFive::DataSet CompartmentReportHDF5::_openDataset(
         {
             return file.getDataSet(datasetName);
         }
-        catch (HighFive::DataSetException)
+        catch (const HighFive::DataSetException&)
         {
             LBTHROW(std::runtime_error("CompartmentReportHDF5: Dataset " +
                                        datasetName + " not found in file: " +
@@ -550,7 +551,7 @@ void CompartmentReportHDF5::_readMetaData(const HighFive::File& file)
 
     try
     {
-        detail::SilenceHDF5 silence;
+        HighFive::SilenceHDF5 silence;
         const std::string& datasetName = file.getObjectName(0);
         const auto& reportGroup = file.getGroup(datasetName);
         _reportName = reportGroup.getObjectName(0);
@@ -566,7 +567,7 @@ void CompartmentReportHDF5::_readMetaData(const HighFive::File& file)
         _dunit = "mV";
         _tunit = "ms";
     }
-    catch (HighFive::Exception&)
+    catch (const HighFive::Exception&)
     {
         LBTHROW(std::runtime_error(_path.string() +
                                    " not a valid H5 compartment report file"));
@@ -599,12 +600,13 @@ void CompartmentReportHDF5::_createMappingAttributes(HighFive::DataSet& dataset)
     detail::addStringAttribute(dataset, mappingAttributes[0], type);
     for (int i = 1; i < 6; ++i)
         dataset.createAttribute<int>(mappingAttributes[i],
-                                     HighFive::DataSpace({1}));
+                                     HighFive::DataSpace(
+                                         std::vector<size_t>({1})));
 }
 
 void CompartmentReportHDF5::_createDataAttributes(HighFive::DataSet& dataset)
 {
-    HighFive::DataSpace scalar({1});
+    HighFive::DataSpace scalar(std::vector<size_t>({1}));
 
     auto attribute =
         dataset.createAttribute<int32_t>(dataAttributes[0], scalar);

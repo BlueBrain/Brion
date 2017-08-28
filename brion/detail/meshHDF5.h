@@ -22,10 +22,10 @@
 #define BRION_DETAIL_MESHHDF5
 
 #include "mesh.h"
-#include "silenceHDF5.h"
 #include "utilsHDF5.h"
 
 #include <highfive/H5File.hpp>
+#include <highfive/util.hpp>
 
 #include <boost/lexical_cast.hpp>
 #include <lunchbox/debug.h>
@@ -66,7 +66,7 @@ public:
     {
         try
         {
-            SilenceHDF5 silence;
+            HighFive::SilenceHDF5 silence;
             _file.getDataSet("/membrane/mesh/vertices");
         }
         catch (HighFive::DataSetException)
@@ -81,7 +81,7 @@ public:
         , _file([source, overwrite] {
             try
             {
-                SilenceHDF5 silence;
+                HighFive::SilenceHDF5 silence;
                 return HighFive::File(source,
                                       overwrite ? H5F_ACC_TRUNC : H5F_ACC_EXCL);
             }
@@ -135,7 +135,6 @@ public:
 
     virtual uint32_tsPtr readTriangles() const
     {
-        return uint32_tsPtr();
         const auto dataset = _file.getDataSet("/membrane/mesh/triangles/soup");
         uint32_tsPtr buffer(new uint32_ts);
         buffer->resize(_numElements(dataset) * 3);
@@ -145,7 +144,6 @@ public:
 
     virtual uint16_tsPtr readTriangleSections() const
     {
-        return uint16_tsPtr();
         const auto dataset =
             _file.getDataSet("/membrane/mesh/mappings/triangle/section_ids");
         uint16_tsPtr buffer(new uint16_ts);
