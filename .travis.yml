@@ -5,6 +5,7 @@ language: cpp
 sudo: false
 os:
   - osx
+  - osgx_image: xcode9.1
 env:
   global:
     - NINJA_STATUS="[%p %u/%t@%o %r]"
