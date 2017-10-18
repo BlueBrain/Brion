@@ -34,13 +34,17 @@
 #include <brion/synapseSummary.h>
 #include <brion/target.h>
 
-#include <keyv/Map.h>
+#include <lunchbox/debug.h>
 #include <lunchbox/lockable.h>
 #include <lunchbox/log.h>
 #include <lunchbox/scopedMutex.h>
 
-#include <highfive/H5Utility.hpp>
+#ifdef BRAIN_USE_KEYV
+#include <keyv/Map.h>
+#endif
+
 #ifdef BRAIN_USE_MVD3
+#include <highfive/H5Utility.hpp>
 #include <mvd/mvd3.hpp>
 #include <mvd/mvd_generic.hpp>
 #endif
@@ -162,6 +166,7 @@ using CachedMorphologies =
 using CachedSynapses = std::unordered_map<std::string, brion::SynapseMatrix>;
 } // namespace
 
+#ifdef BRAIN_USE_KEYV
 class SynapseCache
 {
 public:
@@ -251,7 +256,15 @@ private:
     keyv::MapPtr _cache;
     std::string _synapsePath;
 };
+#else
+class SynapseCache
+{
+public:
+    operator bool() const { return false; }
+};
+#endif
 
+#ifdef BRAIN_USE_KEYV
 class MorphologyCache
 {
 public:
@@ -358,6 +371,13 @@ private:
     keyv::MapPtr _cache;
     const std::string _circuitPath;
 };
+#else
+class MorphologyCache
+{
+public:
+    operator bool() const { return false; }
+};
+#endif
 
 class Circuit::Impl
 {
@@ -745,9 +765,11 @@ public:
         : _morphologySource(config.getMorphologySource())
         , _synapseSource(config.getSynapseSource())
         , _targets(config)
+#ifdef BRAIN_USE_KEYV
         , _cache(keyv::Map::createCache())
         , _morphologyCache(_cache, config.getCircuitSource())
         , _synapseCache(_cache, _synapseSource)
+#endif
     {
         for (auto&& projection :
              config.getSectionNames(brion::CONFIGSECTION_PROJECTION))
@@ -862,7 +884,9 @@ public:
     const brion::URI _synapseSource;
     std::unordered_map<std::string, brion::URI> _afferentProjectionSources;
     Targets _targets;
+#ifdef BRAIN_USE_KEYV
     keyv::MapPtr _cache;
+#endif
     mutable MorphologyCache _morphologyCache;
     mutable SynapseCache _synapseCache;
 

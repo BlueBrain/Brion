@@ -33,7 +33,7 @@ common_find_package(Boost REQUIRED COMPONENTS
   date_time filesystem iostreams program_options regex system unit_test_framework)
 common_find_package(Boost COMPONENTS python${USE_BOOST_PYTHON_VERSION})
 common_find_package(HighFive REQUIRED)
-common_find_package(Keyv REQUIRED)
+common_find_package(Keyv)
 common_find_package(Lunchbox REQUIRED)
 common_find_package(MVDTool)
 common_find_package(NumPy 1.7)

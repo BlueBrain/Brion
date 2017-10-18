@@ -10,8 +10,12 @@ env:
     - NINJA_STATUS="[%p %u/%t@%o %r]"
     - PROJECT_NAME=${PWD##*/}
   matrix:
-  - BUILD_TYPE=Debug
-  - BUILD_TYPE=Release
+    - BUILD_TYPE=Debug OPTIONAL=ON
+    - BUILD_TYPE=Release OPTIONAL=ON
+    - BUILD_TYPE=Debug OPTIONAL=OFF
+    - BUILD_TYPE=Release OPTIONAL=OFF
+matrix:
+  fast_finish: true
 before_install:
   - brew update
   - brew outdated cmake || brew upgrade cmake
@@ -25,5 +29,5 @@ before_install:
 script:
   - mkdir $BUILD_TYPE
   - cd $BUILD_TYPE
-  - HDF5_ROOT=/usr/local/opt/hdf5 cmake -GNinja -DCLONE_SUBPROJECTS=ON -DCMAKE_INSTALL_PREFIX=$PWD/install -DCMAKE_BUILD_TYPE=$BUILD_TYPE ..
+  - HDF5_ROOT=/usr/local/opt/hdf5 cmake -GNinja -DCLONE_SUBPROJECTS=ON  -DSUBPROJECT_Keyv=$OPTIONAL -DCMAKE_INSTALL_PREFIX=$PWD/install -DCMAKE_BUILD_TYPE=$BUILD_TYPE ..
   - ninja all && ninja $PROJECT_NAME-tests && ninja smoketests
