@@ -58,6 +58,7 @@ void _allocate(T& data, const size_t size)
     // cppcheck-suppress memleak
 }
 
+#ifdef BRAIN_USE_KEYV
 bool _hasSurfacePositions(const Circuit::Impl& circuit)
 {
     const auto& synapse = circuit.getSynapsePositions(true);
@@ -65,6 +66,7 @@ bool _hasSurfacePositions(const Circuit::Impl& circuit)
            synapse.getNumAttributes() == brion::SYNAPSE_POSITION_ALL);
     return synapse.getNumAttributes() == brion::SYNAPSE_POSITION_ALL;
 }
+#endif
 }
 
 struct Synapses::Impl : public Synapses::BaseImpl
@@ -233,6 +235,7 @@ struct Synapses::Impl : public Synapses::BaseImpl
         Strings keys;
         CachedSynapses loaded;
 
+#if BRAIN_USE_KEYV
         auto cache = _circuit->getSynapseCache();
         if (cache)
         {
@@ -240,6 +243,9 @@ struct Synapses::Impl : public Synapses::BaseImpl
             loaded =
                 cache->loadPositions(keys, _hasSurfacePositions(*_circuit));
         }
+#else
+        const bool cache = false;
+#endif
 
         // delay the opening of the synapse file as much as possible, even
         // though the code looks ugly... As the circuit impl keeps the file
@@ -270,12 +276,14 @@ struct Synapses::Impl : public Synapses::BaseImpl
             const brion::SynapseMatrix pos =
                 cached ? it->second : readFromFile();
 
+#ifdef BRAIN_USE_KEYV
             if (cache)
             {
                 if (!cached)
                     cache->savePositions(gid, *key, pos);
                 ++key;
             }
+#endif
 
             for (size_t j = 0; j < pos.size(); ++j)
             {

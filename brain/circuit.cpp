@@ -24,6 +24,9 @@
 #include "detail/circuit.h"
 
 #include "synapsesStream.h"
+
+#include <servus/uint128_t.h>
+
 #include <boost/algorithm/string.hpp>
 
 namespace brain
@@ -85,7 +88,11 @@ public:
         // needs recentering or not. This is only the case for local
         // morphologies.
         const Strings keys = _getKeys(gids, uris, coords);
+#ifdef BRAIN_USE_KEYV
         CachedMorphologies cached = _loadFromCache(keys);
+#else
+        CachedMorphologies cached;
+#endif
 
         struct MorphologyUse
         {
@@ -183,9 +190,11 @@ public:
                 morphology.reset(new neuron::Morphology(raw));
             }
 
+#ifdef BRAIN_USE_KEYV
             // Saving to the cache.
             if (_cache)
                 _cache->save(uri.getPath(), key, morphology);
+#endif
             // Assigning the morphology to its entry in the cache
             value = morphology;
             result.push_back(morphology);
@@ -217,15 +226,14 @@ private:
     Strings _getKeys(const GIDSet& gids, const URIs& uris,
                      const Circuit::Coordinates coords)
     {
-        const bool transform = coords == Circuit::Coordinates::global;
-
         // < GID, key >
         Strings keys;
         if (_cache)
         {
+#ifdef BRAIN_USE_KEYV
             // In the case of recentering of morphologies is needed, the keys
             // already encode that.
-            if (transform)
+            if (coords == Circuit::Coordinates::global)
                 keys = _cache->createKeys(uris, gids);
             else
             {
@@ -237,6 +245,10 @@ private:
                 else
                     keys = _cache->createKeys(uris);
             }
+#else
+            (void)gids;
+            (void)coords;
+#endif
         }
         else
         {
@@ -265,6 +277,7 @@ private:
         return keys;
     }
 
+#ifdef BRAIN_USE_KEYV
     /** Loads keys from cache and recenters morphologies when needed.
         The output morphologies are final. */
     CachedMorphologies _loadFromCache(const Strings& keys)
@@ -277,6 +290,7 @@ private:
             keySet.insert(key);
         return _cache->load(keySet);
     }
+#endif
 
     void _recenterMorphology(brion::Morphology& morphology)
     {

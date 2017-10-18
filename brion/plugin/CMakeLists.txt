@@ -10,7 +10,6 @@ set(BRIONPLUGINS_HEADERS
   compartmentReportDummy.h
   compartmentReportHDF5.h
   compartmentReportLegacyHDF5.h
-  compartmentReportMap.h
   morphologyHDF5.h
   morphologySWC.h
   spikeReportASCII.h
@@ -27,7 +26,6 @@ set(BRIONPLUGINS_SOURCES
   compartmentReportDummy.cpp
   compartmentReportHDF5.cpp
   compartmentReportLegacyHDF5.cpp
-  compartmentReportMap.cpp
   morphologyHDF5.cpp
   morphologySWC.cpp
   spikeReportASCII.cpp
@@ -39,7 +37,7 @@ set(BRIONPLUGINS_SOURCES
 )
 
 set(BRIONPLUGINS_LINK_LIBRARIES
-  PRIVATE Lunchbox Keyv Servus vmmlib HighFive ${Boost_FILESYSTEM_LIBRARIES}
+  PRIVATE Lunchbox Servus vmmlib HighFive ${Boost_FILESYSTEM_LIBRARIES}
           ${Boost_REGEX_LIBRARIES} ${Boost_IOSTREAMS_LIBRARIES}
           ${CMAKE_THREADS_LIB_INIT}
 )
@@ -47,7 +45,13 @@ set(BRIONPLUGINS_LINK_LIBRARIES
 if(BRION_USE_ZEROEQ AND TARGET ZeroEQ)
   list(APPEND BRIONPLUGINS_HEADERS morphologyZeroEQ.h)
   list(APPEND BRIONPLUGINS_SOURCES morphologyZeroEQ.cpp)
-  list(APPEND BRIONPLUGINS_LINK_LIBRARIES ZeroEQ)
+  list(APPEND BRIONPLUGINS_LINK_LIBRARIES PRIVATE ZeroEQ)
+endif()
+
+if(BRION_USE_KEYV AND TARGET Keyv)
+  list(APPEND BRIONPLUGINS_HEADERS compartmentReportMap.h)
+  list(APPEND BRIONPLUGINS_SOURCES compartmentReportMap.cpp)
+  list(APPEND BRIONPLUGINS_LINK_LIBRARIES PRIVATE Keyv)
 endif()
 
 set(BRIONPLUGINS_OMIT_LIBRARY_HEADER ON)
