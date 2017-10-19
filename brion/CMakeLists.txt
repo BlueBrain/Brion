@@ -67,7 +67,7 @@ set(BRION_PUBLIC_INCLUDE_DIRECTORIES ${Boost_INCLUDE_DIRS})
 set(BRION_LINK_LIBRARIES
   PUBLIC Servus vmmlib
   PRIVATE Lunchbox HighFive ${_plugin_lib} ${Boost_FILESYSTEM_LIBRARIES}
-          ${Boost_REGEX_LIBRARIES} ${CMAKE_THREADS_LIB_INIT}
+          ${Boost_REGEX_LIBRARIES} ${Boost_IOSTREAMS_LIBRARIES} ${CMAKE_THREADS_LIB_INIT}
 )
 
 common_library(Brion)

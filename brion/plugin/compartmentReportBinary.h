@@ -23,7 +23,8 @@
 #include "compartmentReportCommon.h"
 
 #include <lunchbox/bitOperation.h>
-#include <lunchbox/memoryMap.h>
+
+#include <boost/iostreams/device/mapped_file.hpp>
 
 namespace brion
 {
@@ -95,6 +96,10 @@ private:
     bool _loadFrameMemMap(size_t frameNumber, float* buffer) const;
     void _loadFramesAIO(size_t frameNumber, size_t count, float* buffer) const;
 
+    bool _remapFile(size_t size);
+
+private:
+    const std::string _path;
     double _startTime;
     double _endTime;
     double _timestep;
@@ -103,8 +108,7 @@ private:
 
     GIDSet _gids;
 
-    const std::string _path;
-    lunchbox::MemoryMap _file;
+    boost::iostreams::mapped_file_source _file;
     int _fileDescriptor;
 
     HeaderInfo _header;
