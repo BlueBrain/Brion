@@ -725,10 +725,6 @@ bool CompartmentReportBinary::_parseMapping()
         _originalGIDs.insert(cell.gid);
     }
 
-    // TODO : redundant with _dataOffset = get<uint64_t>(ptr, DATA_INFO +
-    // offset);  Check that.
-    _dataOffset = cells[0].dataOffset;
-
     std::sort(cells.begin(), cells.end());
     SectionOffsets& offsetMapping = _perSectionOffsets[0];
     offsetMapping.resize(cells.size());

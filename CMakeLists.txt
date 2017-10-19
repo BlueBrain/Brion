@@ -20,8 +20,8 @@ set(BRION_MAINTAINER_EMAIL "<bbp-open-source@googlegroups.com>")
 set(BRION_MAINTAINER "${BRION_MAINTAINER_NAME} ${BRION_MAINTAINER_EMAIL}")
 set(BRION_LICENSE LGPL)
 set(BRION_DEB_DEPENDS libhdf5-serial-dev libboost-date-time-dev
-  libboost-filesystem-dev  libboost-iostreams-devlibboost-regex-dev libboost-system-dev
-  libboost-test-dev libboost-thread-dev
+  libboost-filesystem-dev libboost-iostreams-dev libboost-regex-dev
+  libboost-system-dev libboost-test-dev libboost-thread-dev
   python3-sphinx python3-lxml python3-dev python3-numpy)
 set(BRION_PORT_DEPENDS sphinx py-lxml)
 
