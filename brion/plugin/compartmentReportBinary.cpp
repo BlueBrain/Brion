@@ -512,7 +512,11 @@ floatsPtr CompartmentReportBinary::loadNeuron(const uint32_t gid) const
                 }
                 else
                 {
-                    pread(_fileDescriptor, dest, nBytes, srcOffset);
+                    if (pread(_fileDescriptor, dest, nBytes, srcOffset) !=
+                        ssize_t(nBytes))
+                    {
+                        throw std::runtime_error("Failed to read data");
+                    }
                 }
             }
 
