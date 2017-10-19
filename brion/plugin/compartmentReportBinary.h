@@ -49,8 +49,6 @@ struct HeaderInfo
     std::string reportName;
 
     // cppcheck-suppress unusedStructMember
-    uint64_t dataBlockOffset;
-    // cppcheck-suppress unusedStructMember
     bool byteswap;
 };
 
@@ -110,8 +108,10 @@ private:
 
     boost::iostreams::mapped_file_source _file;
     int _fileDescriptor;
+    FILE* _fileHandle;
 
     HeaderInfo _header;
+    uint64_t _dataOffset = 0;
 
     SectionOffsets _perSectionOffsets[2];
     CompartmentCounts _perSectionCounts[2];
