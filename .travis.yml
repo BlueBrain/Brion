@@ -18,7 +18,6 @@ before_install:
   - brew install cppcheck doxygen ninja
   - brew install homebrew/science/hdf5@1.8
   - brew install boost-python
-  - brew install boost
 script:
   - mkdir $BUILD_TYPE
   - cd $BUILD_TYPE
