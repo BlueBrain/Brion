@@ -462,6 +462,9 @@ public:
     size_t getNumNeurons() const final { return _circuit.getNumNeurons(); }
     Vector3fs getPositions(const GIDSet& gids) const final
     {
+        if (gids.empty())
+            return Vector3fs();
+
         const brion::NeuronMatrix& data =
             _circuit.get(gids, brion::NEURON_POSITION_X |
                                    brion::NEURON_POSITION_Y |
@@ -490,6 +493,9 @@ public:
 
     size_ts getMTypes(const GIDSet& gids) const final
     {
+        if (gids.empty())
+            return size_ts();
+
         const brion::NeuronMatrix& matrix =
             _circuit.get(gids, brion::NEURON_MTYPE);
         size_ts result(matrix.shape()[0]);
@@ -507,6 +513,9 @@ public:
 
     size_ts getETypes(const GIDSet& gids) const final
     {
+        if (gids.empty())
+            return size_ts();
+
         const brion::NeuronMatrix& matrix =
             _circuit.get(gids, brion::NEURON_ETYPE);
         size_ts result(matrix.shape()[0]);
@@ -524,6 +533,9 @@ public:
 
     Quaternionfs getRotations(const GIDSet& gids) const final
     {
+        if (gids.empty())
+            return Quaternionfs();
+
         const float deg2rad = float(M_PI) / 180.f;
         const brion::NeuronMatrix& data =
             _circuit.get(gids, brion::NEURON_ROTATION);
@@ -551,6 +563,9 @@ public:
 
     Strings getMorphologyNames(const GIDSet& gids) const final
     {
+        if (gids.empty())
+            return Strings();
+
         const brion::NeuronMatrix& matrix =
             _circuit.get(gids, brion::NEURON_MORPHOLOGY_NAME);
         Strings result(matrix.shape()[0]);
@@ -577,6 +592,9 @@ struct MVD3 : public Circuit::Impl
     size_t getNumNeurons() const final { return _circuit.getNbNeuron(); }
     Vector3fs getPositions(const GIDSet& gids) const final
     {
+        if (gids.empty())
+            return Vector3fs();
+
         Vector3fs results(gids.size());
         const ::MVD3::Range& range = getRange(gids);
         try
@@ -596,6 +614,9 @@ struct MVD3 : public Circuit::Impl
 
     size_ts getMTypes(const GIDSet& gids) const final
     {
+        if (gids.empty())
+            return size_ts();
+
         size_ts results(gids.size());
         const ::MVD3::Range& range = getRange(gids);
         try
@@ -620,6 +641,9 @@ struct MVD3 : public Circuit::Impl
 
     size_ts getETypes(const GIDSet& gids) const final
     {
+        if (gids.empty())
+            return size_ts();
+
         size_ts results(gids.size());
         const ::MVD3::Range& range = getRange(gids);
         try
@@ -644,6 +668,9 @@ struct MVD3 : public Circuit::Impl
 
     Quaternionfs getRotations(const GIDSet& gids) const final
     {
+        if (gids.empty())
+            return Quaternionfs();
+
         Quaternionfs results(gids.size());
         const ::MVD3::Range& range = getRange(gids);
         try
@@ -663,6 +690,9 @@ struct MVD3 : public Circuit::Impl
 
     Strings getMorphologyNames(const GIDSet& gids) const final
     {
+        if (gids.empty())
+            return Strings();
+
         Strings results(gids.size());
         const ::MVD3::Range& range = getRange(gids);
         try

@@ -3,6 +3,8 @@ Changelog {#Changelog}
 
 # git master
 
+* [204](https://github.com/BlueBrain/Brion/pull/204):
+  Fixed brain::Circuit methods to not crash with empty gids lists.
 * [191](https://github.com/BlueBrain/Brion/pull/191):
   - Optimizations in brain::CompartmentReport opening, only the metadata is
     read.

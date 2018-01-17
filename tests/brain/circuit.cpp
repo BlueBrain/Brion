@@ -188,6 +188,26 @@ BOOST_AUTO_TEST_CASE(brain_circuit_positions)
         0.000001f);
 }
 
+BOOST_AUTO_TEST_CASE(brain_empty_gids_lists)
+{
+    const brain::Circuit mvd2((brion::URI(bbp::test::getBlueconfig())));
+    brion::GIDSet nil;
+    BOOST_CHECK(mvd2.getPositions(nil).empty());
+    BOOST_CHECK(mvd2.getTransforms(nil).empty());
+    BOOST_CHECK(mvd2.getRotations(nil).empty());
+    BOOST_CHECK(mvd2.getMorphologyURIs(nil).empty());
+    BOOST_CHECK(mvd2.getMorphologyTypes(nil).empty());
+    BOOST_CHECK(mvd2.getElectrophysiologyTypes(nil).empty());
+
+    const brain::Circuit mvd3(brion::URI(BBP_TEST_BLUECONFIG3));
+    BOOST_CHECK(mvd3.getPositions(nil).empty());
+    BOOST_CHECK(mvd3.getTransforms(nil).empty());
+    BOOST_CHECK(mvd3.getRotations(nil).empty());
+    BOOST_CHECK(mvd3.getMorphologyURIs(nil).empty());
+    BOOST_CHECK(mvd3.getMorphologyTypes(nil).empty());
+    BOOST_CHECK(mvd3.getElectrophysiologyTypes(nil).empty());
+}
+
 namespace
 {
 void _checkMorphology(const brain::neuron::Morphology& morphology,
