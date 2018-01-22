@@ -18,7 +18,7 @@ include_directories(${PROJECT_BINARY_DIR}/tests)
 set(TEST_LIBRARIES ${Boost_FILESYSTEM_LIBRARIES} ${Boost_SYSTEM_LIBRARIES}
   ${Boost_UNIT_TEST_FRAMEWORK_LIBRARY} BBPTestData Brion Brain Lunchbox)
 
-if(TARGET ZeroEQ)
+if(BRION_USE_ZEROEQ AND TARGET ZeroEQ)
   list(APPEND TEST_LIBRARIES BrionPlugins ZeroEQ)
 endif()
 
