@@ -59,10 +59,8 @@ struct Loader
         }
         catch (const HighFive::FileException& exc)
         {
-            LBTHROW(std::runtime_error(_write
-                                           ? "Could not create morphology file "
-                                           : "Could not open morphology file " +
-                                                 path + ": " + exc.what()));
+            LBTHROW(std::runtime_error("Could not open morphology file " +
+                                       path + ": " + exc.what()));
         }
         _checkVersion(path);
         _selectRepairStage();
@@ -93,7 +91,6 @@ private:
     std::vector<size_t> _sectionsDims;
 
     std::string _stage;
-    bool _write;
 
     void _checkVersion(const std::string& source)
     {
