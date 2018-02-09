@@ -3,8 +3,8 @@ set -e
 
 PYTHON_VERSIONS="cp27-cp27mu cp27-cp27m cp34-cp34m cp35-cp35m cp36-cp36m"
 NUMPY_VERSION=1.12.0
-PACKAGING_DIR=/io/packaging/python_wheel/
-WHEELHOUSE=/io/packaging/python_wheel/wheelhouse/
+PACKAGING_DIR=/io/packaging/python_wheels/linux/
+WHEELHOUSE=/io/packaging/python_wheels/linux/wheelhouse
 
 
 get_python_include()
@@ -49,14 +49,13 @@ build_brain()
     /opt/python/$version/bin/pip install "numpy==$NUMPY_VERSION"
     /opt/python/$version/bin/pip install "sphinx==1.3.6" lxml
 
-    mkdir -p /io/build
-    cd /io/build
+    mkdir -p /tmp/build
+    cd /tmp/build
     rm -rf *
 
     cmake ..                                                            \
         -DCMAKE_BUILD_TYPE=Release                                      \
         -DCLONE_SUBPROJECTS=ON                                          \
-        -DSUBPROJECT_ZeroEQ=OFF                                         \
         -DUSE_PYTHON_VERSION=$MAJOR_VERSION                             \
         -DPYTHON_EXECUTABLE:FILEPATH=$PYTHON                            \
         -DPYTHON_INCLUDE_DIR=$PYTHON_INC                                \
@@ -66,14 +65,11 @@ build_brain()
         -DSPHINX_ROOT=/opt/python/$version
     make -j2 brain_python
 
-    cp packaging/python_wheel/setup.py $PACKAGING_DIR/setup.cfg lib
+    cp packaging/python_wheels/setup.py $PACKAGING_DIR/setup.cfg lib
     pushd lib
     $PYTHON setup.py bdist_wheel --bdist-dir=/home
     auditwheel repair -w $WHEELHOUSE dist/*${version}*
     popd
-
-    cd ..
-    rm -rf build
 }
 
 for version in $PYTHON_VERSIONS; do
