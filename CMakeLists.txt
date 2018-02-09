@@ -68,5 +68,5 @@ include(DoxygenRule)
 add_subdirectory(doc/python)
 
 # fill out setup.py metadata for wheel distribution
-configure_file(packaging/python_wheel/setup.py.in
-               ${PROJECT_BINARY_DIR}/packaging/python_wheel/setup.py)
+configure_file(packaging/python_wheels/setup.py.in
+               ${PROJECT_BINARY_DIR}/packaging/python_wheels/setup.py)

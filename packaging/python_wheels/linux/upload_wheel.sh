@@ -7,7 +7,7 @@ else
     CHANNEL=dev
 fi
 
-for wheel in `ls $BASE/packaging/python_wheel/wheelhouse/brain*.whl`; do
+for wheel in `ls $BASE/packaging/python_wheels/wheelhouse/brain*.whl`; do
     upload2repo -t python -r $CHANNEL -f $wheel
 done
 
@@ -15,4 +15,4 @@ done
 docker run --rm \
     -v $BASE:/io:Z \
     bbpdocker.epfl.ch/brain_wheel \
-    /bin/rm -rf /io/packaging/python_wheel/wheelhouse
+    /bin/rm -rf /io/packaging/python_wheels/wheelhouse

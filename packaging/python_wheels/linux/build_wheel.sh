@@ -12,4 +12,4 @@ docker run --rm \
     -e UID=$UID \
     -v $BASE:/io:Z \
     bbpdocker.epfl.ch/brain_wheel \
-    /bin/bash /io/packaging/python_wheel/docker_build_wheel.sh
+    /bin/bash /io/packaging/python_wheels/linux/docker_build_wheel.sh
