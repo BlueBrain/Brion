@@ -3,8 +3,8 @@ set -e
 
 PYTHON_VERSIONS="cp27-cp27mu cp27-cp27m cp34-cp34m cp35-cp35m cp36-cp36m"
 NUMPY_VERSION=1.12.0
-PACKAGING_DIR=/io/packaging/python_wheels/linux/
-WHEELHOUSE=/io/packaging/python_wheels/linux/wheelhouse
+PACKAGING_DIR=/io/packaging/python_wheels/
+WHEELHOUSE=$PACKAGING_DIR/linux/wheelhouse
 
 
 get_python_include()

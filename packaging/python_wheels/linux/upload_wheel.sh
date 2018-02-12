@@ -15,4 +15,4 @@ done
 docker run --rm \
     -v $BASE:/io:Z \
     bbpdocker.epfl.ch/brain_wheel \
-    /bin/rm -rf /io/packaging/python_wheels/wheelhouse
+    /bin/rm -rf /io/packaging/python_wheels/linux/wheelhouse
