@@ -61,6 +61,7 @@ build_brain()
         -DPYTHON_INCLUDE_DIR=$PYTHON_INC                                \
         -DBOOST_INCLUDEDIR=/usr/local/include/                          \
         -DCOMMON_LIBRARY_TYPE=STATIC                                    \
+        -DCOMMON_SOURCE_DIR=/tmp/deps                                   \
         -DHDF5_USE_STATIC_LIBRARIES=ON                                  \
         -DSPHINX_ROOT=/opt/python/$version
     make -j2 brain_python
