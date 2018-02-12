@@ -53,7 +53,7 @@ build_brain()
     cd /tmp/build
     rm -rf *
 
-    cmake ..                                                            \
+    cmake /io                                                           \
         -DCMAKE_BUILD_TYPE=Release                                      \
         -DCLONE_SUBPROJECTS=ON                                          \
         -DUSE_PYTHON_VERSION=$MAJOR_VERSION                             \
