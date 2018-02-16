@@ -219,6 +219,22 @@ const uint32_ts& Morphology::Impl::getChildren(const uint32_t sectionID) const
     return _sectionChildren[sectionID];
 }
 
+const AABB& Morphology::Impl::getBoundingBox() const
+{
+    std::call_once(_boundingBoxValid, [this]() {
+        for (const auto& sample : data->getPoints())
+        {
+            // The soma profile points are not excluded, but it
+            // shouldn't matter.
+            const auto point = Vector3f(sample[0], sample[1], sample[2]);
+            const auto radius = Vector3f(sample[3], sample[3], sample[3]);
+            _aabb.merge(point + radius);
+            _aabb.merge(point - radius);
+        }
+    });
+    return _aabb;
+}
+
 void Morphology::Impl::_transform(brion::MorphologyPtr morphology)
 {
     auto& points = morphology->getPoints();
@@ -254,8 +270,8 @@ void Morphology::Impl::_extractInformation()
     if (ids.size() != 1)
         LBTHROW(std::runtime_error(
             "Bad input morphology '" +
-            std::to_string(data->getInitData().getURI()) +
-            "': " + std::to_string(ids.size()) + " somas found"));
+            std::to_string(data->getInitData().getURI()) + "': " +
+            std::to_string(ids.size()) + " somas found"));
     somaSection = ids[0];
 }
 

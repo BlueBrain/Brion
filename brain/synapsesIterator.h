@@ -30,6 +30,7 @@ class SynapsesIterator
     : public std::iterator<std::forward_iterator_tag, Synapse>
 {
 public:
+    BRAIN_API SynapsesIterator(){};
     BRAIN_API SynapsesIterator(const Synapses& synapses, size_t index);
     BRAIN_API ~SynapsesIterator();
 
@@ -41,8 +42,8 @@ public:
     BRAIN_API Synapse operator*() const;
 
 private:
-    const Synapses& _synapses;
-    size_t _index;
+    const Synapses* _synapses = 0;
+    size_t _index = 0;
 };
 }
 

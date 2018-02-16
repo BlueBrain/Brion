@@ -1,5 +1,5 @@
 
-/* Copyright (c) 2013-2017, EPFL/Blue Brain Project
+/* Copyright (c) 2013-2018, EPFL/Blue Brain Project
  *                          Juan Hernando <jhernando@fi.upm.es>
  *
  * This file is part of Brion <https://github.com/BlueBrain/Brion>
@@ -65,6 +65,9 @@ public:
 
     /** Return the mean distance between the profile points and the centroid. */
     BRAIN_API float getMeanRadius() const;
+
+    /** Return the max distance between any profile point to the centroid. */
+    BRAIN_API float getMaxRadius() const;
 
     /** Return the average of the profile points. */
     BRAIN_API Vector3f getCentroid() const;

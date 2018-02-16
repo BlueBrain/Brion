@@ -25,7 +25,7 @@
 #include <boost/shared_ptr.hpp>
 #include <vector>
 
-namespace brain
+namespace brain_python
 {
 void importArray();
 
@@ -47,16 +47,17 @@ boost::python::object toNumpy(const std::vector<T>& vector, const U& custodian);
 template <typename T, typename U>
 boost::python::object toNumpy(const T* array, size_t size, const U& custodian);
 
-boost::python::object toNumpy(const Matrix4f& matrix);
+boost::python::object toNumpy(const brain::Matrix4f& matrix);
 
 /** Copy the GIDs from a numpy array into a uint32_t vector.
  *  @param object The python object representing the numpy array.
  *  @param result The destination array.
  *  @return true if the GIDs are in ascending order
  */
-bool gidsFromNumpy(const boost::python::object& object, uint32_ts& result);
+bool gidsFromNumpy(const boost::python::object& object,
+                   brain::uint32_ts& result);
 
-std::pair<const Spike*, size_t> spikesFromNumpy(
+std::pair<const brain::Spike*, size_t> spikesFromNumpy(
     const boost::python::object& object);
 
 /// tuple(timestamp : double, data : 1D ndarray )

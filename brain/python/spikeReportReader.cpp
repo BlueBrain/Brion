@@ -1,4 +1,4 @@
-/* Copyright (c) 2006-2016, Ahmet Bilgili <ahmet.bilgili@epfl.ch>
+/* Copyright (c) 2006-2018, Ahmet Bilgili <ahmet.bilgili@epfl.ch>
  *                          Juan Hernando <jhernando@fi.upm.es>
  *
  * This file is part of Brion <https://github.com/BlueBrain/Brion>
@@ -32,6 +32,8 @@ namespace brain
 {
 namespace
 {
+using namespace brain_python;
+
 SpikeReportReaderPtr _initURI(const std::string& uri)
 {
     return SpikeReportReaderPtr(new SpikeReportReader(brion::URI(uri)));
@@ -56,7 +58,7 @@ void export_SpikeReportReader()
     // clang-format off
 const auto selfarg = bp::arg("self");
 
-bp::class_<SpikeReportReader, boost::noncopyable>(
+bp::class_<SpikeReportReader, boost::noncopyable, SpikeReportReaderPtr>(
     "SpikeReportReader", bp::no_init)
     .def("__init__", bp::make_constructor(_initURI),
          DOXY_FN(brain::SpikeReportReader::SpikeReportReader(const brion::URI&)))

@@ -30,7 +30,7 @@
 
 namespace bp = boost::python;
 
-namespace brain
+namespace brain_python
 {
 namespace
 {
@@ -86,14 +86,15 @@ DECLARE_ARRAY_INFO(int, NPY_INT, 1)
 DECLARE_ARRAY_INFO(size_t, NPY_LONG, 1)
 DECLARE_ARRAY_INFO(float, NPY_FLOAT, 1)
 DECLARE_ARRAY_INFO(double, NPY_DOUBLE, 1)
-DECLARE_ARRAY_INFO(neuron::SectionType, NPY_INT, 1)
-DECLARE_ARRAY_INFO(Vector2i, NPY_INT, 2, 2)
-DECLARE_ARRAY_INFO(Vector3f, NPY_FLOAT, 2, 3)
-DECLARE_ARRAY_INFO(Vector4f, NPY_FLOAT, 2, 4)
-DECLARE_ARRAY_INFO(Quaternionf, NPY_FLOAT, 2, 4)
-DECLARE_ARRAY_INFO(Matrix4f, NPY_FLOAT, 3, 4, 4)
-DECLARE_STRUCTURED_ARRAY_INFO(CompartmentReportMapping::IndexEntry, "u4, u4")
-DECLARE_STRUCTURED_ARRAY_INFO(Spike, "f4, u4")
+DECLARE_ARRAY_INFO(brain::neuron::SectionType, NPY_INT, 1)
+DECLARE_ARRAY_INFO(brain::Vector2i, NPY_INT, 2, 2)
+DECLARE_ARRAY_INFO(brain::Vector3f, NPY_FLOAT, 2, 3)
+DECLARE_ARRAY_INFO(brain::Vector4f, NPY_FLOAT, 2, 4)
+DECLARE_ARRAY_INFO(brain::Quaternionf, NPY_FLOAT, 2, 4)
+DECLARE_ARRAY_INFO(brain::Matrix4f, NPY_FLOAT, 3, 4, 4)
+DECLARE_STRUCTURED_ARRAY_INFO(brain::CompartmentReportMapping::IndexEntry,
+                              "u4, u4")
+DECLARE_STRUCTURED_ARRAY_INFO(brain::Spike, "f4, u4")
 
 // Functions for the boost::shared_ptr< std::vector< T >> to numpy converter
 
@@ -202,14 +203,14 @@ void importArray()
     REGISTER_ARRAY_CONVERTER(size_t);
     REGISTER_ARRAY_CONVERTER(float);
     REGISTER_ARRAY_CONVERTER(double);
-    REGISTER_ARRAY_CONVERTER(neuron::SectionType);
-    REGISTER_ARRAY_CONVERTER(CompartmentReportMapping::IndexEntry);
-    REGISTER_ARRAY_CONVERTER(Matrix4f);
-    REGISTER_ARRAY_CONVERTER(Quaternionf);
-    REGISTER_ARRAY_CONVERTER(Spike);
-    REGISTER_ARRAY_CONVERTER(Vector2i);
-    REGISTER_ARRAY_CONVERTER(Vector3f);
-    REGISTER_ARRAY_CONVERTER(Vector4f);
+    REGISTER_ARRAY_CONVERTER(brain::neuron::SectionType);
+    REGISTER_ARRAY_CONVERTER(brain::CompartmentReportMapping::IndexEntry);
+    REGISTER_ARRAY_CONVERTER(brain::Matrix4f);
+    REGISTER_ARRAY_CONVERTER(brain::Quaternionf);
+    REGISTER_ARRAY_CONVERTER(brain::Spike);
+    REGISTER_ARRAY_CONVERTER(brain::Vector2i);
+    REGISTER_ARRAY_CONVERTER(brain::Vector3f);
+    REGISTER_ARRAY_CONVERTER(brain::Vector4f);
 
     bp::class_<AbstractCustodian, AbstractCustodianPtr>("_Custodian");
 }
@@ -247,8 +248,8 @@ bp::object frameToTuple(brion::Frame&& frame)
 bp::object framesToTuple(brion::Frames&& frames)
 {
     if (!frames.data || frames.data->empty())
-        return bp::make_tuple(brain::toNumpy(floats()),
-                              brain::toNumpy(floats()));
+        return bp::make_tuple(toNumpy(brain::floats()),
+                              toNumpy(brain::floats()));
 
     size_t frameCount = frames.timeStamps->size();
     size_t frameSize = frames.data->size() / frameCount;
@@ -271,14 +272,14 @@ bp::object framesToTuple(brion::Frames&& frames)
         bp::throw_error_already_set();
     }
 
-    return bp::make_tuple(brain::toNumpy(std::move(*frames.timeStamps)),
+    return bp::make_tuple(toNumpy(std::move(*frames.timeStamps)),
                           bp::handle<>(array));
 }
 
 namespace
 {
 template <typename T>
-bool _copyGIDs(PyArrayObject* array, uint32_ts& result)
+bool _copyGIDs(PyArrayObject* array, brain::uint32_ts& result)
 {
     const size_t size = PyArray_DIMS(array)[0];
     bool sorted = true;
@@ -306,7 +307,7 @@ bool _copyGIDs(PyArrayObject* array, uint32_ts& result)
 }
 
 template <typename T>
-void _copyArrayToMatrix(PyArrayObject* array, Matrix4f& matrix)
+void _copyArrayToMatrix(PyArrayObject* array, brain::Matrix4f& matrix)
 {
     for (size_t i = 0; i != 4; ++i)
         for (size_t j = 0; j != 4; ++j)
@@ -314,7 +315,8 @@ void _copyArrayToMatrix(PyArrayObject* array, Matrix4f& matrix)
 }
 }
 
-bool gidsFromNumpy(const boost::python::object& object, uint32_ts& result)
+bool gidsFromNumpy(const boost::python::object& object,
+                   brain::uint32_ts& result)
 {
     PyArrayObject* array = reinterpret_cast<PyArrayObject*>(object.ptr());
     if (PyArray_NDIM(array) != 1)
@@ -337,12 +339,13 @@ bool gidsFromNumpy(const boost::python::object& object, uint32_ts& result)
     PyArray_Descr* desc = PyArray_DESCR(array);
     msg << "Cannot convert numpy array of type " << desc->kind << desc->elsize
         << " to GID set" << std::endl;
+    // XXX segfaults invalid types (?)
     PyErr_SetString(PyExc_ValueError, msg.str().c_str());
     boost::python::throw_error_already_set();
     return false; // Unreachable
 }
 
-std::pair<const Spike*, size_t> spikesFromNumpy(
+std::pair<const brain::Spike*, size_t> spikesFromNumpy(
     const boost::python::object& object)
 {
     if (!PyArray_Check(object.ptr()))
@@ -364,13 +367,13 @@ std::pair<const Spike*, size_t> spikesFromNumpy(
         boost::python::throw_error_already_set();
     }
 
-    return std::pair<const Spike*, size_t>(static_cast<Spike*>(
-                                               PyArray_GETPTR1(array, 0)),
-                                           PyArray_DIMS(array)[0]);
+    return std::pair<const brain::Spike*, size_t>(
+        static_cast<brain::Spike*>(PyArray_GETPTR1(array, 0)),
+        PyArray_DIMS(array)[0]);
 }
 
 template <>
-Matrix4f fromNumpy(const bp::object& o)
+brain::Matrix4f fromNumpy(const bp::object& o)
 {
     if (!isArray(o))
     {
@@ -387,7 +390,7 @@ Matrix4f fromNumpy(const bp::object& o)
         bp::throw_error_already_set();
     }
 
-    Matrix4f result;
+    brain::Matrix4f result;
     switch (PyArray_TYPE(array))
     {
     case NPY_FLOAT:

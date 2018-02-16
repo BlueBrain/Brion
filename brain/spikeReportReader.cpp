@@ -53,10 +53,8 @@ SpikeReportReader::SpikeReportReader(const brion::URI& uri,
 {
 }
 
-SpikeReportReader::~SpikeReportReader()
-{
-    delete _impl;
-}
+SpikeReportReader::SpikeReportReader(SpikeReportReader&&) = default;
+SpikeReportReader::~SpikeReportReader() = default;
 
 Spikes SpikeReportReader::getSpikes(const float startTime, const float endTime)
 {

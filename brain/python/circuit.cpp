@@ -35,6 +35,8 @@ namespace brain
 {
 namespace
 {
+using namespace brain_python;
+
 /* Reorders a collection with a random access iterator in place provided a pair
    of iterators with the desired order. The order collection is overwritten.
    http://stackoverflow.com/questions/838384
@@ -76,6 +78,11 @@ bp::object _getProperty(const Circuit& circuit, const MemberFunction& property,
 CircuitPtr Circuit_initFromURI(const std::string& uri)
 {
     return CircuitPtr(new Circuit(URI(uri)));
+}
+
+std::string Circuit_getSource(const Circuit& circuit)
+{
+    return std::to_string(circuit.getSource());
 }
 
 bp::object Circuit_getAllGIDs(const Circuit& circuit)
@@ -162,41 +169,32 @@ bp::object Circuit_getRotations(const Circuit& circuit, bp::object gids)
     return _getProperty(circuit, &Circuit::getRotations, gids);
 }
 
-SynapsesWrapper Circuit_getAfferentSynapses(
-    const CircuitPtr& circuit, bp::object gids,
-    const brain::SynapsePrefetch prefetch)
+Synapses Circuit_getAfferentSynapses(const CircuitPtr& circuit, bp::object gids,
+                                     const brain::SynapsePrefetch prefetch)
 {
-    return SynapsesWrapper(circuit->getAfferentSynapses(gidsFromPython(gids),
-                                                        prefetch),
-                           circuit);
+    return circuit->getAfferentSynapses(gidsFromPython(gids), prefetch);
 }
 
-SynapsesWrapper Circuit_getExternalAfferentSynapses(
+Synapses Circuit_getExternalAfferentSynapses(
     const CircuitPtr& circuit, bp::object gids, const std::string& source,
     const brain::SynapsePrefetch prefetch)
 {
-    return SynapsesWrapper(circuit->getExternalAfferentSynapses(
-                               gidsFromPython(gids), source, prefetch),
-                           circuit);
+    return circuit->getExternalAfferentSynapses(gidsFromPython(gids), source,
+                                                prefetch);
 }
 
-SynapsesWrapper Circuit_getEfferentSynapses(
-    const CircuitPtr& circuit, bp::object gids,
-    const brain::SynapsePrefetch prefetch)
+Synapses Circuit_getEfferentSynapses(const CircuitPtr& circuit, bp::object gids,
+                                     const brain::SynapsePrefetch prefetch)
 {
-    return SynapsesWrapper(circuit->getEfferentSynapses(gidsFromPython(gids),
-                                                        prefetch),
-                           circuit);
+    return circuit->getEfferentSynapses(gidsFromPython(gids), prefetch);
 }
 
-SynapsesWrapper Circuit_getProjectedSynapses(
-    const CircuitPtr& circuit, bp::object pre, bp::object post,
-    const brain::SynapsePrefetch prefetch)
+Synapses Circuit_getProjectedSynapses(const CircuitPtr& circuit, bp::object pre,
+                                      bp::object post,
+                                      const brain::SynapsePrefetch prefetch)
 {
-    return SynapsesWrapper(circuit->getProjectedSynapses(gidsFromPython(pre),
-                                                         gidsFromPython(post),
-                                                         prefetch),
-                           circuit);
+    return circuit->getProjectedSynapses(gidsFromPython(pre),
+                                         gidsFromPython(post), prefetch);
 }
 }
 
@@ -219,6 +217,8 @@ const auto selfarg = bp::arg("self");
 circuitWrapper
     .def("__init__", bp::make_constructor(Circuit_initFromURI),
          DOXY_FN(brain::Circuit::Circuit(const URI&)))
+    .def("source", Circuit_getSource, (selfarg),
+         DOXY_FN(brain::Circuit::getSource))
     .def("gids", Circuit_getAllGIDs, (selfarg),
          DOXY_FN(brain::Circuit::getGIDs() const))
     .def("gids", Circuit_getGIDs, (selfarg, bp::arg("target")),

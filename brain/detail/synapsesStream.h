@@ -43,7 +43,7 @@ struct SynapsesStream
     SynapsesStream(const Circuit& circuit, const GIDSet& preGIDs,
                    const GIDSet& postGIDs, const SynapsePrefetch prefetch)
         : _circuit(circuit)
-        , _afferent(preGIDs.empty() || (postGIDs.size() < preGIDs.size()))
+        , _afferent(preGIDs.empty() || (postGIDs.size() <= preGIDs.size()))
         , _gids(_afferent ? postGIDs : preGIDs)
         , _filterGIDs(_afferent ? preGIDs : postGIDs)
         , _prefetch(prefetch)

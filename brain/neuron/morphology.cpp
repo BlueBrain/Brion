@@ -124,6 +124,13 @@ const Matrix4f& Morphology::getTransformation() const
     return _impl->transformation;
 }
 
+void Morphology::getBoundingBox(Vector3f& min, Vector3f& max) const
+{
+    const auto& aabb = _impl->getBoundingBox();
+    min = aabb.getMin();
+    max = aabb.getMax();
+}
+
 servus::Serializable::Data Morphology::toBinary() const
 {
     return _impl->data->toBinary();

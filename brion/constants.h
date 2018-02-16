@@ -34,6 +34,7 @@ const char* const MORPHOLOGY_HDF5_FILES_SUBDIRECTORY = "h5";
 
 const char* const BLUECONFIG_CIRCUIT_PATH_KEY = "CircuitPath";
 const char* const BLUECONFIG_NRN_PATH_KEY = "nrnPath";
+const char* const BLUECONFIG_MESH_PATH_KEY = "MeshPath";
 const char* const BLUECONFIG_MORPHOLOGY_PATH_KEY = "MorphologyPath";
 const char* const BLUECONFIG_OUTPUT_PATH_KEY = "OutputRoot";
 const char* const BLUECONFIG_TARGET_FILE_KEY = "TargetFile";

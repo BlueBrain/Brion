@@ -49,14 +49,14 @@ public:
 
     /** @name Copy semantics by data sharing. */
     //@{
-    BRAIN_API Synapses(const Synapses&);
-    BRAIN_API Synapses& operator=(const Synapses&);
+    BRAIN_API Synapses(const Synapses&) noexcept;
+    BRAIN_API Synapses& operator=(const Synapses&) noexcept;
     //@}
 
     /** @name Move semantics. */
     //@{
-    BRAIN_API Synapses(Synapses&& rhs);
-    BRAIN_API Synapses& operator=(Synapses&& rhs);
+    BRAIN_API Synapses(Synapses&& rhs) noexcept;
+    BRAIN_API Synapses& operator=(Synapses&& rhs) noexcept;
     //@}
 
     /** @return number of synapses available in this container. */
@@ -77,8 +77,8 @@ public:
     BRAIN_API Synapse operator[](size_t index) const;
 
     /**
-     * @return the synapse GIDs containing GIDs of the post-synaptic cells and
-     *         the indices in the afferent contacts array.
+     * @return the index part of the synapses GID (this is the index in each
+     *         post-synaptic dataset array).
      * @throw std::runtime_error if index information not found in the synapse
      *                           source of the circuit.
      */
@@ -212,19 +212,21 @@ public:
     BRAIN_API const int* efficacies() const;
     //@}
 
-protected:
     // The Impl pointer needs to be used in the Python wrapping as a custodian.
     // Instead of moving the Impl declaration outside the implementation, this
     // base class is used to give access to a virtual destructor, which is all
     // the wrapping needs.
+    /** @internal */
     struct BaseImpl
     {
         virtual ~BaseImpl(){};
     };
-    struct Impl;
+    /** @internal */
     std::shared_ptr<const BaseImpl> _impl;
 
 private:
+    struct Impl;
+
     friend struct detail::SynapsesStream;
     Synapses(const Circuit& circuit, const GIDSet& gids,
              const GIDSet& filterGIDs, bool afferent, SynapsePrefetch prefetch);

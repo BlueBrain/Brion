@@ -20,20 +20,20 @@
 #include "helpers.h"
 #include "arrayHelpers.h"
 
-namespace brain
+namespace brain_python
 {
 namespace
 {
-bool _gidsFromIterable(const boost::python::object& iterable, uint32_ts& result)
+bool _gidsFromIterable(const boost::python::object& iterable,
+                       brain::uint32_ts& result)
 {
     bool sorted = true;
     try
     {
         result.clear();
         result.reserve(len(iterable));
-        // Copying the elements in the iterable to std vector for using
-        // insertion
-        // from an iterable
+        // Copying the elements in the iterable to std::vector using
+        // insertion from an iterable.
         boost::python::stl_input_iterator<unsigned int> i(iterable), end;
         uint32_t last = 0;
         for (; i != end; ++i)
@@ -55,24 +55,24 @@ bool _gidsFromIterable(const boost::python::object& iterable, uint32_ts& result)
 }
 }
 
-GIDSet gidsFromPython(const boost::python::object& object)
+brain::GIDSet gidsFromPython(const boost::python::object& object)
 {
-    uint32_ts vector;
+    brain::uint32_ts vector;
 
     if (isArray(object))
         gidsFromNumpy(object, vector);
     else
         _gidsFromIterable(object, vector);
 
-    GIDSet gids;
+    brain::GIDSet gids;
     gids.insert(vector.begin(), vector.end());
     return gids;
 }
 
-void gidsFromPython(const boost::python::object& object, GIDSet& result,
-                    uint32_ts& mapping)
+void gidsFromPython(const boost::python::object& object, brain::GIDSet& result,
+                    brain::uint32_ts& mapping)
 {
-    uint32_ts vector;
+    brain::uint32_ts vector;
 
     const bool sorted = isArray(object) ? gidsFromNumpy(object, vector)
                                         : _gidsFromIterable(object, vector);

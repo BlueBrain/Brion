@@ -20,6 +20,8 @@
  * 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
  */
 
+#include "targets.h"
+
 #include <brain/neuron/morphology.h>
 #include <brion/blueConfig.h>
 #include <brion/circuit.h>
@@ -88,14 +90,9 @@ void assign(const ::MVD3::Range& range, const GIDSet& gids, SrcArray& src,
         return;
     }
 
-    typename DstArray::iterator dst_it = dst.begin();
-    for (GIDSet::const_iterator i = gids.begin(); i != gids.end(); ++i)
-    {
-        typename SrcArray::const_iterator src_it = src.begin();
-        std::advance(src_it, *i - range.offset - 1);
-        *dst_it = assignOp(*src_it);
-        ++dst_it;
-    }
+    auto j = dst.begin();
+    for (const auto gid : gids)
+        *j++ = assignOp(src[gid - range.offset - 1]);
 }
 
 Vector3f toVector3f(const ::MVD3::Positions::const_subarray<1>::type& subarray)
@@ -165,13 +162,13 @@ public:
         Strings keys;
         keys.reserve(gids.size());
 
+        std::string prefix = _synapsePath;
+        prefix += afferent ? "_afferent" : "_efferent";
+
         for (const auto gid : gids)
-        {
-            std::string hash = _synapsePath;
-            hash += afferent ? "_afferent" : "_efferent";
-            hash += std::to_string(gid);
-            keys.emplace_back(servus::make_uint128(hash).getString());
-        }
+            keys.emplace_back(
+                servus::make_uint128(prefix + std::to_string(gid)).getString());
+
         return keys;
     }
 
@@ -334,6 +331,8 @@ private:
 class Circuit::Impl
 {
 public:
+    URI _source;
+
     virtual ~Impl() {}
     virtual size_t getNumNeurons() const = 0;
 
@@ -366,7 +365,7 @@ public:
     virtual size_ts getMTypes(const GIDSet& gids) const = 0;
     virtual Strings getMorphologyTypeNames() const = 0;
     virtual size_ts getETypes(const GIDSet& gids) const = 0;
-    virtual Strings getElectrophysiologyNames() const = 0;
+    virtual Strings getElectrophysiologyTypeNames() const = 0;
     virtual Quaternionfs getRotations(const GIDSet& gids) const = 0;
     virtual Strings getMorphologyNames(const GIDSet& gids) const = 0;
 
@@ -376,7 +375,17 @@ public:
             return URI(name);
 
         URI uri(getMorphologySource());
-        uri.setPath(uri.getPath() + "/" + name + ".h5");
+        const auto h5 = uri.getPath() + "/" + name + ".h5";
+        if (!fs::exists(fs::path(h5)))
+        {
+            const auto swc = uri.getPath() + "/" + name + ".swc";
+            if (fs::exists(fs::path(swc)))
+            {
+                uri.setPath(swc);
+                return uri;
+            }
+        }
+        uri.setPath(h5);
         return uri;
     }
 
@@ -508,7 +517,7 @@ public:
         LBUNIMPLEMENTED;
         return size_ts();
     }
-    Strings getElectrophysiologyNames() const final
+    Strings getElectrophysiologyTypeNames() const final
     {
         LBUNIMPLEMENTED;
         return Strings();
@@ -650,7 +659,7 @@ public:
     explicit BBPCircuit(const brion::BlueConfig& config)
         : _morphologySource(config.getMorphologySource())
         , _synapseSource(config.getSynapseSource())
-        , _targetSources(config.getTargetSources())
+        , _targets(config)
         , _cache(keyv::Map::createCache())
         , _morphologyCache(_cache, config.getCircuitSource())
         , _synapseCache(_cache, _synapseSource)
@@ -665,22 +674,7 @@ public:
 
     GIDSet getGIDs(const std::string& target) const final
     {
-        if (_targetParsers.empty())
-        {
-            for (const URI& uri : _targetSources)
-            {
-                try
-                {
-                    _targetParsers.push_back(brion::Target(uri.getPath()));
-                }
-                catch (const std::runtime_error& exc)
-                {
-                    LBWARN << "Failed to load targets from " << uri.getPath()
-                           << ": " << exc.what() << std::endl;
-                }
-            }
-        }
-        return brion::Target::parse(_targetParsers, target);
+        return _targets.getGIDs(target);
     }
 
     URI getMorphologySource() const final { return _morphologySource; }
@@ -782,8 +776,7 @@ public:
     const brion::URI _morphologySource;
     const brion::URI _synapseSource;
     std::unordered_map<std::string, brion::URI> _afferentProjectionSources;
-    const brion::URIs _targetSources;
-    mutable brion::Targets _targetParsers;
+    Targets _targets;
     keyv::MapPtr _cache;
     mutable MorphologyCache _morphologyCache;
     mutable SynapseCache _synapseCache;
@@ -876,7 +869,7 @@ public:
         return result;
     }
 
-    Strings getElectrophysiologyNames() const final
+    Strings getElectrophysiologyTypeNames() const final
     {
         return _circuit.getTypes(brion::NEURONCLASS_ETYPE);
     }
@@ -1011,7 +1004,7 @@ struct MVD3 : public BBPCircuit
         }
     }
 
-    Strings getElectrophysiologyNames() const final
+    Strings getElectrophysiologyTypeNames() const final
     {
         return _circuit.listAllEtypes();
     }

@@ -1,6 +1,6 @@
 
-/* Copyright (c) 2006-2015, Raphael Dumusc <raphael.dumusc@epfl.ch>
- *                          Juan Hernando <jhernando@fi.upm.es>
+/* Copyright (c) 2006-2018, Raphael Dumusc <raphael.dumusc@epfl.ch>
+ *                          Juan Hernando <juan.hernando@epfl.ch>
  *
  * This file is part of Brion <https://github.com/BlueBrain/Brion>
  *
@@ -36,7 +36,7 @@ namespace brain
  *
  * This class is not thread-safe except where noted.
  */
-class SpikeReportReader : public boost::noncopyable
+class SpikeReportReader
 {
 public:
     /**
@@ -58,6 +58,8 @@ public:
      * @throw std::runtime_error if source is invalid.
      */
     BRAIN_API SpikeReportReader(const brion::URI& uri, const GIDSet& subset);
+
+    BRAIN_API SpikeReportReader(SpikeReportReader&& other);
 
     /**
      * Destructor.
@@ -112,8 +114,11 @@ public:
     BRAIN_API void close();
 
 private:
+    SpikeReportReader(const SpikeReportReader& other) = delete;
+    SpikeReportReader& operator=(const SpikeReportReader& other) = delete;
+
     class _Impl;
-    _Impl* _impl;
+    std::unique_ptr<_Impl> _impl;
 };
 }
 #endif

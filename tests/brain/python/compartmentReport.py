@@ -200,8 +200,7 @@ class TestMemoryManagement(unittest.TestCase):
     def test_frame(self):
         timestamp, frame = CompartmentReport(report_path).create_view(
             {1, 2, 3}).load(0.1)
-
-        assert(numpy.isclose(timestamp ,0.1))
+        assert(numpy.isclose(timestamp, 0.1))
         assert((frame ==
             [-65.14350891113281, -65.29447937011719, -65.4448013305664]).all())
 

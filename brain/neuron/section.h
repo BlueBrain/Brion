@@ -84,6 +84,23 @@ public:
     BRAIN_API Vector4fs getSamples() const;
 
     /**
+     * Return the sample at a given position.
+     * @param index A positive value for indexing from the beginning of the
+     *        section, a negative value for indexing from the end of the
+     *        section.
+     *        The result is undefined if index >= n or index < -n,
+     *        being n = getNumSamples().
+     * @return The sample at the given index.
+     */
+    BRAIN_API const Vector4f& operator[](int index) const;
+
+    /**
+     * Return the number of samples of this section.
+     * Provided as a more efficient alternative to getSamples.size().
+     */
+    BRAIN_API size_t getNumSamples() const;
+
+    /**
      * Return a list of points sampling this section at discrete locations.
      *
      * If the section is a soma section this function will return the soma

@@ -38,7 +38,7 @@ class BlueConfig;
  * Following RAII, this class is ready to use after the creation and will ensure
  * release of resources upon destruction.
  */
-class BlueConfig : public boost::noncopyable
+class BlueConfig
 {
 public:
     /** Close BlueConfig or CircuitConfig file. @version 1.0 */
@@ -54,6 +54,9 @@ public:
      * @version 1.0
      */
     BRION_API explicit BlueConfig(const std::string& source);
+
+    BRION_API BlueConfig(BlueConfig&&) = default;
+    BRION_API BlueConfig& operator=(BlueConfig&&) = default;
 
     /** Get names of given section type.
      *
@@ -123,6 +126,12 @@ public:
     BRION_API URI getProjectionSource(const std::string& name) const;
 
     /**
+     * @return the URI to the mesh source.
+     * @version 3.0
+     */
+    BRION_API URI getMeshSource() const;
+
+    /**
       * @return the full path to the morphology database. A suffix may be
       *         prepended to the bare path from the BlueConfig.
       * @version 1.7
@@ -166,9 +175,12 @@ public:
     //@}
 
 private:
+    BlueConfig(const BlueConfig&) = delete;
+    BlueConfig& operator=(const BlueConfig&) = delete;
+
     friend std::ostream& operator<<(std::ostream&, const BlueConfig&);
 
-    detail::BlueConfig* const _impl;
+    std::unique_ptr<detail::BlueConfig> _impl;
 };
 
 /** Stream out content of BlueConfig or CircuitConfig file. */

@@ -1,4 +1,4 @@
-# Copyright (c) 2013-2017, EPFL/Blue Brain Project
+# Copyright (c) 2013-2018, EPFL/Blue Brain Project
 #                          ahmet.bilgili@epfl.ch
 #                          juan.hernando@epfl.ch
 #
@@ -19,9 +19,27 @@ endif()
 
 include(PythonDocstrings)
 
+set(BRAINPYTHONHELPERS_PUBLIC_HEADERS
+  arrayHelpers.h
+  helpers.h
+  )
+
+set(BRAINPYTHONHELPERS_SOURCES
+  arrayHelpers.cpp
+  helpers.cpp
+  )
+
+set(BRAINPYTHONHELPERS_INCLUDE_NAME brain/python)
+set(BRAINPYTHONHELPERS_NAMESPACE brain_python)
+
+set(BRAINPYTHONHELPERS_LINK_LIBRARIES PUBLIC Servus vmmlib ${Boost_PYTHON${USE_BOOST_PYTHON_VERSION}_LIBRARY})
+
+common_library(BrainPythonHelpers MODULE ${BRAIN_PYTHON_HELPER_SOURCES})
+
 set(BRAIN_PYTHON_SOURCES
   brain.cpp
   circuit.cpp
+  simulation.cpp
   compartmentReport.cpp
   spikeReportReader.cpp
   spikeReportWriter.cpp
@@ -33,8 +51,6 @@ docstrings(BRAIN_PYTHON_SOURCES BRAIN_PUBLIC_HEADERS
   ${PROJECT_BINARY_DIR}/include)
 
 list(APPEND BRAIN_PYTHON_SOURCES
-  arrayHelpers.cpp
-  helpers.cpp
   spikes.cpp
   submodules.cpp
   test.cpp
@@ -53,7 +69,7 @@ if(TARGET ${PROJECT_NAME}-docstrings)
   target_compile_definitions(brain_python PRIVATE BRAIN_HAS_DOCSTRINGS)
 endif()
 
-set(_brain_python_libs Brain ${Boost_PYTHON${USE_BOOST_PYTHON_VERSION}_LIBRARY})
+set(_brain_python_libs BrainPythonHelpers Brain ${Boost_PYTHON${USE_BOOST_PYTHON_VERSION}_LIBRARY})
 # this is needed for the python wheel case where we are STATIC and shall not
 # link python libraries.
 if(COMMON_LIBRARY_TYPE MATCHES "SHARED")

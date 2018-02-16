@@ -1,4 +1,4 @@
-/* Copyright (c) 2013-2016, EPFL/Blue Brain Project
+/* Copyright (c) 2013-2018, EPFL/Blue Brain Project
  *                          Juan Hernando <juan.hernando@epfl.ch>
  *
  * This file is part of Brion <https://github.com/BlueBrain/Brion>
@@ -23,6 +23,7 @@
 #include "docstrings.h"
 #include "types.h"
 
+#include <brain/synapse.h>
 #include <brain/synapses.h>
 
 #include <vmmlib/vector.hpp>
@@ -33,12 +34,20 @@ namespace brain
 {
 namespace
 {
-bool nonzero(const SynapsesWrapper&)
+using namespace brain_python;
+
+bool nonzero(const Synapses&)
 {
     return true;
 }
 
-SynapseWrapper Synapses_get(const SynapsesWrapper& synapses, long int index)
+bp::object Synapse_getGID(const Synapse& synapse)
+{
+    auto gid = synapse.getGID();
+    return bp::make_tuple(gid.first, gid.second);
+}
+
+Synapse Synapses_get(const Synapses& synapses, long int index)
 {
     if (index < 0)
         index = synapses.size() + index;
@@ -47,18 +56,29 @@ SynapseWrapper Synapses_get(const SynapsesWrapper& synapses, long int index)
         PyErr_SetString(PyExc_IndexError, "Index out of bounds");
         bp::throw_error_already_set();
     }
-    return SynapseWrapper(synapses[index], synapses, synapses._circuit);
+    return synapses[index];
 }
 
 #define GET_SYNAPSES_ARRAY_PROPERTY(type, name)                           \
-    bp::object Synapses_##name(const SynapsesWrapper& synapses)           \
+    bp::object Synapses_##name(const Synapses& synapses)                  \
     {                                                                     \
         if (!synapses.name())                                             \
             return bp::object();                                          \
         return toNumpy(synapses.name(), synapses.size(), synapses._impl); \
     }
 
-GET_SYNAPSES_ARRAY_PROPERTY(size_t, indices)
+bp::object Synapses_indices(const Synapses& synapses)
+{
+    try
+    {
+        return toNumpy(synapses.indices(), synapses.size(), synapses._impl);
+    }
+    catch (...)
+    {
+        return bp::object();
+    }
+}
+
 GET_SYNAPSES_ARRAY_PROPERTY(uin32_t, preGIDs)
 GET_SYNAPSES_ARRAY_PROPERTY(uin32_t, preSectionIDs)
 GET_SYNAPSES_ARRAY_PROPERTY(uin32_t, preSegmentIDs)
@@ -93,9 +113,8 @@ void export_Synapses()
 {
 const auto selfarg = bp::arg( "self" );
 
-bp::class_< SynapseWrapper >( "Synapse",
-                              DOXY_CLASS( brain::Synapse ), bp::no_init )
-    .def( "gid", &Synapse::getGID, ( selfarg ),
+bp::class_< Synapse >( "Synapse", DOXY_CLASS( brain::Synapse ), bp::no_init )
+    .def( "gid", Synapse_getGID, ( selfarg ),
           DOXY_FN( brain::Synapse::getGID ))
     .def( "pre_gid", &Synapse::getPresynapticGID, ( selfarg ),
           DOXY_FN( brain::Synapse::getPresynapticGID ))
@@ -137,8 +156,8 @@ bp::class_< SynapseWrapper >( "Synapse",
           DOXY_FN( brain::Synapse::getEfficacy ))
     ;
 
-bp::class_< SynapsesWrapper >( "Synapses", DOXY_CLASS( brain::Synapses ),
-                               bp::no_init )
+bp::class_< Synapses >( "Synapses", DOXY_CLASS( brain::Synapses ),
+                        bp::no_init )
     .def( "__nonzero__", nonzero )
     .def( "__len__", &Synapses::size )
     .def( "__getitem__", Synapses_get )

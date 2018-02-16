@@ -1,5 +1,5 @@
-# Copyright (c) 2016, EPFL/Blue Brain Project
-#                     Juan Hernando <juan.hernando@epfl.ch>
+# Copyright (c) 2016-2018, EPFL/Blue Brain Project
+#                          Juan Hernando <juan.hernando@epfl.ch>
 #
 # This file is part of Brion <https://github.com/BlueBrain/Brion>
 #
@@ -29,6 +29,7 @@ class TestCircuitOpen(unittest.TestCase):
 
     def test_open(self):
         circuit = brain.Circuit(brain.test.circuit_config)
+        assert(circuit.source() == brain.test.circuit_config)
 
 class TestCircuit(unittest.TestCase):
     def setUp(self):

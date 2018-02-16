@@ -44,10 +44,13 @@ Circuit::Impl* newImpl(const URI& source)
 {
     // Check if sonata
     const auto path = source.getPath();
+    Circuit::Impl* out;
     if (boost::algorithm::ends_with(path, ".json"))
-        return new SonataCircuit(source);
+        out = new SonataCircuit(source);
     else
-        return newImpl(brion::BlueConfig(source.getPath()));
+        out = newImpl(brion::BlueConfig(source.getPath()));
+    out->_source = source;
+    return out;
 }
 
 Circuit::Circuit(const URI& source)
@@ -60,8 +63,16 @@ Circuit::Circuit(const brion::BlueConfig& config)
 {
 }
 
-Circuit::~Circuit()
+Circuit::Circuit(Circuit&& other)
+    : _impl(std::move(other._impl))
 {
+}
+
+Circuit::~Circuit() = default;
+
+const URI& Circuit::getSource() const
+{
+    return _impl->_source;
 }
 
 GIDSet Circuit::getGIDs() const
@@ -205,6 +216,11 @@ Vector3fs Circuit::getPositions(const GIDSet& gids) const
     return _impl->getPositions(gids);
 }
 
+Strings Circuit::getMorphologyNames(const GIDSet& gids) const
+{
+    return _impl->getMorphologyNames(gids);
+}
+
 size_ts Circuit::getMorphologyTypes(const GIDSet& gids) const
 {
     return _impl->getMTypes(gids);
@@ -222,7 +238,7 @@ size_ts Circuit::getElectrophysiologyTypes(const GIDSet& gids) const
 
 Strings Circuit::getElectrophysiologyTypeNames() const
 {
-    return _impl->getElectrophysiologyNames();
+    return _impl->getElectrophysiologyTypeNames();
 }
 
 Matrix4fs Circuit::getTransforms(const GIDSet& gids) const

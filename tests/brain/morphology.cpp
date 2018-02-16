@@ -174,7 +174,9 @@ BOOST_AUTO_TEST_CASE(get_section_samples)
         points.push_back(
             brion::Vector4f(0, -i2 / 20.0, i2 / 20.0, 0.5 + i2 / 1000.0));
     }
-    checkCloseArrays(morphology.getSection(1).getSamples(), points);
+    auto section = morphology.getSection(1);
+    BOOST_CHECK_EQUAL(section.getNumSamples(), points.size());
+    checkCloseArrays(section.getSamples(), points);
 
     points.clear();
     for (size_t i = 0; i != 11; ++i)
@@ -183,7 +185,9 @@ BOOST_AUTO_TEST_CASE(get_section_samples)
         points.push_back(
             brion::Vector4f(i2 / 20.0, 0, i2 / 20.0, 0.5 + i2 / 1000.0));
     }
-    checkCloseArrays(morphology.getSection(4).getSamples(), points);
+    section = morphology.getSection(4);
+    BOOST_CHECK_EQUAL(section.getNumSamples(), points.size());
+    checkCloseArrays(section.getSamples(), points);
 
     points.clear();
     for (size_t i = 0; i != 11; ++i)
@@ -192,7 +196,9 @@ BOOST_AUTO_TEST_CASE(get_section_samples)
         points.push_back(
             brion::Vector4f(-i2 / 20.0, 0, i2 / 20.0, 0.5 + i2 / 1000.0));
     }
-    checkCloseArrays(morphology.getSection(7).getSamples(), points);
+    section = morphology.getSection(7);
+    BOOST_CHECK_EQUAL(section.getNumSamples(), points.size());
+    checkCloseArrays(section.getSamples(), points);
 
     points.clear();
     for (size_t i = 0; i != 11; ++i)
@@ -201,7 +207,20 @@ BOOST_AUTO_TEST_CASE(get_section_samples)
         points.push_back(
             brion::Vector4f(0, i2 / 20.0, i2 / 20.0, 0.5 + i2 / 1000.0));
     }
-    checkCloseArrays(morphology.getSection(10).getSamples(), points);
+    section = morphology.getSection(10);
+    BOOST_CHECK_EQUAL(section.getNumSamples(), points.size());
+    checkCloseArrays(section.getSamples(), points);
+}
+
+BOOST_AUTO_TEST_CASE(get_section_samples_by_index)
+{
+    brain::neuron::Morphology morphology(TEST_MORPHOLOGY_URI);
+    auto section = morphology.getSection(10);
+    auto samples = section.getSamples();
+    BOOST_CHECK_EQUAL(section[0], *samples.begin());
+    BOOST_CHECK_EQUAL(section[-1], *samples.rbegin());
+    BOOST_CHECK_EQUAL(section[1], *++samples.begin());
+    BOOST_CHECK_EQUAL(section[-2], *++samples.rbegin());
 }
 
 BOOST_AUTO_TEST_CASE(get_section_distances_to_soma)

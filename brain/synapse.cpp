@@ -24,9 +24,9 @@
 
 namespace brain
 {
-Synapse::Synapse(const Synapses& synapses, const size_t index)
-    : _synapses(synapses)
-    , _index(index)
+Synapse::Synapse(const Synapses& synapses, const size_t index) noexcept
+    : _synapses(synapses),
+      _index(index)
 {
 }
 

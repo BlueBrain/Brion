@@ -137,6 +137,8 @@ public:
      */
     BRAIN_API const Matrix4f& getTransformation() const;
 
+    BRAIN_API void getBoundingBox(Vector3f& min, Vector3f& max) const;
+
 private:
     friend class brain::Circuit;
     friend class brain::MorphologyCache;
