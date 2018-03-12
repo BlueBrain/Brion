@@ -19,6 +19,7 @@
 
 #include "nodes.h"
 
+#include <HighFive/include/highfive/H5DataSet.hpp>
 #include <HighFive/include/highfive/H5File.hpp>
 
 #include <iostream>
@@ -78,9 +79,10 @@ Strings Nodes::getPopulationNames() const
 
 size_t Nodes::getNumberOfNodes(const std::string population) const
 {
-    HighFive::Group group = impl->file->getGroup("/nodes/" + population);
-    (void)group;
-    return 0;
+    return impl->file->getGroup("/nodes/" + population)
+        .getDataSet("node_type_id")
+        .getSpace()
+        .getDimensions()[0];
 }
 
 uint32_ts Nodes::getNodeIDs(const std::string population) const

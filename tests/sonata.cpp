@@ -49,6 +49,13 @@ BOOST_AUTO_TEST_CASE(sonata_getPopulationNames)
     BOOST_CHECK_EQUAL(pn[0], "simple");
 }
 
+BOOST_AUTO_TEST_CASE(sonata_getNumberOfNodes)
+{
+    brion::Nodes nodes(TEST_MORPHOLOGY_URI);
+    const auto num_nodes = nodes.getNumberOfNodes("simple");
+    BOOST_CHECK_EQUAL(num_nodes, 20);
+}
+
 BOOST_AUTO_TEST_CASE(sonata_getNodeIDs)
 {
     brion::Nodes nodes(TEST_MORPHOLOGY_URI);
