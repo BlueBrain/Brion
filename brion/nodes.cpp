@@ -21,6 +21,7 @@
 
 #include <HighFive/include/highfive/H5File.hpp>
 
+#include <iostream>
 #include <memory>
 
 namespace brion
@@ -52,6 +53,14 @@ Nodes::~Nodes() = default;
 Strings Nodes::getPopulationNames() const
 {
     Strings population_names;
+    HighFive::Group group = impl->file->getGroup("/nodes");
+
+    const size_t num_objects = group.getNumberObjects();
+    population_names.reserve(num_objects);
+
+    for (size_t i = 0; i < num_objects; i++)
+        population_names.emplace_back(group.getObjectName(i));
+
     return population_names;
 }
 }

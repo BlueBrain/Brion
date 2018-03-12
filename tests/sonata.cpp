@@ -40,3 +40,11 @@ BOOST_AUTO_TEST_CASE(sonata_constructors)
     brion::Nodes nodes0(TEST_MORPHOLOGY_URI);
     brion::Nodes nodes1(TEST_MORPHOLOGY_URI);
 }
+
+BOOST_AUTO_TEST_CASE(sonata_population_names)
+{
+    brion::Nodes nodes(TEST_MORPHOLOGY_URI);
+    const auto pn = nodes.getPopulationNames();
+    BOOST_CHECK_EQUAL(pn.size(), 1);
+    BOOST_CHECK_EQUAL(pn[0], "simple");
+}
