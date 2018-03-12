@@ -63,4 +63,20 @@ Strings Nodes::getPopulationNames() const
 
     return population_names;
 }
+
+size_t Nodes::getNumberOfNodes(const std::string population) const
+{
+    HighFive::Group group = impl->file->getGroup("/nodes/" + population);
+    (void)group;
+    return 0;
+}
+
+uint32_ts Nodes::getNodeIDs(const std::string population) const
+{
+    uint32_ts node_ids;
+    const HighFive::Group group = impl->file->getGroup("/nodes/" + population);
+    const HighFive::DataSet ds = group.getDataSet("node_id");
+    ds.read(node_ids);
+    return node_ids;
+}
 }
