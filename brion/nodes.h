@@ -54,7 +54,7 @@ public:
         @throw runtime_error if the dataset does not exist. */
     uint32_ts getNodeGroupIDs(const std::string population) const;
 
-    /** Read and return the values in the node_grouo_ind dataset of the
+    /** Read and return the values in the node_group_ind dataset of the
         requested population.
         @throw runtime_error if the dataset does not exist. */
     uint32_ts getNodeGroupIndices(const std::string population) const;
