@@ -1,0 +1,4 @@
+node_type_id population mtype etype model_type
+0 simple pyramidal fast biophysical
+1 simple none slow virtual
+2 simple interneuron fast biophysical
