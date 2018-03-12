@@ -22,8 +22,12 @@
 
 #include <brion/types.h>
 
+#include <memory>
+
 namespace brion
 {
+class NodesImpl;
+
 class Nodes
 {
 public:
@@ -32,6 +36,7 @@ public:
         file.
     */
     Nodes(const URI& uri);
+    ~Nodes();
 
     /** Return the name of all the children of the nodes group */
     Strings getPopulationNames() const;
@@ -58,5 +63,9 @@ public:
     uint32_ts getNodeTypes(const std::string population) const;
 
     NodeGroup openGroup(const std::string& name, uint32_t groupId);
+
+private:
+    struct Impl;
+    std::unique_ptr<Impl> impl;
 };
 }

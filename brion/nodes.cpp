@@ -25,20 +25,33 @@
 
 namespace brion
 {
+struct Nodes::Impl
+{
+    std::unique_ptr<HighFive::File> file;
+};
+
 Nodes::Nodes(const URI& uri)
+    : impl(new Nodes::Impl())
 {
     // lunchbox::ScopedWrite mutex(detail::hdf5Lock());
     const std::string path = uri.getPath();
-    std::unique_ptr<HighFive::File> file;
 
     try
     {
-        file.reset(new HighFive::File(path, HighFive::File::ReadOnly));
+        impl->file.reset(new HighFive::File(path, HighFive::File::ReadOnly));
     }
     catch (const HighFive::FileException& exc)
     {
         throw std::runtime_error("Could not open morphology file " + path +
                                  ": " + exc.what());
     }
+}
+
+Nodes::~Nodes() = default;
+
+Strings Nodes::getPopulationNames() const
+{
+    Strings population_names;
+    return population_names;
 }
 }
