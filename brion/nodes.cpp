@@ -26,6 +26,18 @@
 
 namespace brion
 {
+static uint32_ts get_id_list_helper(const HighFive::File& file,
+                                    const std::string& population,
+                                    const std::string& dataset)
+{
+    uint32_ts list;
+    const HighFive::Group group = file.getGroup("/nodes/" + population);
+    const HighFive::DataSet ds = group.getDataSet(dataset);
+    ds.read(list);
+    return list;
+}
+//////////////////////////////////////////////////////////////////////////////
+
 struct Nodes::Impl
 {
     std::unique_ptr<HighFive::File> file;
@@ -73,10 +85,22 @@ size_t Nodes::getNumberOfNodes(const std::string population) const
 
 uint32_ts Nodes::getNodeIDs(const std::string population) const
 {
-    uint32_ts node_ids;
-    const HighFive::Group group = impl->file->getGroup("/nodes/" + population);
-    const HighFive::DataSet ds = group.getDataSet("node_id");
-    ds.read(node_ids);
-    return node_ids;
+    return get_id_list_helper(*impl->file.get(), population, "node_id");
+}
+
+uint32_ts Nodes::getNodeGroupIDs(const std::string population) const
+{
+    return get_id_list_helper(*impl->file.get(), population, "node_group_id");
+}
+
+uint32_ts Nodes::getNodeGroupIndices(const std::string population) const
+{
+    return get_id_list_helper(*impl->file.get(), population,
+                              "node_group_index");
+}
+
+uint32_ts Nodes::getNodeTypes(const std::string population) const
+{
+    return get_id_list_helper(*impl->file.get(), population, "node_type_id");
 }
 }

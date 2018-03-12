@@ -49,7 +49,7 @@ public:
         May be empty if the dataset is not present */
     uint32_ts getNodeIDs(const std::string population) const;
 
-    /** Read and return the values in the node_grouo_id dataset of the requested
+    /** Read and return the values in the node_group_id dataset of the requested
         population.
         @throw runtime_error if the dataset does not exist. */
     uint32_ts getNodeGroupIDs(const std::string population) const;
