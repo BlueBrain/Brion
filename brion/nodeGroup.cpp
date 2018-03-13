@@ -50,6 +50,15 @@ Strings NodeGroup::getAttributeNames()
 Strings NodeGroup::getDynamicParameterNames()
 {
     Strings parameterNames;
+
+    const HighFive::Group dynamics_params_group =
+        impl->group.getGroup("dynamics_params");
+
+    const size_t num_objects = dynamics_params_group.getNumberObjects();
+
+    for (size_t i = 0; i < num_objects; i++)
+        parameterNames.push_back(dynamics_params_group.getObjectName(i));
+
     return parameterNames;
 }
 
@@ -89,6 +98,8 @@ T NodeGroup::getAttribute(const std::string& name) const
     return list;
 }
 
+//////////////////////////////////////////////////////////////////////////////
+
 template int32_ts NodeGroup::getAttribute<int32_ts>(const std::string&) const;
 template uint16_ts NodeGroup::getAttribute<uint16_ts>(const std::string&) const;
 template uint32_ts NodeGroup::getAttribute<uint32_ts>(const std::string&) const;
@@ -96,6 +107,8 @@ template uint64_ts NodeGroup::getAttribute<uint64_ts>(const std::string&) const;
 template floats NodeGroup::getAttribute<floats>(const std::string&) const;
 template doubles NodeGroup::getAttribute<doubles>(const std::string&) const;
 template Strings NodeGroup::getAttribute<Strings>(const std::string&) const;
+
+//////////////////////////////////////////////////////////////////////////////
 
 template int32_ts NodeGroup::getAttribute<int32_ts>(const std::string&, size_t,
                                                     size_t) const;

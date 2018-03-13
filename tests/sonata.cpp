@@ -106,14 +106,19 @@ BOOST_AUTO_TEST_CASE(sonata_nodeGroup_getAttributeNames)
     brion::Nodes nodes(TEST_MORPHOLOGY_URI);
     auto group = nodes.openGroup(POPULATION_NAME, 0);
     const auto names = group.getAttributeNames();
-    BOOST_CHECK_EQUAL(names.size(), 7);
-    BOOST_CHECK_EQUAL(names[0], "morphology_file");
-    BOOST_CHECK_EQUAL(names[1], "rotation_angle_x");
-    BOOST_CHECK_EQUAL(names[2], "rotation_angle_y");
+    BOOST_CHECK_EQUAL(names.size(), 8);
+    BOOST_CHECK_EQUAL(names[1], "morphology_file");
+    BOOST_CHECK_EQUAL(names[2], "rotation_angle_x");
+    BOOST_CHECK_EQUAL(names[3], "rotation_angle_y");
 }
 
 BOOST_AUTO_TEST_CASE(sonata_nodeGroup_getDynamicParameterNames)
 {
+    brion::Nodes nodes(TEST_MORPHOLOGY_URI);
+    auto group = nodes.openGroup(POPULATION_NAME, 0);
+    const auto names = group.getDynamicParameterNames();
+    BOOST_CHECK_EQUAL(names.size(), 1);
+    BOOST_CHECK_EQUAL(names[0], "my_dataset");
 }
 
 BOOST_AUTO_TEST_CASE(sonata_nodeGroup_getNumberOfNodes)
@@ -121,7 +126,7 @@ BOOST_AUTO_TEST_CASE(sonata_nodeGroup_getNumberOfNodes)
     brion::Nodes nodes(TEST_MORPHOLOGY_URI);
     auto group = nodes.openGroup(POPULATION_NAME, 0);
     const auto num_nodes = group.getNumberOfNodes();
-    BOOST_CHECK_EQUAL(num_nodes, 7);
+    BOOST_CHECK_EQUAL(num_nodes, 8);
 }
 
 BOOST_AUTO_TEST_CASE(sonata_nodeGroup_getAttribute)

@@ -68,6 +68,10 @@ group.create_dataset("morphology_file", data=morphology_file)
 # morph_translate =
 # model_template =
 
+dynamic_params = group.create_group("dynamics_params")
+my_dataset = numpy.array([0.1]*10, dtype="float")
+dynamic_params.create_dataset("my_dataset", data=my_dataset)
+
 group = population.create_group("1")
 model_type = numpy.array([ModelType.virtual] * 10, dtype=ModelType.dtype)
 group.create_dataset("model_type", data=model_type)
