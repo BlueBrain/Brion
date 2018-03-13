@@ -26,8 +26,6 @@
 
 namespace brion
 {
-class NodesImpl;
-
 class Nodes
 {
 public:
@@ -62,7 +60,7 @@ public:
     /** TBD: may move to the group level. */
     uint32_ts getNodeTypes(const std::string population) const;
 
-    NodeGroup openGroup(const std::string& name, uint32_t groupId);
+    NodeGroup openGroup(const std::string& population, uint32_t groupId);
 
 private:
     struct Impl;

@@ -20,15 +20,23 @@
 
 #include <brion/types.h>
 
+#include <memory>
+
+namespace HighFive
+{
+class Group;
+}
+
 namespace brion
 {
-class Nodes;
+class Node;
 
 class NodeGroup
 {
 public:
-    friend Nodes;
-    NodeGroup() = delete;
+    NodeGroup(const NodeGroup& other);
+    NodeGroup(const HighFive::Group& group);
+    ~NodeGroup();
 
     Strings getAttributeNames();
 
@@ -37,20 +45,20 @@ public:
     size_t getNumberOfNodes() const;
 
     template <typename T>
-    std::vector<T> getAttribute(const std::string& name) const;
+    T getAttribute(const std::string& name) const;
 
     template <typename T>
-    std::vector<T> getAttribute(const std::string& name, size_t start,
-                                size_t end) const;
+    T getAttribute(const std::string& name, size_t start, size_t end) const;
 
     template <typename T>
-    std::vector<T> getDynamicParameter(const std::string& name) const;
+    T getDynamicParameter(const std::string& name) const;
 
     template <typename T>
-    std::vector<T> getDynamicParameter(const std::string& name, size_t start,
-                                       size_t end) const;
+    T getDynamicParameter(const std::string& name, size_t start,
+                          size_t end) const;
 
 private:
-    NodeGroup(...);
+    struct Impl;
+    std::unique_ptr<Impl> impl;
 };
 }

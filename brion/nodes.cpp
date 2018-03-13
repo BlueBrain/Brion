@@ -105,4 +105,11 @@ uint32_ts Nodes::getNodeTypes(const std::string population) const
 {
     return get_id_list_helper(*impl->file.get(), population, "node_type_id");
 }
+
+NodeGroup Nodes::openGroup(const std::string& population, uint32_t groupId)
+{
+    const HighFive::Group group = impl->file->getGroup("/nodes/" + population)
+                                      .getGroup(std::to_string(groupId));
+    return {group};
+}
 }
