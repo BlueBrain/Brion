@@ -33,7 +33,7 @@ typedef brion::Vector4f V4f;
 typedef brion::Vector3f V3f;
 
 const brion::URI TEST_MORPHOLOGY_URI(std::string("file://") + BRION_TESTDATA +
-                                     "/sonnet/simple_nodes.h5");
+                                     "/sonata/simple_nodes.h5");
 
 constexpr char POPULATION_NAME[] = "simple";
 
