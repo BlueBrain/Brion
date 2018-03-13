@@ -68,17 +68,16 @@ size_t NodeGroup::getNumberOfNodes() const
 }
 
 template <typename T>
-T NodeGroup::getAttribute(const std::string& name, size_t start,
-                          size_t end) const
+T getAttributeHelper(const HighFive::DataSet set, bool use_slice = false,
+                     size_t start = 0, size_t end = 0)
 {
-    assert(end >= start);
-
     T list;
-    const HighFive::DataSet attribute = impl->group.getDataSet(name);
-    attribute.read(list);
+    set.read(list);
 
-    if (start != 0 || end != list.size())
+    if (use_slice && (start != 0 || end != list.size()))
     {
+        assert(end >= start);
+
         T sublist;
         sublist.reserve(end - start);
         for (size_t i = start; i < end; i++)
@@ -90,12 +89,33 @@ T NodeGroup::getAttribute(const std::string& name, size_t start,
 }
 
 template <typename T>
+T NodeGroup::getAttribute(const std::string& name, size_t start,
+                          size_t end) const
+{
+    return std::move(
+        getAttributeHelper<T>(impl->group.getDataSet(name), true, start, end));
+}
+
+template <typename T>
 T NodeGroup::getAttribute(const std::string& name) const
 {
-    T list;
-    const HighFive::DataSet attribute = impl->group.getDataSet(name);
-    attribute.read(list);
-    return list;
+    return std::move(getAttributeHelper<T>(impl->group.getDataSet(name)));
+}
+
+template <typename T>
+T NodeGroup::getDynamicParameter(const std::string& name) const
+{
+    return std::move(getAttributeHelper<T>(
+        impl->group.getGroup("dynamics_params").getDataSet(name)));
+}
+
+template <typename T>
+T NodeGroup::getDynamicParameter(const std::string& name, size_t start,
+                                 size_t end) const
+{
+    return std::move(getAttributeHelper<T>(
+        impl->group.getGroup("dynamics_params").getDataSet(name), true, start,
+        end));
 }
 
 //////////////////////////////////////////////////////////////////////////////
@@ -124,4 +144,42 @@ template doubles NodeGroup::getAttribute<doubles>(const std::string&, size_t,
                                                   size_t) const;
 template Strings NodeGroup::getAttribute<Strings>(const std::string&, size_t,
                                                   size_t) const;
+
+//////////////////////////////////////////////////////////////////////////////
+
+template int32_ts NodeGroup::getDynamicParameter<int32_ts>(
+    const std::string&) const;
+template uint16_ts NodeGroup::getDynamicParameter<uint16_ts>(
+    const std::string&) const;
+template uint32_ts NodeGroup::getDynamicParameter<uint32_ts>(
+    const std::string&) const;
+template uint64_ts NodeGroup::getDynamicParameter<uint64_ts>(
+    const std::string&) const;
+template floats NodeGroup::getDynamicParameter<floats>(
+    const std::string&) const;
+template doubles NodeGroup::getDynamicParameter<doubles>(
+    const std::string&) const;
+template Strings NodeGroup::getDynamicParameter<Strings>(
+    const std::string&) const;
+
+//////////////////////////////////////////////////////////////////////////////
+
+template int32_ts NodeGroup::getDynamicParameter<int32_ts>(const std::string&,
+                                                           size_t,
+                                                           size_t) const;
+template uint16_ts NodeGroup::getDynamicParameter<uint16_ts>(const std::string&,
+                                                             size_t,
+                                                             size_t) const;
+template uint32_ts NodeGroup::getDynamicParameter<uint32_ts>(const std::string&,
+                                                             size_t,
+                                                             size_t) const;
+template uint64_ts NodeGroup::getDynamicParameter<uint64_ts>(const std::string&,
+                                                             size_t,
+                                                             size_t) const;
+template floats NodeGroup::getDynamicParameter<floats>(const std::string&,
+                                                       size_t, size_t) const;
+template doubles NodeGroup::getDynamicParameter<doubles>(const std::string&,
+                                                         size_t, size_t) const;
+template Strings NodeGroup::getDynamicParameter<Strings>(const std::string&,
+                                                         size_t, size_t) const;
 }

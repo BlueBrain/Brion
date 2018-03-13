@@ -38,6 +38,12 @@ const brion::URI TEST_MORPHOLOGY_URI(std::string("file://") + BRION_TESTDATA +
 
 constexpr char POPULATION_NAME[] = "simple";
 
+static bool fuzz_eq(float v0, float v1)
+{
+    constexpr auto epsilon = 0.00001;
+    return std::abs(v0 - v1) < epsilon;
+}
+
 BOOST_AUTO_TEST_CASE(sonata_constructors)
 {
     brion::Nodes nodes0(TEST_MORPHOLOGY_URI);
@@ -121,6 +127,17 @@ BOOST_AUTO_TEST_CASE(sonata_nodeGroup_getDynamicParameterNames)
     BOOST_CHECK_EQUAL(names[0], "my_dataset");
 }
 
+BOOST_AUTO_TEST_CASE(sonata_nodeGroup_getDynamicParameter)
+{
+    brion::Nodes nodes(TEST_MORPHOLOGY_URI);
+    auto group = nodes.openGroup(POPULATION_NAME, 0);
+
+    const auto my_dataset =
+        group.getDynamicParameter<brion::floats>("my_dataset");
+    BOOST_CHECK_EQUAL(my_dataset.size(), 10);
+    BOOST_CHECK(fuzz_eq(my_dataset[0], 0.1));
+}
+
 BOOST_AUTO_TEST_CASE(sonata_nodeGroup_getNumberOfNodes)
 {
     brion::Nodes nodes(TEST_MORPHOLOGY_URI);
@@ -143,11 +160,6 @@ BOOST_AUTO_TEST_CASE(sonata_nodeGroup_getAttribute)
     const auto x = group.getAttribute<brion::floats>("x", 2, 12);
     const auto y = group.getAttribute<brion::floats>("y", 3, 12);
     const auto z = group.getAttribute<brion::floats>("z", 6, 10);
-
-    const auto fuzz_eq = [](float v0, float v1) {
-        constexpr auto epsilon = 0.00001;
-        return std::abs(v0 - v1) < epsilon;
-    };
 
     BOOST_CHECK_EQUAL(rotation_angle_x.size(), 10);
     BOOST_CHECK(fuzz_eq(rotation_angle_x[0], 0.1));
