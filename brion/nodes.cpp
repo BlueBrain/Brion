@@ -47,7 +47,6 @@ struct Nodes::Impl
 Nodes::Nodes(const URI& uri)
     : impl(new Nodes::Impl())
 {
-    // lunchbox::ScopedWrite mutex(detail::hdf5Lock());
     const std::string path = uri.getPath();
 
     try
@@ -56,8 +55,8 @@ Nodes::Nodes(const URI& uri)
     }
     catch (const HighFive::FileException& exc)
     {
-        throw std::runtime_error("Could not open morphology file " + path +
-                                 ": " + exc.what());
+        throw std::runtime_error("Could not open file " + path + ": " +
+                                 exc.what());
     }
 }
 
@@ -110,6 +109,6 @@ NodeGroup Nodes::openGroup(const std::string& population, uint32_t groupId)
 {
     const HighFive::Group group = impl->file->getGroup("/nodes/" + population)
                                       .getGroup(std::to_string(groupId));
-    return {group};
+    return NodeGroup(group);
 }
 }
