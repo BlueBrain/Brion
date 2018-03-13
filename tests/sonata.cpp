@@ -135,9 +135,9 @@ BOOST_AUTO_TEST_CASE(sonata_nodeGroup_getAttribute)
         group.getAttribute<brion::floats>("rotation_angle_y");
     const auto rotation_angle_z =
         group.getAttribute<brion::floats>("rotation_angle_z");
-    const auto x = group.getAttribute<brion::floats>("x");
-    const auto y = group.getAttribute<brion::floats>("y");
-    const auto z = group.getAttribute<brion::floats>("z");
+    const auto x = group.getAttribute<brion::floats>("x", 2, 12);
+    const auto y = group.getAttribute<brion::floats>("y", 3, 12);
+    const auto z = group.getAttribute<brion::floats>("z", 6, 10);
 
     const auto fuzz_eq = [](float v0, float v1) {
         constexpr auto epsilon = 0.00001;
@@ -153,14 +153,14 @@ BOOST_AUTO_TEST_CASE(sonata_nodeGroup_getAttribute)
     BOOST_CHECK_EQUAL(rotation_angle_z.size(), 10);
     BOOST_CHECK(fuzz_eq(rotation_angle_z[0], 0.3));
 
-    BOOST_CHECK_EQUAL(x.size(), 12);
-    BOOST_CHECK(fuzz_eq(x[2], 2.0));
+    BOOST_CHECK_EQUAL(x.size(), 10);
+    BOOST_CHECK(fuzz_eq(x[0], 2.0));
 
-    BOOST_CHECK_EQUAL(y.size(), 12);
-    BOOST_CHECK(fuzz_eq(y[3], 1.0));
+    BOOST_CHECK_EQUAL(y.size(), 9);
+    BOOST_CHECK(fuzz_eq(y[0], 1.0));
 
-    BOOST_CHECK_EQUAL(z.size(), 10);
-    BOOST_CHECK(fuzz_eq(z[6], -0.5));
+    BOOST_CHECK_EQUAL(z.size(), 4);
+    BOOST_CHECK(fuzz_eq(z[0], -0.5));
 
     std::cout << std::endl;
 }
