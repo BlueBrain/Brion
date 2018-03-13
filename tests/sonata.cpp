@@ -178,6 +178,4 @@ BOOST_AUTO_TEST_CASE(sonata_nodeGroup_getAttribute)
 
     BOOST_CHECK_EQUAL(z.size(), 4);
     BOOST_CHECK(fuzz_eq(z[0], -0.5));
-
-    std::cout << std::endl;
 }
