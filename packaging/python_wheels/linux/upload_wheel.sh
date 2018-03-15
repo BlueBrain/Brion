@@ -1,5 +1,7 @@
 #!/usr/bin/env bash
-BASE=$(git rev-parse --show-toplevel)
+
+cd "$( dirname "${BASH_SOURCE[0]}" )"
+source ../common.sh
 
 if [ "$RELEASE" == "true" ]; then
     CHANNEL=release
