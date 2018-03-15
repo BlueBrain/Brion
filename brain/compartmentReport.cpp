@@ -54,7 +54,7 @@ CompartmentReportView CompartmentReport::createView(const brion::GIDSet& cells)
 
 CompartmentReportView CompartmentReport::createView()
 {
-    return CompartmentReportView(_impl, {});
+    return CompartmentReportView(_impl, brion::GIDSet());
 }
 
 } // namespace
