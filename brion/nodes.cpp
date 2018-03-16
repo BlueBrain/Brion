@@ -25,55 +25,53 @@
 #include <iostream>
 #include <memory>
 
-namespace brion
+namespace
 {
-static uint32_ts get_id_list_helper(const HighFive::File& file,
-                                    const std::string& population,
-                                    const std::string& dataset)
+static brion::uint32_ts _readIntVector(const HighFive::File& file,
+                                       const std::string& population,
+                                       const std::string& dataset)
 {
-    uint32_ts list;
+    brion::uint32_ts list;
     const HighFive::Group group = file.getGroup("/nodes/" + population);
     const HighFive::DataSet ds = group.getDataSet(dataset);
     ds.read(list);
     return list;
 }
+}
+
+namespace brion
+{
 //////////////////////////////////////////////////////////////////////////////
 
 struct Nodes::Impl
 {
+    Impl(const std::string& uri)
+        : file(new HighFive::File(uri))
+    {
+    }
+
     std::unique_ptr<HighFive::File> file;
 };
 
 Nodes::Nodes(const URI& uri)
-    : impl(new Nodes::Impl())
+    : impl(new Nodes::Impl(uri.getPath()))
 {
-    const std::string path = uri.getPath();
-
-    try
-    {
-        impl->file.reset(new HighFive::File(path, HighFive::File::ReadOnly));
-    }
-    catch (const HighFive::FileException& exc)
-    {
-        throw std::runtime_error("Could not open file " + path + ": " +
-                                 exc.what());
-    }
 }
 
 Nodes::~Nodes() = default;
 
 Strings Nodes::getPopulationNames() const
 {
-    Strings population_names;
+    Strings populationNames;
     HighFive::Group group = impl->file->getGroup("/nodes");
 
     const size_t num_objects = group.getNumberObjects();
-    population_names.reserve(num_objects);
+    populationNames.reserve(num_objects);
 
     for (size_t i = 0; i < num_objects; i++)
-        population_names.emplace_back(group.getObjectName(i));
+        populationNames.emplace_back(group.getObjectName(i));
 
-    return population_names;
+    return populationNames;
 }
 
 size_t Nodes::getNumberOfNodes(const std::string population) const
@@ -86,23 +84,22 @@ size_t Nodes::getNumberOfNodes(const std::string population) const
 
 uint32_ts Nodes::getNodeIDs(const std::string population) const
 {
-    return get_id_list_helper(*impl->file.get(), population, "node_id");
+    return _readIntVector(*impl->file, population, "node_id");
 }
 
 uint32_ts Nodes::getNodeGroupIDs(const std::string population) const
 {
-    return get_id_list_helper(*impl->file.get(), population, "node_group_id");
+    return _readIntVector(*impl->file, population, "node_group_id");
 }
 
 uint32_ts Nodes::getNodeGroupIndices(const std::string population) const
 {
-    return get_id_list_helper(*impl->file.get(), population,
-                              "node_group_index");
+    return _readIntVector(*impl->file, population, "node_group_index");
 }
 
 uint32_ts Nodes::getNodeTypes(const std::string population) const
 {
-    return get_id_list_helper(*impl->file.get(), population, "node_type_id");
+    return _readIntVector(*impl->file, population, "node_type_id");
 }
 
 NodeGroup Nodes::openGroup(const std::string& population, uint32_t groupId)

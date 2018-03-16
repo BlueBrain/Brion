@@ -22,6 +22,35 @@
 #include <HighFive/include/highfive/H5File.hpp>
 #include <HighFive/include/highfive/H5Group.hpp>
 
+namespace
+{
+template <typename T>
+T getAttributeHelper(const HighFive::DataSet set, size_t start = 0,
+                     const size_t end = std::numeric_limits<size_t>::max())
+{
+    if (start >= end)
+    {
+        throw std::runtime_error("Start index " + std::to_string(start) +
+                                 " is greater than or equal to end index " +
+                                 std::to_string(end));
+    }
+
+    T output;
+
+    if (start != 0 && end != std::numeric_limits<size_t>::max())
+    {
+        const auto selection = set.select({start}, {end - start});
+        selection.read(output);
+    }
+    else
+    {
+        set.read(output);
+    }
+
+    return output;
+}
+}
+
 namespace brion
 {
 struct NodeGroup::Impl
@@ -35,6 +64,7 @@ NodeGroup::NodeGroup(const HighFive::Group& group)
     impl->group = group;
 }
 NodeGroup::~NodeGroup() = default;
+NodeGroup::NodeGroup(NodeGroup&&) = default;
 
 Strings NodeGroup::getAttributeNames()
 {
@@ -68,118 +98,51 @@ size_t NodeGroup::getNumberOfNodes() const
 }
 
 template <typename T>
-T getAttributeHelper(const HighFive::DataSet set, bool use_slice = false,
-                     size_t start = 0, size_t end = 0)
+std::vector<T> NodeGroup::getAttribute(const std::string& name, size_t start,
+                                       size_t end) const
 {
-    T list;
-    set.read(list);
-
-    if (use_slice && (start != 0 || end != list.size()))
-    {
-        assert(end >= start);
-
-        T sublist;
-        sublist.reserve(end - start);
-        for (size_t i = start; i < end; i++)
-            sublist.push_back(list[i]);
-        list = std::move(sublist);
-    }
-
-    return list;
+    return getAttributeHelper<std::vector<T>>(impl->group.getDataSet(name),
+                                              start, end);
 }
 
 template <typename T>
-T NodeGroup::getAttribute(const std::string& name, size_t start,
-                          size_t end) const
+std::vector<T> NodeGroup::getAttribute(const std::string& name) const
 {
-    return std::move(
-        getAttributeHelper<T>(impl->group.getDataSet(name), true, start, end));
+    return getAttributeHelper<std::vector<T>>(impl->group.getDataSet(name));
 }
 
 template <typename T>
-T NodeGroup::getAttribute(const std::string& name) const
+std::vector<T> NodeGroup::getDynamicParameter(const std::string& name) const
 {
-    return std::move(getAttributeHelper<T>(impl->group.getDataSet(name)));
+    return getAttributeHelper<std::vector<T>>(
+        impl->group.getGroup("dynamics_params").getDataSet(name));
 }
 
 template <typename T>
-T NodeGroup::getDynamicParameter(const std::string& name) const
+std::vector<T> NodeGroup::getDynamicParameter(const std::string& name,
+                                              size_t start, size_t end) const
 {
-    return std::move(getAttributeHelper<T>(
-        impl->group.getGroup("dynamics_params").getDataSet(name)));
-}
-
-template <typename T>
-T NodeGroup::getDynamicParameter(const std::string& name, size_t start,
-                                 size_t end) const
-{
-    return std::move(getAttributeHelper<T>(
-        impl->group.getGroup("dynamics_params").getDataSet(name), true, start,
-        end));
+    return getAttributeHelper<std::vector<T>>(
+        impl->group.getGroup("dynamics_params").getDataSet(name), start, end);
 }
 
 //////////////////////////////////////////////////////////////////////////////
 
-template int32_ts NodeGroup::getAttribute<int32_ts>(const std::string&) const;
-template uint16_ts NodeGroup::getAttribute<uint16_ts>(const std::string&) const;
-template uint32_ts NodeGroup::getAttribute<uint32_ts>(const std::string&) const;
-template uint64_ts NodeGroup::getAttribute<uint64_ts>(const std::string&) const;
-template floats NodeGroup::getAttribute<floats>(const std::string&) const;
-template doubles NodeGroup::getAttribute<doubles>(const std::string&) const;
-template Strings NodeGroup::getAttribute<Strings>(const std::string&) const;
+#define CREATE_GET_FUNCTIONS(list_type, scalar_type)                \
+    template list_type NodeGroup::getAttribute<scalar_type>(        \
+        const std::string&) const;                                  \
+    template list_type NodeGroup::getAttribute<scalar_type>(        \
+        const std::string&, size_t, size_t) const;                  \
+    template list_type NodeGroup::getDynamicParameter<scalar_type>( \
+        const std::string&) const;                                  \
+    template list_type NodeGroup::getDynamicParameter<scalar_type>( \
+        const std::string&, size_t, size_t) const;
 
-//////////////////////////////////////////////////////////////////////////////
-
-template int32_ts NodeGroup::getAttribute<int32_ts>(const std::string&, size_t,
-                                                    size_t) const;
-template uint16_ts NodeGroup::getAttribute<uint16_ts>(const std::string&,
-                                                      size_t, size_t) const;
-template uint32_ts NodeGroup::getAttribute<uint32_ts>(const std::string&,
-                                                      size_t, size_t) const;
-template uint64_ts NodeGroup::getAttribute<uint64_ts>(const std::string&,
-                                                      size_t, size_t) const;
-template floats NodeGroup::getAttribute<floats>(const std::string&, size_t,
-                                                size_t) const;
-template doubles NodeGroup::getAttribute<doubles>(const std::string&, size_t,
-                                                  size_t) const;
-template Strings NodeGroup::getAttribute<Strings>(const std::string&, size_t,
-                                                  size_t) const;
-
-//////////////////////////////////////////////////////////////////////////////
-
-template int32_ts NodeGroup::getDynamicParameter<int32_ts>(
-    const std::string&) const;
-template uint16_ts NodeGroup::getDynamicParameter<uint16_ts>(
-    const std::string&) const;
-template uint32_ts NodeGroup::getDynamicParameter<uint32_ts>(
-    const std::string&) const;
-template uint64_ts NodeGroup::getDynamicParameter<uint64_ts>(
-    const std::string&) const;
-template floats NodeGroup::getDynamicParameter<floats>(
-    const std::string&) const;
-template doubles NodeGroup::getDynamicParameter<doubles>(
-    const std::string&) const;
-template Strings NodeGroup::getDynamicParameter<Strings>(
-    const std::string&) const;
-
-//////////////////////////////////////////////////////////////////////////////
-
-template int32_ts NodeGroup::getDynamicParameter<int32_ts>(const std::string&,
-                                                           size_t,
-                                                           size_t) const;
-template uint16_ts NodeGroup::getDynamicParameter<uint16_ts>(const std::string&,
-                                                             size_t,
-                                                             size_t) const;
-template uint32_ts NodeGroup::getDynamicParameter<uint32_ts>(const std::string&,
-                                                             size_t,
-                                                             size_t) const;
-template uint64_ts NodeGroup::getDynamicParameter<uint64_ts>(const std::string&,
-                                                             size_t,
-                                                             size_t) const;
-template floats NodeGroup::getDynamicParameter<floats>(const std::string&,
-                                                       size_t, size_t) const;
-template doubles NodeGroup::getDynamicParameter<doubles>(const std::string&,
-                                                         size_t, size_t) const;
-template Strings NodeGroup::getDynamicParameter<Strings>(const std::string&,
-                                                         size_t, size_t) const;
+CREATE_GET_FUNCTIONS(int32_ts, int32_t)
+CREATE_GET_FUNCTIONS(uint16_ts, uint16_t)
+CREATE_GET_FUNCTIONS(uint32_ts, uint32_t)
+CREATE_GET_FUNCTIONS(uint64_ts, uint64_t)
+CREATE_GET_FUNCTIONS(floats, float)
+CREATE_GET_FUNCTIONS(doubles, double)
+CREATE_GET_FUNCTIONS(Strings, std::string)
 }

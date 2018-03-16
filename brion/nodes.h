@@ -26,6 +26,11 @@
 
 namespace brion
 {
+/** Provides access to data in a H5 file.
+ *
+ * Note that H5 exceptions may be thrown when calling class methods.
+ */
+
 class Nodes
 {
 public:
@@ -57,9 +62,16 @@ public:
         @throw runtime_error if the dataset does not exist. */
     uint32_ts getNodeGroupIndices(const std::string population) const;
 
-    /** TBD: may move to the group level. */
+    /** Read and return the values in the node_type_id dataset of the
+        requested population.
+        @throw runtime_error if the dataset does not exist. */
     uint32_ts getNodeTypes(const std::string population) const;
 
+    /** Returns a handle to a group
+     *
+     * @param population Name of the population
+     * @param groupId Id of the group
+     */
     NodeGroup openGroup(const std::string& population, uint32_t groupId);
 
 private:

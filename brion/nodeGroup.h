@@ -29,35 +29,79 @@ class Group;
 
 namespace brion
 {
-class Node;
+class Nodes;
+
+/** A handle to a specific group of nodes in a H5 file.
+ *
+ * Note that H5 exceptions may be thrown when calling class methods.
+ */
 
 class NodeGroup
 {
 public:
-    NodeGroup(const NodeGroup& other);
-    NodeGroup(const HighFive::Group& group);
+    friend class Nodes;
+    NodeGroup(NodeGroup&&);
     ~NodeGroup();
 
+    /** Return the names of all the datasets of the node group */
     Strings getAttributeNames();
 
+    /** Return the names of all the datasets in the 'dynamics_params' group */
     Strings getDynamicParameterNames();
 
+    /** Return the number of nodes in the node group */
     size_t getNumberOfNodes() const;
 
+    /** Read and return the values of the requested dataset
+     *
+     * @param name Name of the dataset
+     */
     template <typename T>
-    T getAttribute(const std::string& name) const;
+    std::vector<T> getAttribute(const std::string& name) const;
 
+    /** Read and return the values of the requested dataset
+     *
+     * Reads from start to the index before end, i.e. in set builder notation:
+     * '[start, end)'.
+     *
+     * @param name Name of the dataset
+     * @param start Index of first element
+     * @param end Index _after_ last element
+     *
+     * @throw std::runtime_error if start >= end
+     */
     template <typename T>
-    T getAttribute(const std::string& name, size_t start, size_t end) const;
+    std::vector<T> getAttribute(const std::string& name, size_t start,
+                                size_t end) const;
 
+    /** Read and return the values of the requested dataset in the dynamic
+     * parameters group.
+     *
+     * @param name Name of the dataset
+     */
     template <typename T>
-    T getDynamicParameter(const std::string& name) const;
+    std::vector<T> getDynamicParameter(const std::string& name) const;
 
+    /** Read and return the values of the requested dataset in the dynamic
+     * parameters group.
+     *
+     * Reads from start to the index before end, i.e. in set builder notation:
+     * '[start, end)'.
+     *
+     * @param name Name of the dataset
+     * @param start Index of first element
+     * @param end Index _after_ last element
+     *
+     * @throw std::runtime_error if start >= end
+     */
     template <typename T>
-    T getDynamicParameter(const std::string& name, size_t start,
-                          size_t end) const;
+    std::vector<T> getDynamicParameter(const std::string& name, size_t start,
+                                       size_t end) const;
 
 private:
+    NodeGroup(const NodeGroup& other) = delete;
+    NodeGroup(const HighFive::Group& group);
+
     struct Impl;
     std::unique_ptr<Impl> impl;
 };
