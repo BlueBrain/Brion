@@ -11,6 +11,7 @@ export PATH="$PYENV_ROOT/bin:$PATH"
 PYTHON_VERSIONS="2.7.14 3.4.7 3.5.4 3.6.4"
 HDF5=hdf5-1.8.17
 BOOST=boost_1_59_0
+WHEELHOUSE=`pwd`/../wheelhouse
 
 function install_pyenv
 {
@@ -237,7 +238,7 @@ function test_wheel
     deactivate
 
     # Once tested, the wheel is moved to wheelhouse
-    mv brain*.whl ../wheelhouse
+    mv brain*.whl $WHEELHOUSE
 }
 
 function build_wheel
@@ -266,8 +267,8 @@ build_hdf5
 install_pyenv
 install_python_versions
 
-mkdir -p wheelhouse
-rm wheelhouse/*whl 2>/dev/null
+mkdir -p $WHEELHOUSE
+rm $WHEELHOUSE/*whl 2>/dev/null
 
 for version in $PYTHON_VERSIONS; do
     build_wheel $version

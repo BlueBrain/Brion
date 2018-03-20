@@ -19,8 +19,8 @@
 
 #include "nodeGroup.h"
 
-#include <HighFive/include/highfive/H5File.hpp>
-#include <HighFive/include/highfive/H5Group.hpp>
+#include <highfive/H5File.hpp>
+#include <highfive/H5Group.hpp>
 
 namespace
 {
