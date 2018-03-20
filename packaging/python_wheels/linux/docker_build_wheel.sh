@@ -1,9 +1,12 @@
 #!/usr/bin/env bash
 set -e
 
+cd "$( dirname "${BASH_SOURCE[0]}" )"
+source ../common.sh
+
 PYTHON_VERSIONS="cp27-cp27mu cp27-cp27m cp34-cp34m cp35-cp35m cp36-cp36m"
 PACKAGING_DIR=/io/packaging/python_wheels/
-WHEELHOUSE=$PACKAGING_DIR/linux/wheelhouse
+WHEELHOUSE=$PACKAGING_DIR/wheelhouse
 
 get_python_include()
 {
