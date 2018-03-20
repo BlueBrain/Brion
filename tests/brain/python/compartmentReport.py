@@ -78,7 +78,7 @@ class TestReader(unittest.TestCase):
         view = self.report.create_view({1, 2, 3})
         timestamps, frames = view.load(0.0, 0.2)
 
-        assert(numpy.isclose(timestamps,[ 0.0, 0.1]).all())
+        assert(numpy.isclose(timestamps,[0.0, 0.1]).all())
         assert(numpy.isclose(frames, [[-65., -65., -65.],
             [-65.14350891, -65.29447937, -65.44480133]]).all())
 
@@ -96,13 +96,18 @@ class TestReader(unittest.TestCase):
         # load(start, end, step)
         timestamps, frames = view.load(0.0, 1.0, 0.2)
         assert(len(timestamps) == 5)
-        assert(numpy.isclose(timestamps,[ 0.0, 0.2, 0.4, 0.6, 0.8]).all())
+        assert(numpy.isclose(timestamps,[0.0, 0.2, 0.4, 0.6, 0.8]).all())
         assert(frames.shape == (5, 3))
 
         timestamps, frames = view.load(0.0, 1.0, 0.3)
         assert(len(timestamps) == 4)
-        assert(numpy.isclose(timestamps,[ 0.0, 0.3, 0.6, 0.9]).all())
+        assert(numpy.isclose(timestamps,[0.0, 0.3, 0.6, 0.9]).all())
         assert(frames.shape == (4, 3))
+
+        timestamps, frames = view.load(0.0, 0.001, 0.1)
+        assert(len(timestamps) == 1)
+        assert(numpy.isclose(timestamps,[0.0]).all())
+        assert(frames.shape == (1, 3))
 
         # load_all()
         timestamps, frames = view.load_all()
@@ -112,7 +117,6 @@ class TestReader(unittest.TestCase):
         assert(frame.shape == (3,))
         assert((frame ==
             [-65.14350891113281, -65.29447937011719, -65.4448013305664]).all())
-
 
         # temp view
         timestamp, frame = self.report.create_view({1, 2, 3}).load(0.1)
@@ -167,12 +171,12 @@ class TestReaderExceptions(unittest.TestCase):
 
         self.assertRaises(RuntimeError, CompartmentReportView.load, self.view,
                           self.end, self.start)
-        result = self.view.load(self.start - 20, self.start)
-        assert(result is None)
-        result = self.view.load(self.end, self.end + 10)
-        assert(result is None)
-        result = self.view.load(self.start - 10, self.end + 10)
-        assert(len(result[0]) == 100)
+        ts, fs = self.view.load(self.start - 20, self.start)
+        assert(len(ts) == 0 and len(fs) == 0)
+        ts, fs = self.view.load(self.end, self.end + 10)
+        assert(len(ts) == 0 and len(fs) == 0)
+        ts, fs = self.view.load(self.start - 10, self.end + 10)
+        assert(len(ts) == 100 and len(fs) == 100)
 
     def test_load_range_step(self):
 

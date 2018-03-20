@@ -258,12 +258,18 @@ void testReadStep(const char* relativePath)
 
     brain::CompartmentReport report(brion::URI(path.string()));
     auto view = report.createView(gids);
+    const auto frameSize = view.getMapping().getFrameSize();
 
     const double start = report.getMetaData().startTime;
     const double step = report.getMetaData().timeStep;
 
     auto frames = view.load(start, start + step * 4, step * 2).get();
-    BOOST_REQUIRE_EQUAL(frames.timeStamps->size(), 2);
+    BOOST_CHECK_EQUAL(frames.timeStamps->size(), 2);
+    BOOST_CHECK_EQUAL(frames.data->size(), frameSize * 2);
+
+    frames = view.load(start, start + step * 0.5, step * 2).get();
+    BOOST_CHECK_EQUAL(frames.timeStamps->size(), 1);
+    BOOST_CHECK_EQUAL(frames.data->size(), frameSize);
 
     BOOST_CHECK_THROW(view.load(start, start - step * 4, step),
                       std::logic_error);
@@ -277,12 +283,20 @@ void testReadStep(const char* relativePath)
 
 BOOST_AUTO_TEST_CASE(read_binary)
 {
-    testRead("local/simulations/may17_2011/Control/allCompartments.bbp");
+    const auto path =
+        "local/simulations/may17_2011/Control/allCompartments.bbp";
+    testRead(path);
+    testReadRange(path);
+    testReadStep(path);
 }
 
 BOOST_AUTO_TEST_CASE(read_hdf5)
 {
-    testRead("local/simulations/may17_2011/Control/allCompartments.h5");
+    const auto path =
+        "local/simulations/may17_2011/Control/allCompartments.bbp";
+    testRead(path);
+    testReadRange(path);
+    testReadStep(path);
 }
 
 void testReadAll(const char* relativePath)
