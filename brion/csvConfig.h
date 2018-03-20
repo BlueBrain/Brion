@@ -32,6 +32,7 @@ public:
     /** Open given filepath to a csv file for reading.
      *
      * @param uri filepath to circuit file
+     *
      * @throw std::runtime_error if file could not be opened
      * @throw std::runtime_error if csv table is inconsistent
      */
@@ -39,6 +40,16 @@ public:
     CsvConfig(CsvConfig&&);
     CsvConfig(const CsvConfig& other) = delete;
     ~CsvConfig();
+
+    /** Returns the value of a property of the node_type_id
+     *
+     * @param node_type_id The id of the node type
+     * @param property The name of the property
+     *
+     * @throw std::runtime_error if node_type_id or property not found
+     */
+    const std::string& get_property(size_t node_type_id,
+                                    const std::string& property) const;
 
 private:
     struct Impl;

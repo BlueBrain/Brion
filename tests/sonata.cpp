@@ -227,3 +227,12 @@ BOOST_AUTO_TEST_CASE(csv_config_constructors)
 {
     auto csv = brion::CsvConfig(TEST_SONATA_NODE_TYPES_URI);
 }
+
+BOOST_AUTO_TEST_CASE(csv_config_get_property)
+{
+    auto csv = brion::CsvConfig(TEST_SONATA_NODE_TYPES_URI);
+    BOOST_CHECK_EQUAL(csv.get_property(1, "population"), "simple");
+    BOOST_CHECK_EQUAL(csv.get_property(0, "mtype"), "pyramidal");
+    BOOST_CHECK_EQUAL(csv.get_property(2, "etype"), "fast");
+    BOOST_CHECK_EQUAL(csv.get_property(1, "model_type"), "virtual");
+}
