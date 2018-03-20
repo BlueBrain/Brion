@@ -22,6 +22,7 @@
 #include <brion/brion.h>
 #include <tests/paths.h>
 
+#include <brion/circuitConfig.h>
 #include <brion/nodes.h>
 #include <brion/types.h>
 
@@ -39,6 +40,9 @@ const brion::URI TEST_SONATA_SIMPLE_NODES_URI(std::string("file://") +
                                               BRION_TESTDATA +
                                               "/sonata/simple_nodes.h5");
 
+const brion::URI TEST_SONATA_SIMPLE_NETWORK_URI(std::string("file://") +
+                                                BRION_TESTDATA +
+                                                "/sonata/simple_network.json");
 constexpr char POPULATION_NAME[] = "simple";
 
 BOOST_AUTO_TEST_CASE(sonata_constructors)
@@ -173,4 +177,41 @@ BOOST_AUTO_TEST_CASE(sonata_nodeGroup_getAttribute)
 
     BOOST_CHECK_EQUAL(z.size(), 4);
     BOOST_CHECK_EQUAL(z[0], -0.5f);
+}
+
+/////////////////////////////////////////////////////////////////////////////
+
+BOOST_AUTO_TEST_CASE(circuit_config_constructors)
+{
+    auto config = brion::CircuitConfig(TEST_SONATA_SIMPLE_NETWORK_URI);
+}
+
+BOOST_AUTO_TEST_CASE(circuit_config_getTargetSimulator)
+{
+    auto config = brion::CircuitConfig(TEST_SONATA_SIMPLE_NETWORK_URI);
+    BOOST_CHECK_EQUAL(config.getTargetSimulator(), "none");
+}
+
+BOOST_AUTO_TEST_CASE(circuit_config_getComponents)
+{
+    auto config = brion::CircuitConfig(TEST_SONATA_SIMPLE_NETWORK_URI);
+    const auto components = config.getComponents();
+    BOOST_CHECK_EQUAL(components.morphologies_dir, "./morphologies");
+}
+
+BOOST_AUTO_TEST_CASE(circuit_config_getNetworkNodes)
+{
+    auto config = brion::CircuitConfig(TEST_SONATA_SIMPLE_NETWORK_URI);
+    const auto nodes = config.getNetworkNodes();
+    BOOST_CHECK_EQUAL(nodes[0].nodes_file, "simple_nodes.h5");
+    BOOST_CHECK_EQUAL(nodes[0].node_types_file, "node_types.csv");
+    BOOST_CHECK_EQUAL(nodes[1].nodes_file, "./simple_nodes.h5");
+    BOOST_CHECK_EQUAL(nodes[1].node_types_file, "./node_types.csv");
+}
+
+BOOST_AUTO_TEST_CASE(circuit_config_getNetworkEdges)
+{
+    auto config = brion::CircuitConfig(TEST_SONATA_SIMPLE_NETWORK_URI);
+    const auto edges = config.getNetworkEdges();
+    BOOST_CHECK_EQUAL(edges.size(), 0);
 }
