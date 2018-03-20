@@ -1,0 +1,24 @@
+{
+    "manifest": {
+        "$BASE_DIR": ".",
+        "$NETWORK_DIR": "$BASE_DIR",
+        "$COMPONENT_DIR": "$BASE_DIR"
+    }
+    "target_simulator": "none",
+
+    "components_dir": {
+        "morphologies_dir": "$COMPONENT_DIR/morphologies"
+    }
+    "networks": {
+        "nodes": [
+            {
+                "nodes_file": "simple_nodes.h5",
+                "node_types_file": "node_types.csv"
+            },
+            {
+                "nodes_file": "$NETWORK_DIR/simple_nodes.h5",
+                "node_types_file": "$NETWORK_DIR/node_types.csv"
+            }]
+        "edges": []
+    }
+}

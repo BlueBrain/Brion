@@ -21,6 +21,8 @@ set(BRION_PUBLIC_HEADERS
   synapse.h
   target.h
   types.h
+  nodes.h
+  nodeGroup.h
   )
 
 set(BRION_HEADERS
@@ -44,6 +46,8 @@ set(BRION_SOURCES
   synapseSummary.cpp
   synapse.cpp
   target.cpp
+  nodes.cpp
+  nodeGroup.cpp
   )
 
 if(MSVC)
