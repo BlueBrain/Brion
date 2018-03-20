@@ -32,7 +32,8 @@ public:
     /** Open given filepath to a csv file for reading.
      *
      * @param uri filepath to circuit file
-     * @throw std::runtime_error if file is not found or invalid
+     * @throw std::runtime_error if file could not be opened
+     * @throw std::runtime_error if csv table is inconsistent
      */
     CsvConfig(const URI& uri);
     CsvConfig(CsvConfig&&);

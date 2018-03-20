@@ -26,6 +26,41 @@
 #include <streambuf>
 #include <string>
 
+namespace
+{
+// Taken from:
+// https://stackoverflow.com/questions/890164/how-can-i-split-a-string-by-a-delimiter-into-an-array
+std::vector<std::string> explode(const std::string& str, const char& ch)
+{
+    std::string next;
+    std::vector<std::string> result;
+
+    // For each character in the string
+    for (auto it = str.begin(); it != str.end(); it++)
+    {
+        // If we've hit the terminal character
+        if (*it == ch)
+        {
+            // If we have some characters accumulated
+            if (!next.empty())
+            {
+                // Add them to the result vector
+                result.push_back(next);
+                next.clear();
+            }
+        }
+        else
+        {
+            // Accumulate the next character into the sequence
+            next += *it;
+        }
+    }
+    if (!next.empty())
+        result.push_back(next);
+    return result;
+}
+}
+
 namespace brion
 {
 struct CsvConfig::Impl
@@ -45,7 +80,22 @@ struct CsvConfig::Impl
 
         contents.assign((std::istreambuf_iterator<char>(file)),
                         std::istreambuf_iterator<char>());
+
+        const auto lines = explode(contents, '\n');
+        for (const auto& line : lines)
+            table.push_back(explode(line, ' '));
+
+        const size_t num_columns = table.front().size();
+
+        for (const auto& row : table)
+        {
+            if (num_columns != row.size())
+                throw std::runtime_error("Number of columns inconsistent in `" +
+                                         uri + "`");
+        }
     }
+
+    std::vector<std::vector<std::string>> table;
 };
 
 CsvConfig::CsvConfig(const URI& uri)
