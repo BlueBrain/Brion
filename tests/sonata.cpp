@@ -23,6 +23,7 @@
 #include <tests/paths.h>
 
 #include <brion/circuitConfig.h>
+#include <brion/csvConfig.h>
 #include <brion/nodes.h>
 #include <brion/types.h>
 
@@ -43,6 +44,9 @@ const brion::URI TEST_SONATA_SIMPLE_NODES_URI(std::string("file://") +
 const brion::URI TEST_SONATA_SIMPLE_NETWORK_URI(std::string("file://") +
                                                 BRION_TESTDATA +
                                                 "/sonata/simple_network.json");
+const brion::URI TEST_SONATA_NODE_TYPES_URI(std::string("file://") +
+                                            BRION_TESTDATA +
+                                            "/sonata/node_types.csv");
 constexpr char POPULATION_NAME[] = "simple";
 
 BOOST_AUTO_TEST_CASE(sonata_constructors)
@@ -215,4 +219,11 @@ BOOST_AUTO_TEST_CASE(circuit_config_getNetworkEdges)
     const auto edges = config.getEdges();
     BOOST_CHECK_EQUAL(edges[0].elements, "./simple_edges.h5");
     BOOST_CHECK_EQUAL(edges[0].types, "./edge_types.csv");
+}
+
+////////////////////////////////////////////////////////////////////////////
+
+BOOST_AUTO_TEST_CASE(csv_config_constructors)
+{
+    auto csv = brion::CsvConfig(TEST_SONATA_NODE_TYPES_URI);
 }
