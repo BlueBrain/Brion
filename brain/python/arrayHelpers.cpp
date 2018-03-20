@@ -246,8 +246,9 @@ bp::object frameToTuple(brion::Frame&& frame)
 
 bp::object framesToTuple(brion::Frames&& frames)
 {
-    if (!frames.data)
-        return bp::object(); // None
+    if (!frames.data || frames.data->empty())
+        return bp::make_tuple(brain::toNumpy(floats()),
+                              brain::toNumpy(floats()));
 
     size_t frameCount = frames.timeStamps->size();
     size_t frameSize = frames.data->size() / frameCount;
