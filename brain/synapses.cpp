@@ -213,7 +213,7 @@ struct Synapses::Impl : public Synapses::BaseImpl
 
         Strings hashes;
         hashes.reserve(gids.size());
-        const auto& path = _circuit._impl->_synapseSource.getPath();
+        const auto& path = _circuit._impl->getSynapseSource().getPath();
         const std::string baseHash(fs::canonical(path).generic_string());
         for (const auto gid : gids)
         {

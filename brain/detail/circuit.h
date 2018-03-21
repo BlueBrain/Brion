@@ -149,54 +149,11 @@ using CachedSynapses = std::unordered_map<std::string, brion::SynapseMatrix>;
 class Circuit::Impl
 {
 public:
-    explicit Impl(const brion::BlueConfig& config)
-        : _circuitSource(config.getCircuitSource())
-        , _morphologySource(config.getMorphologySource())
-        , _synapseSource(config.getSynapseSource())
-        , _targetSources(config.getTargetSources())
-        , _cache(keyv::Map::createCache())
-        , _synapsePositionColumns(0)
-    {
-        for (auto&& projection :
-             config.getSectionNames(brion::CONFIGSECTION_PROJECTION))
-        {
-            _afferentProjectionSources[projection] =
-                config.getProjectionSource(projection);
-        }
-    }
-
     virtual ~Impl() {}
     virtual size_t getNumNeurons() const = 0;
 
-    const brion::URI& getCircuitSource() const { return _circuitSource; }
-    GIDSet getGIDs() const
-    {
-        brain::GIDSet gids;
-        brain::GIDSet::const_iterator hint = gids.begin();
-        for (uint32_t i = 0; i < getNumNeurons(); ++i)
-            hint = gids.insert(hint, i + 1);
-        return gids;
-    }
-
-    GIDSet getGIDs(const std::string& target) const
-    {
-        if (_targetParsers.empty())
-        {
-            for (const URI& uri : _targetSources)
-            {
-                try
-                {
-                    _targetParsers.push_back(brion::Target(uri.getPath()));
-                }
-                catch (const std::runtime_error& exc)
-                {
-                    LBWARN << "Failed to load targets from " << uri.getPath()
-                           << ": " << exc.what() << std::endl;
-                }
-            }
-        }
-        return brion::Target::parse(_targetParsers, target);
-    }
+    virtual GIDSet getGIDs() const = 0;
+    virtual GIDSet getGIDs(const std::string& target) const = 0;
 
     GIDSet getRandomGIDs(const float fraction, const std::string& target) const
     {
@@ -220,14 +177,89 @@ public:
     virtual Quaternionfs getRotations(const GIDSet& gids) const = 0;
     virtual Strings getMorphologyNames(const GIDSet& gids) const = 0;
 
-    URI getMorphologyURI(const std::string& name) const
+    virtual URI getMorphologyURI(const std::string& name) const = 0;
+
+    virtual const brion::URI& getCircuitSource() const = 0;
+    virtual void saveMorphologyToCache(
+        const std::string& uri, const std::string& hash,
+        neuron::MorphologyPtr morphology) const = 0;
+
+    virtual CachedMorphologies loadMorphologiesFromCache(
+        const std::set<std::string>& hashes) const = 0;
+    virtual void saveSynapsePositionsToCache(
+        const uint32_t gid, const std::string& hash,
+        const brion::SynapseMatrix& value) const = 0;
+    virtual CachedSynapses loadSynapsePositionsFromCache(
+        const Strings& keys) const = 0;
+    virtual void _findSynapsePositionsColumns() const = 0;
+    virtual const brion::SynapseSummary& getSynapseSummary() const = 0;
+    virtual const brion::Synapse& getSynapseAttributes(
+        const bool afferent) const = 0;
+    virtual const brion::Synapse& getAfferentProjectionAttributes(
+        const std::string& name) const = 0;
+    virtual const brion::Synapse* getSynapseExtra() const = 0;
+    virtual const brion::Synapse& getSynapsePositions(
+        const bool afferent) const = 0;
+    virtual const URI& getSynapseSource() const = 0;
+};
+
+class BBPCircuit : public Circuit::Impl
+{
+public:
+    explicit BBPCircuit(const brion::BlueConfig& config)
+        : _circuitSource(config.getCircuitSource())
+        , _morphologySource(config.getMorphologySource())
+        , _synapseSource(config.getSynapseSource())
+        , _targetSources(config.getTargetSources())
+        , _cache(keyv::Map::createCache())
+        , _synapsePositionColumns(0)
+    {
+        for (auto&& projection :
+             config.getSectionNames(brion::CONFIGSECTION_PROJECTION))
+        {
+            _afferentProjectionSources[projection] =
+                config.getProjectionSource(projection);
+        }
+    }
+
+    const brion::URI& getCircuitSource() const final { return _circuitSource; }
+    GIDSet getGIDs() const final
+    {
+        brain::GIDSet gids;
+        brain::GIDSet::const_iterator hint = gids.begin();
+        for (uint32_t i = 0; i < getNumNeurons(); ++i)
+            hint = gids.insert(hint, i + 1);
+        return gids;
+    }
+
+    GIDSet getGIDs(const std::string& target) const final
+    {
+        if (_targetParsers.empty())
+        {
+            for (const URI& uri : _targetSources)
+            {
+                try
+                {
+                    _targetParsers.push_back(brion::Target(uri.getPath()));
+                }
+                catch (const std::runtime_error& exc)
+                {
+                    LBWARN << "Failed to load targets from " << uri.getPath()
+                           << ": " << exc.what() << std::endl;
+                }
+            }
+        }
+        return brion::Target::parse(_targetParsers, target);
+    }
+
+    URI getMorphologyURI(const std::string& name) const final
     {
         URI uri(_morphologySource);
         uri.setPath(uri.getPath() + "/" + name + ".h5");
         return uri;
     }
 
-    const brion::SynapseSummary& getSynapseSummary() const
+    const brion::SynapseSummary& getSynapseSummary() const final
     {
         lunchbox::ScopedWrite mutex(_synapseSummary);
 
@@ -237,7 +269,7 @@ public:
         return **_synapseSummary;
     }
 
-    const brion::Synapse& getSynapseAttributes(const bool afferent) const
+    const brion::Synapse& getSynapseAttributes(const bool afferent) const final
     {
         const size_t i = afferent ? 0 : 1;
         lunchbox::ScopedWrite mutex(_synapseAttributes[i]);
@@ -250,7 +282,7 @@ public:
     }
 
     const brion::Synapse& getAfferentProjectionAttributes(
-        const std::string& name) const
+        const std::string& name) const final
     {
         auto& lockable = _externalAfferents[name];
         lunchbox::ScopedWrite mutex(lockable);
@@ -275,7 +307,7 @@ public:
         return *synapses;
     }
 
-    const brion::Synapse* getSynapseExtra() const
+    const brion::Synapse* getSynapseExtra() const final
     {
         lunchbox::ScopedWrite mutex(_synapseExtra);
 
@@ -294,7 +326,7 @@ public:
         return _synapseExtra->get();
     }
 
-    const brion::Synapse& getSynapsePositions(const bool afferent) const
+    const brion::Synapse& getSynapsePositions(const bool afferent) const final
     {
         const size_t i = afferent ? 0 : 1;
         lunchbox::ScopedWrite mutex(_synapsePositions[i]);
@@ -314,7 +346,7 @@ public:
     }
 
     void saveMorphologyToCache(const std::string& uri, const std::string& hash,
-                               neuron::MorphologyPtr morphology) const
+                               neuron::MorphologyPtr morphology) const final
     {
         if (!_cache)
             return;
@@ -329,7 +361,7 @@ public:
     }
 
     CachedMorphologies loadMorphologiesFromCache(
-        const std::set<std::string>& hashes) const
+        const std::set<std::string>& hashes) const final
     {
         CachedMorphologies loaded;
         if (!_cache)
@@ -362,9 +394,9 @@ public:
         return loaded;
     }
 
-    void saveSynapsePositionsToCache(const uint32_t gid,
-                                     const std::string& hash,
-                                     const brion::SynapseMatrix& value) const
+    void saveSynapsePositionsToCache(
+        const uint32_t gid, const std::string& hash,
+        const brion::SynapseMatrix& value) const final
     {
         if (!_cache)
             return;
@@ -378,7 +410,8 @@ public:
         }
     }
 
-    CachedSynapses loadSynapsePositionsFromCache(const Strings& keys) const
+    CachedSynapses loadSynapsePositionsFromCache(
+        const Strings& keys) const final
     {
         CachedSynapses loaded;
         if (!_cache)
@@ -420,7 +453,7 @@ public:
         return loaded;
     }
 
-    void _findSynapsePositionsColumns() const
+    void _findSynapsePositionsColumns() const final
     {
         lunchbox::ScopedWrite mutex(_synapsePositions[0]);
         if (!(*_synapsePositions[0]))
@@ -429,6 +462,7 @@ public:
         _synapsePositionColumns = (*_synapsePositions[0])->getNumAttributes();
     }
 
+    virtual const URI& getSynapseSource() const final { return _synapseSource; }
     const brion::URI _circuitSource;
     const brion::URI _morphologySource;
     const brion::URI _synapseSource;
@@ -450,11 +484,11 @@ public:
         _externalAfferents;
 };
 
-class MVD2 : public Circuit::Impl
+class MVD2 : public BBPCircuit
 {
 public:
     MVD2(const brion::BlueConfig& config)
-        : Impl(config)
+        : BBPCircuit(config)
         , _circuit(config.getCircuitSource().getPath())
     {
     }
@@ -581,10 +615,10 @@ private:
 };
 
 #ifdef BRAIN_USE_MVD3
-struct MVD3 : public Circuit::Impl
+struct MVD3 : public BBPCircuit
 {
     MVD3(const brion::BlueConfig& config)
-        : Impl(config)
+        : BBPCircuit(config)
         , _circuit(config.getCircuitSource().getPath())
     {
     }
