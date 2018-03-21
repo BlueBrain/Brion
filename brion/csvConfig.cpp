@@ -86,29 +86,30 @@ struct CsvConfig::Impl
         for (const auto& line : lines)
             table.push_back(explode(line, ' '));
 
-        const size_t num_columns = table.front().size();
+        { // Verify layout
+            const size_t num_columns = table.front().size();
+            for (const auto& row : table)
+            {
+                if (num_columns != row.size())
+                    throw std::runtime_error(
+                        "Number of columns inconsistent in `" + uri + "`");
+            }
+        }
 
-        {
+        { // Fill access maps
             size_t ctr = 0;
             for (const auto& column_name : table.front())
             {
                 name_to_column_index[column_name] = ctr;
                 ctr++;
             }
-        }
 
-        for (size_t i = 1; i < table.size(); i++)
-        {
-            const auto& node_type_id_str = table[i][0];
-            const size_t node_type_id = std::stoi(node_type_id_str);
-            node_type_id_to_row_index[node_type_id] = i;
-        }
-
-        for (const auto& row : table)
-        {
-            if (num_columns != row.size())
-                throw std::runtime_error("Number of columns inconsistent in `" +
-                                         uri + "`");
+            for (size_t i = 1; i < table.size(); i++)
+            {
+                const auto& node_type_id_str = table[i][0];
+                const size_t node_type_id = std::stoi(node_type_id_str);
+                node_type_id_to_row_index[node_type_id] = i;
+            }
         }
     }
 
