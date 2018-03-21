@@ -133,6 +133,9 @@ std::future<brion::Frames> CompartmentReportView::load(double start, double end,
     start = (frameIndex + 0.5) * reportTimeStep + reportStartTime;
 
     end = std::min(end, _impl->report->getEndTime());
+    // Since we have pushed start to the middle of a frame, we have to make
+    // sure that end is not behind start.
+    end = std::max(start + reportTimeStep * 0.5, end);
 
     auto task = [this, start, end, step] {
 
