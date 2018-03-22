@@ -58,7 +58,7 @@ nlohmann::json _parseCircuitJson(const std::string& jsonStr)
 
     { // Expand variables dependent on other variables
         bool anyChange = true;
-        constexpr size_t max_iterations = 10;
+        constexpr size_t max_iterations = 5;
         size_t iteration = 0;
 
         while (anyChange && iteration < max_iterations)
