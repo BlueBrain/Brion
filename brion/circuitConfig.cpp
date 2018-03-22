@@ -58,8 +58,10 @@ nlohmann::json _parseCircuitJson(const std::string& jsonStr)
 
     { // Expand variables dependent on other variables
         bool anyChange = true;
+        constexpr size_t max_iterations = 10;
+        size_t iteration = 0;
 
-        while (anyChange)
+        while (anyChange && iteration < max_iterations)
         {
             anyChange = false;
             auto variablesCopy = variables;
@@ -83,7 +85,12 @@ nlohmann::json _parseCircuitJson(const std::string& jsonStr)
             }
 
             variables = variablesCopy;
+            iteration++;
         }
+
+        if (iteration == max_iterations)
+            throw std::runtime_error(
+                "Reached maximum allowed iterations in variable expansion");
     }
 
     // Expand variables in whole json
