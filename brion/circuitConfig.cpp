@@ -30,13 +30,9 @@
 
 namespace
 {
-nlohmann::json _parseCircuitJson(const std::string& jsonStr)
+std::map<std::string, std::string> _readVariables(const nlohmann::json& json)
 {
-    using nlohmann::json;
-
-    const auto jsonOrig = json::parse(jsonStr);
-    auto jsonFlat = jsonOrig.flatten();
-    auto manifest = jsonOrig["manifest"];
+    auto manifest = json["manifest"];
 
     std::map<std::string, std::string> variables;
 
@@ -60,43 +56,56 @@ nlohmann::json _parseCircuitJson(const std::string& jsonStr)
         }
     }
 
-    { // Expand variables dependent on other variables
-        bool anyChange = true;
-        constexpr size_t max_iterations = 5;
-        size_t iteration = 0;
+    return variables;
+}
 
-        while (anyChange && iteration < max_iterations)
+std::map<std::string, std::string> _resolveVariables(
+    std::map<std::string, std::string> variables)
+{
+    bool anyChange = true;
+    constexpr size_t max_iterations = 5;
+    size_t iteration = 0;
+
+    while (anyChange && iteration < max_iterations)
+    {
+        anyChange = false;
+        auto variablesCopy = variables;
+
+        for (const auto& vI : variables)
         {
-            anyChange = false;
-            auto variablesCopy = variables;
+            const auto& vIKey = vI.first;
+            const auto& vIValue = vI.second;
 
-            for (const auto& vI : variables)
+            for (auto& vJ : variablesCopy)
             {
-                const auto& vIKey = vI.first;
-                const auto& vIValue = vI.second;
+                auto& vJValue = vJ.second;
+                auto startPos = vJValue.find(vIKey);
 
-                for (auto& vJ : variablesCopy)
+                if (startPos != std::string::npos)
                 {
-                    auto& vJValue = vJ.second;
-                    auto startPos = vJValue.find(vIKey);
-
-                    if (startPos != std::string::npos)
-                    {
-                        vJValue.replace(startPos, vIKey.length(), vIValue);
-                        anyChange = true;
-                    }
+                    vJValue.replace(startPos, vIKey.length(), vIValue);
+                    anyChange = true;
                 }
             }
-
-            variables = variablesCopy;
-            iteration++;
         }
 
-        if (iteration == max_iterations)
-            throw std::runtime_error(
-                "Reached maximum allowed iterations in variable expansion, "
-                "possibly infinite recursion.");
+        variables = variablesCopy;
+        iteration++;
     }
+
+    if (iteration == max_iterations)
+        throw std::runtime_error(
+            "Reached maximum allowed iterations in variable expansion, "
+            "possibly infinite recursion.");
+
+    return variables;
+}
+
+nlohmann::json _expandVariables(
+    const nlohmann::json& json,
+    const std::map<std::string, std::string>& variables)
+{
+    auto jsonFlat = json.flatten();
 
     // Expand variables in whole json
     for (auto it = jsonFlat.begin(); it != jsonFlat.end(); ++it)
@@ -122,6 +131,15 @@ nlohmann::json _parseCircuitJson(const std::string& jsonStr)
     }
 
     return jsonFlat.unflatten();
+}
+
+nlohmann::json _parseCircuitJson(const std::string& jsonStr)
+{
+    const auto json = nlohmann::json::parse(jsonStr);
+
+    auto variables = _readVariables(json);
+    variables = _resolveVariables(variables);
+    return _expandVariables(json, variables);
 }
 
 std::map<std::string, std::string> _fillComponents(const nlohmann::json& json)
