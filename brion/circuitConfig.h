@@ -57,10 +57,10 @@ public:
     std::string getComponentPath(const std::string& name) const;
 
     /** Return the list of network nodes */
-    std::vector<SubnetworkFiles> getNodes() const;
+    const std::vector<SubnetworkFiles>& getNodes() const;
 
     /** Return the list of network edges */
-    std::vector<SubnetworkFiles> getEdges() const;
+    const std::vector<SubnetworkFiles>& getEdges() const;
 
 private:
     struct Impl;
