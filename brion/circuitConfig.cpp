@@ -34,11 +34,14 @@ nlohmann::json _parseCircuitJson(const std::string& jsonStr)
 {
     using nlohmann::json;
 
-    auto jsonFlat = json::parse(jsonStr).flatten();
+    const auto jsonOrig = json::parse(jsonStr);
+    auto jsonFlat = jsonOrig.flatten();
+    auto manifest = jsonOrig["manifest"];
+
     std::map<std::string, std::string> variables;
 
-    // Find variables
-    for (auto it = jsonFlat.begin(); it != jsonFlat.end(); ++it)
+    // Find variables in manifest section
+    for (auto it = manifest.begin(); it != manifest.end(); ++it)
     {
         const auto keyName = it.key();
         const auto name =
