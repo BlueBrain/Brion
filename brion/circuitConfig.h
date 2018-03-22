@@ -29,15 +29,6 @@ namespace brion
 class CircuitConfig
 {
 public:
-    struct Components
-    {
-        std::string morphologies_dir;
-        std::string synaptic_models_dir;
-        std::string mechanisms_dir;
-        std::string biophysical_neuron_models_dir;
-        std::string point_neuron_models_dir;
-    };
-
     struct NetworkNode
     {
         std::string nodes_file;
@@ -64,8 +55,12 @@ public:
     /** Return the target simulator */
     std::string getTargetSimulator() const;
 
-    /** Return the struct of components */
-    Components getComponents() const;
+    /** Return the directory of a component in the components_dir given its name
+    *
+    * @param name component name
+    * @throw std::runtime_error if component not found
+    */
+    std::string getComponentPath(const std::string& name) const;
 
     /** Return the list of network nodes */
     std::vector<NetworkNode> getNetworkNodes() const;
