@@ -40,19 +40,23 @@ nlohmann::json _parseCircuitJson(const std::string& jsonStr)
 
     std::map<std::string, std::string> variables;
 
+    const std::regex regexVariable("\\$[a-zA-Z0-9_]*");
+
     // Find variables in manifest section
     for (auto it = manifest.begin(); it != manifest.end(); ++it)
     {
-        const auto keyName = it.key();
-        const auto name =
-            keyName.substr(std::string(keyName).find_last_of('/') + 1);
+        const auto name = it.key();
 
-        if ('$' == name[0])
+        if (std::regex_match(name, regexVariable))
         {
             if (variables.find(name) != variables.end())
                 throw std::runtime_error("Duplicate variable `" + name + "`");
 
             variables[name] = it.value();
+        }
+        else
+        {
+            throw std::runtime_error("Invalid variable name `" + name + "`");
         }
     }
 
