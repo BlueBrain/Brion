@@ -94,7 +94,8 @@ nlohmann::json _parseCircuitJson(const std::string& jsonStr)
 
         if (iteration == max_iterations)
             throw std::runtime_error(
-                "Reached maximum allowed iterations in variable expansion");
+                "Reached maximum allowed iterations in variable expansion, "
+                "possibly infinite recursion.");
     }
 
     // Expand variables in whole json
