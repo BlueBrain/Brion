@@ -212,11 +212,13 @@ std::string CircuitConfig::getComponentPath(const std::string& name) const
     return it->second;
 }
 
-std::vector<CircuitConfig::SubnetworkFiles> CircuitConfig::getNodes() const
+const std::vector<CircuitConfig::SubnetworkFiles>& CircuitConfig::getNodes()
+    const
 {
     return impl->networkNodes;
 }
-std::vector<CircuitConfig::SubnetworkFiles> CircuitConfig::getEdges() const
+const std::vector<CircuitConfig::SubnetworkFiles>& CircuitConfig::getEdges()
+    const
 {
     return impl->networkEdges;
 }
