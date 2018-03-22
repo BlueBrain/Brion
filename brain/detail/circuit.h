@@ -152,7 +152,15 @@ public:
     virtual ~Impl() {}
     virtual size_t getNumNeurons() const = 0;
 
-    virtual GIDSet getGIDs() const = 0;
+    GIDSet getGIDs() const
+    {
+        brain::GIDSet gids;
+        brain::GIDSet::const_iterator hint = gids.begin();
+        for (uint32_t i = 0; i < getNumNeurons(); ++i)
+            hint = gids.insert(hint, i + 1);
+        return gids;
+    }
+
     virtual GIDSet getGIDs(const std::string& target) const = 0;
 
     GIDSet getRandomGIDs(const float fraction, const std::string& target) const
@@ -203,6 +211,141 @@ public:
     virtual const URI& getSynapseSource() const = 0;
 };
 
+class SonataCircuit : public Circuit::Impl
+{
+public:
+    explicit SonataCircuit(const URI&) {}
+    virtual ~SonataCircuit() {}
+    virtual size_t getNumNeurons() const
+    {
+        LBUNIMPLEMENTED;
+        return 0;
+    }
+
+    virtual GIDSet getGIDs(const std::string& /*target*/) const
+    {
+        LBUNIMPLEMENTED;
+        return GIDSet();
+    }
+
+    virtual Vector3fs getPositions(const GIDSet& /*gids*/) const
+    {
+        LBUNIMPLEMENTED;
+        return Vector3fs();
+    }
+    virtual size_ts getMTypes(const GIDSet& /*gids*/) const
+    {
+        LBUNIMPLEMENTED;
+        return size_ts();
+    }
+    virtual Strings getMorphologyNames() const
+    {
+        LBUNIMPLEMENTED;
+        return Strings();
+    }
+    virtual size_ts getETypes(const GIDSet& /*gids*/) const
+    {
+        LBUNIMPLEMENTED;
+        return size_ts();
+    }
+    virtual Strings getElectrophysiologyNames() const
+    {
+        LBUNIMPLEMENTED;
+        return Strings();
+    }
+    virtual Quaternionfs getRotations(const GIDSet& /*gids*/) const
+    {
+        LBUNIMPLEMENTED;
+        return Quaternionfs();
+    }
+    virtual Strings getMorphologyNames(const GIDSet& /*gids*/) const
+    {
+        LBUNIMPLEMENTED;
+        return Strings();
+    }
+
+    virtual URI getMorphologyURI(const std::string& /*name*/) const
+    {
+        LBUNIMPLEMENTED;
+        return URI("");
+    }
+
+    virtual const brion::URI& getCircuitSource() const
+    {
+        LBUNIMPLEMENTED;
+        return delete_thisURI;
+    }
+    virtual void saveMorphologyToCache(
+        const std::string& /*uri*/, const std::string& /*hash*/,
+        neuron::MorphologyPtr /*morphology*/) const
+    {
+        LBUNIMPLEMENTED;
+        return;
+    }
+
+    virtual CachedMorphologies loadMorphologiesFromCache(
+        const std::set<std::string>& /*hashes*/) const
+    {
+        LBUNIMPLEMENTED;
+        return CachedMorphologies();
+    }
+    virtual void saveSynapsePositionsToCache(
+        const uint32_t /*gid*/, const std::string& /*hash*/,
+        const brion::SynapseMatrix& /*value*/) const
+    {
+        LBUNIMPLEMENTED;
+        return;
+    }
+    virtual CachedSynapses loadSynapsePositionsFromCache(
+        const Strings& /*keys*/) const
+    {
+        LBUNIMPLEMENTED;
+        return CachedSynapses();
+    }
+    virtual void _findSynapsePositionsColumns() const
+    {
+        LBUNIMPLEMENTED;
+        return;
+    }
+    virtual const brion::SynapseSummary& getSynapseSummary() const
+    {
+        LBUNIMPLEMENTED;
+        return delete_thisSynapseSummary;
+    }
+    virtual const brion::Synapse& getSynapseAttributes(
+        const bool /*afferent*/) const
+    {
+        LBUNIMPLEMENTED;
+        return delete_thisSynapse;
+    }
+    virtual const brion::Synapse& getAfferentProjectionAttributes(
+        const std::string& /*name*/) const
+    {
+        LBUNIMPLEMENTED;
+        return delete_thisSynapse;
+    }
+    virtual const brion::Synapse* getSynapseExtra() const
+    {
+        LBUNIMPLEMENTED;
+        return &delete_thisSynapse;
+    }
+    virtual const brion::Synapse& getSynapsePositions(
+        const bool /*afferent*/) const
+    {
+        LBUNIMPLEMENTED;
+        return delete_thisSynapse;
+    }
+    virtual const URI& getSynapseSource() const
+    {
+        LBUNIMPLEMENTED;
+        return delete_thisURI;
+    }
+
+    brion::Synapse delete_thisSynapse{""};
+    brion::SynapseSummary delete_thisSynapseSummary{""};
+    URI delete_thisURI{""};
+};
+
 class BBPCircuit : public Circuit::Impl
 {
 public:
@@ -223,15 +366,6 @@ public:
     }
 
     const brion::URI& getCircuitSource() const final { return _circuitSource; }
-    GIDSet getGIDs() const final
-    {
-        brain::GIDSet gids;
-        brain::GIDSet::const_iterator hint = gids.begin();
-        for (uint32_t i = 0; i < getNumNeurons(); ++i)
-            hint = gids.insert(hint, i + 1);
-        return gids;
-    }
-
     GIDSet getGIDs(const std::string& target) const final
     {
         if (_targetParsers.empty())
