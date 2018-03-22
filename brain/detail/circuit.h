@@ -273,7 +273,7 @@ public:
     virtual const brion::URI& getCircuitSource() const
     {
         LBUNIMPLEMENTED;
-        return delete_thisURI;
+        return *(URI*)(delete_this);
     }
     virtual void saveMorphologyToCache(
         const std::string& /*uri*/, const std::string& /*hash*/,
@@ -310,40 +310,38 @@ public:
     virtual const brion::SynapseSummary& getSynapseSummary() const
     {
         LBUNIMPLEMENTED;
-        return delete_thisSynapseSummary;
+        return *(brion::SynapseSummary*)(delete_this);
     }
     virtual const brion::Synapse& getSynapseAttributes(
         const bool /*afferent*/) const
     {
         LBUNIMPLEMENTED;
-        return delete_thisSynapse;
+        return *(brion::Synapse*)(delete_this);
     }
     virtual const brion::Synapse& getAfferentProjectionAttributes(
         const std::string& /*name*/) const
     {
         LBUNIMPLEMENTED;
-        return delete_thisSynapse;
+        return *(brion::Synapse*)(delete_this);
     }
     virtual const brion::Synapse* getSynapseExtra() const
     {
         LBUNIMPLEMENTED;
-        return &delete_thisSynapse;
+        return &*(brion::Synapse*)(delete_this);
     }
     virtual const brion::Synapse& getSynapsePositions(
         const bool /*afferent*/) const
     {
         LBUNIMPLEMENTED;
-        return delete_thisSynapse;
+        return *(brion::Synapse*)(delete_this);
     }
     virtual const URI& getSynapseSource() const
     {
         LBUNIMPLEMENTED;
-        return delete_thisURI;
+        return *(URI*)(delete_this);
     }
 
-    brion::Synapse delete_thisSynapse{""};
-    brion::SynapseSummary delete_thisSynapseSummary{""};
-    URI delete_thisURI{""};
+    int* delete_this;
 };
 
 class BBPCircuit : public Circuit::Impl

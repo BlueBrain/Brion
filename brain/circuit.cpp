@@ -40,8 +40,18 @@ Circuit::Impl* newImpl(const brion::BlueConfig& config)
 #endif
 }
 
+Circuit::Impl* newImpl(const URI& source)
+{
+    // Check if sonata
+    const auto path = source.getPath();
+    if (boost::algorithm::ends_with(path, ".json"))
+        return new SonataCircuit(source);
+    else
+        return newImpl(brion::BlueConfig(source.getPath()));
+}
+
 Circuit::Circuit(const URI& source)
-    : _impl(newImpl(brion::BlueConfig(source.getPath())))
+    : _impl(newImpl(source))
 {
 }
 
