@@ -213,5 +213,6 @@ BOOST_AUTO_TEST_CASE(circuit_config_getNetworkEdges)
 {
     auto config = brion::CircuitConfig(TEST_SONATA_SIMPLE_NETWORK_URI);
     const auto edges = config.getEdges();
-    BOOST_CHECK_EQUAL(edges.size(), 0);
+    BOOST_CHECK_EQUAL(edges[0].elements, "./simple_edges.h5");
+    BOOST_CHECK_EQUAL(edges[0].types, "./edge_types.csv");
 }
