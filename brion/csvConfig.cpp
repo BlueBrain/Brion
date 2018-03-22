@@ -87,10 +87,10 @@ struct CsvConfig::Impl
             table.push_back(explode(line, ' '));
 
         { // Verify layout
-            const size_t num_columns = table.front().size();
+            const size_t numColumns = table.front().size();
             for (const auto& row : table)
             {
-                if (num_columns != row.size())
+                if (numColumns != row.size())
                     throw std::runtime_error(
                         "Number of columns inconsistent in `" + uri + "`");
             }
@@ -98,25 +98,25 @@ struct CsvConfig::Impl
 
         { // Fill access maps
             size_t ctr = 0;
-            for (const auto& column_name : table.front())
+            for (const auto& columnName : table.front())
             {
-                name_to_column_index[column_name] = ctr;
+                nameToColumnIndex[columnName] = ctr;
                 ctr++;
             }
 
             for (size_t i = 1; i < table.size(); i++)
             {
-                const auto& node_type_id_str = table[i][0];
-                const size_t node_type_id = std::stoi(node_type_id_str);
-                node_type_id_to_row_index[node_type_id] = i;
+                const auto& nodeTypeIdStr = table[i][0];
+                const size_t nodeTypeId = std::stoi(nodeTypeIdStr);
+                nodeTypeIdToRowIndex[nodeTypeId] = i;
             }
         }
     }
 
     std::vector<std::vector<std::string>> table;
 
-    std::unordered_map<size_t, size_t> node_type_id_to_row_index;
-    std::unordered_map<std::string, size_t> name_to_column_index;
+    std::unordered_map<size_t, size_t> nodeTypeIdToRowIndex;
+    std::unordered_map<std::string, size_t> nameToColumnIndex;
 };
 
 CsvConfig::CsvConfig(const URI& uri)
@@ -124,13 +124,13 @@ CsvConfig::CsvConfig(const URI& uri)
 {
 }
 
-const std::string& CsvConfig::get_property(const size_t node_type_id,
-                                           const std::string& property) const
+const std::string& CsvConfig::getProperty(const size_t nodeTypeId,
+                                          const std::string& property) const
 {
-    const size_t row_index = impl->node_type_id_to_row_index.at(node_type_id);
-    const size_t column_index = impl->name_to_column_index.at(property);
+    const size_t rowIndex = impl->nodeTypeIdToRowIndex.at(nodeTypeId);
+    const size_t columnIndex = impl->nameToColumnIndex.at(property);
 
-    return impl->table[row_index][column_index];
+    return impl->table[rowIndex][columnIndex];
 }
 
 CsvConfig::~CsvConfig() = default;
