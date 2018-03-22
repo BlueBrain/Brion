@@ -44,9 +44,11 @@ const brion::URI TEST_SONATA_SIMPLE_NODES_URI(std::string("file://") +
 const brion::URI TEST_SONATA_SIMPLE_NETWORK_URI(std::string("file://") +
                                                 BRION_TESTDATA +
                                                 "/sonata/simple_network.json");
+
 const brion::URI TEST_SONATA_NODE_TYPES_URI(std::string("file://") +
                                             BRION_TESTDATA +
                                             "/sonata/node_types.csv");
+
 constexpr char POPULATION_NAME[] = "simple";
 
 BOOST_AUTO_TEST_CASE(sonata_constructors)
@@ -261,4 +263,9 @@ BOOST_AUTO_TEST_CASE(csv_config_getProperties)
     BOOST_CHECK_EQUAL(properties[1], "model_type");
     BOOST_CHECK_EQUAL(properties[2], "mtype");
     BOOST_CHECK_EQUAL(properties[3], "population");
+}
+
+BOOST_AUTO_TEST_CASE(sonata_SonataConfig_constructors)
+{
+    brain::Circuit circuit(TEST_SONATA_SIMPLE_NETWORK_URI);
 }
