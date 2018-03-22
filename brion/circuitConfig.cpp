@@ -63,10 +63,10 @@ std::map<std::string, std::string> _resolveVariables(
     std::map<std::string, std::string> variables)
 {
     bool anyChange = true;
-    constexpr size_t max_iterations = 5;
+    constexpr size_t maxIterations = 5;
     size_t iteration = 0;
 
-    while (anyChange && iteration < max_iterations)
+    while (anyChange && iteration < maxIterations)
     {
         anyChange = false;
         auto variablesCopy = variables;
@@ -93,7 +93,7 @@ std::map<std::string, std::string> _resolveVariables(
         iteration++;
     }
 
-    if (iteration == max_iterations)
+    if (iteration == maxIterations)
         throw std::runtime_error(
             "Reached maximum allowed iterations in variable expansion, "
             "possibly infinite recursion.");
@@ -154,18 +154,18 @@ std::map<std::string, std::string> _fillComponents(const nlohmann::json& json)
 }
 
 std::vector<brion::CircuitConfig::SubnetworkFiles> _fillSubnetwork(
-    const nlohmann::json& json, const std::string& network_type,
-    const std::string& element_name, const std::string& type_name)
+    const nlohmann::json& json, const std::string& networkType,
+    const std::string& elementName, const std::string& typeName)
 {
     std::vector<brion::CircuitConfig::SubnetworkFiles> output;
 
-    const auto nodes = json["networks"][network_type];
+    const auto nodes = json["networks"][networkType];
 
     for (const auto& node : nodes)
     {
         brion::CircuitConfig::SubnetworkFiles network;
-        network.elements = node[element_name];
-        network.types = node[type_name];
+        network.elements = node[elementName];
+        network.types = node[typeName];
         output.push_back(network);
     }
 
@@ -194,16 +194,16 @@ struct CircuitConfig::Impl
                         std::istreambuf_iterator<char>());
 
         const auto json = _parseCircuitJson(contents);
-        target_simulator = json["target_simulator"];
-        component_dirs = _fillComponents(json);
+        targetSimulator = json["target_simulator"];
+        componentDirs = _fillComponents(json);
         networkEdges =
             _fillSubnetwork(json, "edges", "edges_file", "edge_types_file");
         networkNodes =
             _fillSubnetwork(json, "nodes", "nodes_file", "node_types_file");
     }
 
-    std::string target_simulator;
-    std::map<std::string, std::string> component_dirs;
+    std::string targetSimulator;
+    std::map<std::string, std::string> componentDirs;
     std::vector<CircuitConfig::SubnetworkFiles> networkNodes;
     std::vector<CircuitConfig::SubnetworkFiles> networkEdges;
 };
@@ -218,13 +218,13 @@ CircuitConfig::CircuitConfig(CircuitConfig&&) = default;
 
 std::string CircuitConfig::getTargetSimulator() const
 {
-    return impl->target_simulator;
+    return impl->targetSimulator;
 }
 
 std::string CircuitConfig::getComponentPath(const std::string& name) const
 {
-    const auto it = impl->component_dirs.find(name);
-    if (it == impl->component_dirs.end())
+    const auto it = impl->componentDirs.find(name);
+    if (it == impl->componentDirs.end())
         throw std::runtime_error("Could not find component '" + name + "'");
 
     return it->second;
