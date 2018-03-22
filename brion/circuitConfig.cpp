@@ -30,7 +30,7 @@
 
 namespace
 {
-nlohmann::json parseCircuitJson(const std::string& jsonStr)
+nlohmann::json _parseCircuitJson(const std::string& jsonStr)
 {
     using nlohmann::json;
 
@@ -109,7 +109,7 @@ nlohmann::json parseCircuitJson(const std::string& jsonStr)
     return jsonFlat.unflatten();
 }
 
-std::map<std::string, std::string> fill_components(const nlohmann::json& json)
+std::map<std::string, std::string> _fillComponents(const nlohmann::json& json)
 {
     const auto comps = json["components_dir"];
     std::map<std::string, std::string> output;
@@ -120,7 +120,7 @@ std::map<std::string, std::string> fill_components(const nlohmann::json& json)
     return output;
 }
 
-std::vector<brion::CircuitConfig::SubnetworkFiles> fill_subnetwork(
+std::vector<brion::CircuitConfig::SubnetworkFiles> _fillSubnetwork(
     const nlohmann::json& json, const std::string& network_type,
     const std::string& element_name, const std::string& type_name)
 {
@@ -160,13 +160,13 @@ struct CircuitConfig::Impl
         contents.assign((std::istreambuf_iterator<char>(file)),
                         std::istreambuf_iterator<char>());
 
-        const auto json = parseCircuitJson(contents);
+        const auto json = _parseCircuitJson(contents);
         target_simulator = json["target_simulator"];
-        component_dirs = fill_components(json);
+        component_dirs = _fillComponents(json);
         networkEdges =
-            fill_subnetwork(json, "edges", "edges_file", "edge_types_file");
+            _fillSubnetwork(json, "edges", "edges_file", "edge_types_file");
         networkNodes =
-            fill_subnetwork(json, "nodes", "nodes_file", "node_types_file");
+            _fillSubnetwork(json, "nodes", "nodes_file", "node_types_file");
     }
 
     std::string target_simulator;
