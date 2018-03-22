@@ -58,6 +58,13 @@ set(_brain_python_libs Brain ${Boost_PYTHON${USE_BOOST_PYTHON_VERSION}_LIBRARY})
 # link python libraries.
 if(COMMON_LIBRARY_TYPE MATCHES "SHARED")
   list(APPEND _brain_python_libs ${PYTHON_LIBRARIES})
+else()
+  if(APPLE)
+    # Do not give error on undefined symbols when linking the Python module.
+    # This is needed when building for a wheel package, as the module must not
+    # link explicitly against any Python runtime library.
+    set_target_properties(brain_python PROPERTIES LINK_FLAGS "-undefined dynamic_lookup")
+  endif()
 endif()
 target_link_libraries(brain_python PRIVATE ${_brain_python_libs})
 if(BBPTESTDATA_FOUND)

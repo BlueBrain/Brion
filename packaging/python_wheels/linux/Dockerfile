@@ -1,4 +1,4 @@
-FROM quay.io/pypa/manylinux1_x86_64
+FROM quay.io/pypa/manylinux1_x86_64@sha256:a0f4dd1303b10dbbd99f84e6d7e9b6575efd5c3a6b16519a15703a70a5833b4d
 RUN yum install -y zlib-devel bzip2-devel flex
 
 ############
@@ -40,6 +40,7 @@ RUN rm -rf boost_1_59_0.tar.gz # don't delete build folder, needed to build boos
 
 # Needed for docstrings generation and system doxygen is too old
 # after 1.8.6, we can't use anymore system flex, see https://stackoverflow.com/questions/20844635
-RUN wget --no-check-certificate https://github.com/doxygen/doxygen/archive/Release_1_8_5.tar.gz && tar xfz Release_1_8_5 && cd doxygen-Release_1_8_5 && ./configure && make -j2 && make install
+
+RUN curl -OL https://github.com/doxygen/doxygen/archive/Release_1_8_5.tar.gz && tar xfz Release_1_8_5.tar.gz && cd doxygen-Release_1_8_5 && ./configure && make -j2 && make install
 RUN rm -rf Release_1_8_5 doxygen-Release_1_8_5
 

@@ -1,9 +1,9 @@
 #!/usr/bin/env bash
-BASE=$(git rev-parse --show-toplevel)
+
+cd "$( dirname "${BASH_SOURCE[0]}" )"
+source ../common.sh
 
 export PIPPROXY="-i https://bbpteam.epfl.ch/repository/devpi/simple"
-export http_proxy=${HTTP_PROXY-$http_proxy}
-export https_proxy=${HTTPS_PROXY-$https_proxy}
 
 docker run --rm \
     -e http_proxy=$http_proxy \

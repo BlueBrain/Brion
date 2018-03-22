@@ -1,5 +1,7 @@
 #!/usr/bin/env bash
-BASE=$(git rev-parse --show-toplevel)
+
+cd "$( dirname "${BASH_SOURCE[0]}" )"
+source ../common.sh
 
 docker build -t brain_wheel \
     --build-arg http_proxy=${HTTP_PROXY-$http_proxy} \

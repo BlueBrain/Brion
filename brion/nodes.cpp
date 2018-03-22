@@ -19,8 +19,8 @@
 
 #include "nodes.h"
 
-#include <HighFive/include/highfive/H5DataSet.hpp>
-#include <HighFive/include/highfive/H5File.hpp>
+#include <highfive/H5DataSet.hpp>
+#include <highfive/H5File.hpp>
 
 #include <iostream>
 #include <memory>

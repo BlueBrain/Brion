@@ -21,7 +21,7 @@ add_custom_target(${PROJECT_NAME}-python-doc-html
 set_target_properties(${PROJECT_NAME}-python-doc-html PROPERTIES
   EXCLUDE_FROM_DEFAULT_BUILD ON FOLDER "doxygen")
 
-if(TARGET brain_python)
+if(TARGET brain_python AND TARGET ${PROJECT_NAME}-doxygen)
   add_dependencies(${PROJECT_NAME}-python-doc-html brain_python)
   add_dependencies(${PROJECT_NAME}-doxygen ${PROJECT_NAME}-python-doc-html)
 endif()
