@@ -127,10 +127,17 @@ CsvConfig::CsvConfig(const URI& uri)
 const std::string& CsvConfig::getProperty(const size_t nodeTypeId,
                                           const std::string& property) const
 {
-    const size_t rowIndex = impl->nodeTypeIdToRowIndex.at(nodeTypeId);
-    const size_t columnIndex = impl->nameToColumnIndex.at(property);
+    auto itRow = impl->nodeTypeIdToRowIndex.find(nodeTypeId);
+    auto itCol = impl->nameToColumnIndex.find(property);
 
-    return impl->table[rowIndex][columnIndex];
+    if (itRow == impl->nodeTypeIdToRowIndex.end())
+        throw std::runtime_error("Node type id not found: `" +
+                                 std::to_string(nodeTypeId) + "`");
+
+    if (itCol == impl->nameToColumnIndex.end())
+        throw std::runtime_error("Property not found: `" + property + "`");
+
+    return impl->table[itRow->second][itCol->second];
 }
 
 CsvConfig::~CsvConfig() = default;
