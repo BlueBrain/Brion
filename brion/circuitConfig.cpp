@@ -109,23 +109,15 @@ nlohmann::json parseCircuitJson(const std::string& jsonStr)
     return jsonFlat.unflatten();
 }
 
-brion::CircuitConfig::Components fill_components(const nlohmann::json& json)
+std::map<std::string,std::string> fill_components(const nlohmann::json& json)
 {
-    brion::CircuitConfig::Components components;
-
     const auto comps = json["components_dir"];
+    std::map<std::string, std::string> output;
 
-    const auto tryGetValue = [&](const std::string& name) {
-        return comps.find(name) != comps.end() ? comps[name] : "";
-    };
+    for (auto it = comps.begin(); it != comps.end(); ++it)
+        output[it.key()] = it.value();
 
-    components.morphologies_dir = tryGetValue("morphologies_dir");
-    components.synaptic_models_dir = tryGetValue("synaptic_models_dir");
-    components.mechanisms_dir = tryGetValue("mechanisms_dir");
-    components.biophysical_neuron_models_dir =
-        tryGetValue("biophysical_neuron_models_dir");
-    components.point_neuron_models_dir = tryGetValue("point_neuron_models_dir");
-    return components;
+    return output;
 }
 
 std::vector<brion::CircuitConfig::NetworkNode> fill_nodes(
@@ -187,13 +179,13 @@ struct CircuitConfig::Impl
 
         const auto json = parseCircuitJson(contents);
         target_simulator = json["target_simulator"];
-        components = fill_components(json);
+        component_dirs = fill_components(json);
         networkNodes = fill_nodes(json);
         networkEdges = fill_edges(json);
     }
 
     std::string target_simulator;
-    CircuitConfig::Components components;
+    std::map<std::string, std::string> component_dirs;
     std::vector<CircuitConfig::NetworkNode> networkNodes;
     std::vector<CircuitConfig::NetworkEdge> networkEdges;
 };
@@ -211,9 +203,13 @@ std::string CircuitConfig::getTargetSimulator() const
     return impl->target_simulator;
 }
 
-CircuitConfig::Components CircuitConfig::getComponents() const
+std::string CircuitConfig::getComponentPath(const std::string& name) const
 {
-    return impl->components;
+    const auto it = impl->component_dirs.find(name);
+    if (it == impl->component_dirs.end())
+        throw std::runtime_error("Could not find component '" + name + "'");
+
+    return it->second;
 }
 
 std::vector<CircuitConfig::NetworkNode> CircuitConfig::getNetworkNodes() const

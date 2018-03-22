@@ -195,8 +195,8 @@ BOOST_AUTO_TEST_CASE(circuit_config_getTargetSimulator)
 BOOST_AUTO_TEST_CASE(circuit_config_getComponents)
 {
     auto config = brion::CircuitConfig(TEST_SONATA_SIMPLE_NETWORK_URI);
-    const auto components = config.getComponents();
-    BOOST_CHECK_EQUAL(components.morphologies_dir, "./morphologies");
+    BOOST_CHECK_EQUAL(config.getComponentPath("morphologies_dir"),
+                      "./morphologies");
 }
 
 BOOST_AUTO_TEST_CASE(circuit_config_getNetworkNodes)
