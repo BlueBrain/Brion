@@ -202,16 +202,16 @@ BOOST_AUTO_TEST_CASE(circuit_config_getComponents)
 BOOST_AUTO_TEST_CASE(circuit_config_getNetworkNodes)
 {
     auto config = brion::CircuitConfig(TEST_SONATA_SIMPLE_NETWORK_URI);
-    const auto nodes = config.getNetworkNodes();
-    BOOST_CHECK_EQUAL(nodes[0].nodes_file, "simple_nodes.h5");
-    BOOST_CHECK_EQUAL(nodes[0].node_types_file, "node_types.csv");
-    BOOST_CHECK_EQUAL(nodes[1].nodes_file, "./simple_nodes.h5");
-    BOOST_CHECK_EQUAL(nodes[1].node_types_file, "./node_types.csv");
+    const auto nodes = config.getNodes();
+    BOOST_CHECK_EQUAL(nodes[0].elements, "simple_nodes.h5");
+    BOOST_CHECK_EQUAL(nodes[0].types, "node_types.csv");
+    BOOST_CHECK_EQUAL(nodes[1].elements, "./simple_nodes.h5");
+    BOOST_CHECK_EQUAL(nodes[1].types, "./node_types.csv");
 }
 
 BOOST_AUTO_TEST_CASE(circuit_config_getNetworkEdges)
 {
     auto config = brion::CircuitConfig(TEST_SONATA_SIMPLE_NETWORK_URI);
-    const auto edges = config.getNetworkEdges();
+    const auto edges = config.getEdges();
     BOOST_CHECK_EQUAL(edges.size(), 0);
 }

@@ -109,7 +109,7 @@ nlohmann::json parseCircuitJson(const std::string& jsonStr)
     return jsonFlat.unflatten();
 }
 
-std::map<std::string,std::string> fill_components(const nlohmann::json& json)
+std::map<std::string, std::string> fill_components(const nlohmann::json& json)
 {
     const auto comps = json["components_dir"];
     std::map<std::string, std::string> output;
@@ -120,37 +120,20 @@ std::map<std::string,std::string> fill_components(const nlohmann::json& json)
     return output;
 }
 
-std::vector<brion::CircuitConfig::NetworkNode> fill_nodes(
-    const nlohmann::json& json)
+std::vector<brion::CircuitConfig::SubnetworkFiles> fill_subnetwork(
+    const nlohmann::json& json, const std::string& network_type,
+    const std::string& element_name, const std::string& type_name)
 {
-    std::vector<brion::CircuitConfig::NetworkNode> output;
+    std::vector<brion::CircuitConfig::SubnetworkFiles> output;
 
-    const auto nodes = json["networks"]["nodes"];
+    const auto nodes = json["networks"][network_type];
 
     for (const auto& node : nodes)
     {
-        brion::CircuitConfig::NetworkNode networkNode;
-        networkNode.nodes_file = node["nodes_file"];
-        networkNode.node_types_file = node["node_types_file"];
-        output.push_back(networkNode);
-    }
-
-    return output;
-}
-
-std::vector<brion::CircuitConfig::NetworkEdge> fill_edges(
-    const nlohmann::json& json)
-{
-    std::vector<brion::CircuitConfig::NetworkEdge> output;
-
-    const auto edges = json["networks"]["edges"];
-
-    for (const auto& edge : edges)
-    {
-        brion::CircuitConfig::NetworkEdge networkEdge;
-        networkEdge.edges_file = edge["edges_file"];
-        networkEdge.edge_types_file = edge["edge_types_file"];
-        output.push_back(networkEdge);
+        brion::CircuitConfig::SubnetworkFiles network;
+        network.elements = node[element_name];
+        network.types = node[type_name];
+        output.push_back(network);
     }
 
     return output;
@@ -180,14 +163,16 @@ struct CircuitConfig::Impl
         const auto json = parseCircuitJson(contents);
         target_simulator = json["target_simulator"];
         component_dirs = fill_components(json);
-        networkNodes = fill_nodes(json);
-        networkEdges = fill_edges(json);
+        networkEdges =
+            fill_subnetwork(json, "edges", "edges_file", "edge_types_file");
+        networkNodes =
+            fill_subnetwork(json, "nodes", "nodes_file", "node_types_file");
     }
 
     std::string target_simulator;
     std::map<std::string, std::string> component_dirs;
-    std::vector<CircuitConfig::NetworkNode> networkNodes;
-    std::vector<CircuitConfig::NetworkEdge> networkEdges;
+    std::vector<CircuitConfig::SubnetworkFiles> networkNodes;
+    std::vector<CircuitConfig::SubnetworkFiles> networkEdges;
 };
 
 CircuitConfig::CircuitConfig(const URI& uri)
@@ -212,11 +197,11 @@ std::string CircuitConfig::getComponentPath(const std::string& name) const
     return it->second;
 }
 
-std::vector<CircuitConfig::NetworkNode> CircuitConfig::getNetworkNodes() const
+std::vector<CircuitConfig::SubnetworkFiles> CircuitConfig::getNodes() const
 {
     return impl->networkNodes;
 }
-std::vector<CircuitConfig::NetworkEdge> CircuitConfig::getNetworkEdges() const
+std::vector<CircuitConfig::SubnetworkFiles> CircuitConfig::getEdges() const
 {
     return impl->networkEdges;
 }

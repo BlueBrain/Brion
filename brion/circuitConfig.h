@@ -29,16 +29,10 @@ namespace brion
 class CircuitConfig
 {
 public:
-    struct NetworkNode
+    struct SubnetworkFiles
     {
-        std::string nodes_file;
-        std::string node_types_file;
-    };
-
-    struct NetworkEdge
-    {
-        std::string edges_file;
-        std::string edge_types_file;
+        std::string elements;
+        std::string types;
     };
 
 public:
@@ -63,10 +57,10 @@ public:
     std::string getComponentPath(const std::string& name) const;
 
     /** Return the list of network nodes */
-    std::vector<NetworkNode> getNetworkNodes() const;
+    std::vector<SubnetworkFiles> getNodes() const;
 
     /** Return the list of network edges */
-    std::vector<NetworkEdge> getNetworkEdges() const;
+    std::vector<SubnetworkFiles> getEdges() const;
 
 private:
     struct Impl;
