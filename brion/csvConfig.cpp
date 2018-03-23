@@ -52,12 +52,7 @@ struct CsvConfig::Impl
         if (file.fail())
             throw std::runtime_error("Could not open file `" + uri + "`");
 
-        std::vector<std::string> lines;
-
         for (std::string line; std::getline(file, line);)
-            lines.push_back(line);
-
-        for (const auto& line : lines)
             table.push_back(explode_whitespace(line));
 
         // Verify layout
