@@ -35,6 +35,7 @@ public:
      *
      * @throw std::runtime_error if file could not be opened
      * @throw std::runtime_error if csv table is inconsistent
+     * @throw std::runtime_error if 'node_type_id' column is missing
      */
     CsvConfig(const URI& uri);
     CsvConfig(CsvConfig&&);
