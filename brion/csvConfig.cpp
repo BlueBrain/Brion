@@ -77,7 +77,7 @@ struct CsvConfig::Impl
         if (nodeTypeIdIt == nameToColumnIndex.end())
             throw std::runtime_error("Could not find column 'node_type_id'");
 
-        const auto pos = std::distance(nameToColumnIndex.begin(), nodeTypeIdIt);
+        const auto pos = nodeTypeIdIt->second;
 
         for (size_t i = 1; i < table.size(); i++)
         {
