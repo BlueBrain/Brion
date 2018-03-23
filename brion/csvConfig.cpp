@@ -53,16 +53,11 @@ struct CsvConfig::Impl
         if (file.fail())
             throw std::runtime_error("Could not open file `" + uri + "`");
 
-        std::string contents;
+        std::vector<std::string> lines;
 
-        file.seekg(0, std::ios::end);
-        contents.reserve(file.tellg());
-        file.seekg(0, std::ios::beg);
+        for (std::string line; std::getline(file, line);)
+            lines.push_back(line);
 
-        contents.assign((std::istreambuf_iterator<char>(file)),
-                        std::istreambuf_iterator<char>());
-
-        const auto lines = explode(contents, boost::char_separator<char>("\n"));
         for (const auto& line : lines)
             table.push_back(explode(line, boost::char_separator<char>(" ")));
 
