@@ -19,6 +19,7 @@
 
 #include "csvConfig.h"
 
+#include <boost/tokenizer.hpp>
 #include <fstream>
 #include <iostream>
 #include <memory>
@@ -29,36 +30,15 @@
 
 namespace
 {
-// Taken from:
-// https://stackoverflow.com/questions/890164/how-can-i-split-a-string-by-a-delimiter-into-an-array
-std::vector<std::string> explode(const std::string& str, const char& ch)
+std::vector<std::string> explode(const std::string& str,
+                                 const boost::char_separator<char>& sep)
 {
-    std::string next;
-    std::vector<std::string> result;
+    const boost::tokenizer<boost::char_separator<char>> tok{str, sep};
 
-    // For each character in the string
-    for (auto it = str.begin(); it != str.end(); it++)
-    {
-        // If we've hit the terminal character
-        if (*it == ch)
-        {
-            // If we have some characters accumulated
-            if (!next.empty())
-            {
-                // Add them to the result vector
-                result.push_back(next);
-                next.clear();
-            }
-        }
-        else
-        {
-            // Accumulate the next character into the sequence
-            next += *it;
-        }
-    }
-    if (!next.empty())
-        result.push_back(next);
-    return result;
+    std::vector<std::string> output;
+    for (const auto& t : tok)
+        output.emplace_back(t);
+    return output;
 }
 }
 
@@ -82,9 +62,9 @@ struct CsvConfig::Impl
         contents.assign((std::istreambuf_iterator<char>(file)),
                         std::istreambuf_iterator<char>());
 
-        const auto lines = explode(contents, '\n');
+        const auto lines = explode(contents, boost::char_separator<char>("\n"));
         for (const auto& line : lines)
-            table.push_back(explode(line, ' '));
+            table.push_back(explode(line, boost::char_separator<char>(" ")));
 
         { // Verify layout
             const size_t numColumns = table.front().size();
