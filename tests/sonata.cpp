@@ -235,6 +235,9 @@ BOOST_AUTO_TEST_CASE(csv_config_get_property)
     BOOST_CHECK_EQUAL(csv.getProperty(0, "mtype"), "pyramidal");
     BOOST_CHECK_EQUAL(csv.getProperty(2, "etype"), "fast");
     BOOST_CHECK_EQUAL(csv.getProperty(1, "model_type"), "virtual");
+
+    BOOST_CHECK_THROW(csv.getProperty(99, "population"), std::runtime_error);
+    BOOST_CHECK_THROW(csv.getProperty(0, "void"), std::runtime_error);
 }
 
 BOOST_AUTO_TEST_CASE(csv_config_getNodeTypeIds)
