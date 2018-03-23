@@ -42,6 +42,12 @@ public:
     CsvConfig(const CsvConfig& other) = delete;
     ~CsvConfig();
 
+    /** Returns all available node_type_id's */
+    size_ts getNodeTypeIds() const;
+
+    /** Returns all available properties */
+    Strings getProperties() const;
+
     /** Returns the value of a property of the node_type_id
      *
      * @param nodeTypeId The id of the node type

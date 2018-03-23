@@ -103,6 +103,26 @@ CsvConfig::CsvConfig(const URI& uri)
 {
 }
 
+size_ts CsvConfig::getNodeTypeIds() const
+{
+    size_ts output;
+    for (const auto& it : impl->nodeTypeIdToRowIndex)
+        output.push_back(it.first);
+    std::sort(output.begin(), output.end());
+    return output;
+}
+
+Strings CsvConfig::getProperties() const
+{
+    Strings output;
+    for (const auto& it : impl->nameToColumnIndex)
+        output.push_back(it.first);
+    output.erase(std::remove(output.begin(), output.end(), "node_type_id"),
+                 output.end());
+    std::sort(output.begin(), output.end());
+    return output;
+}
+
 const std::string& CsvConfig::getProperty(const size_t nodeTypeId,
                                           const std::string& property) const
 {
