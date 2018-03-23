@@ -30,11 +30,10 @@
 
 namespace
 {
-std::vector<std::string> explode(const std::string& str,
-                                 const boost::char_separator<char>& sep)
+std::vector<std::string> explode_whitespace(const std::string& str)
 {
+    const boost::char_separator<char> sep{" "};
     const boost::tokenizer<boost::char_separator<char>> tok{str, sep};
-
     std::vector<std::string> output;
     for (const auto& t : tok)
         output.emplace_back(t);
@@ -59,7 +58,7 @@ struct CsvConfig::Impl
             lines.push_back(line);
 
         for (const auto& line : lines)
-            table.push_back(explode(line, boost::char_separator<char>(" ")));
+            table.push_back(explode_whitespace(line));
 
         { // Verify layout
             const size_t numColumns = table.front().size();
