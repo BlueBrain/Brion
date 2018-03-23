@@ -243,7 +243,9 @@ BOOST_AUTO_TEST_CASE(csv_config_get_property)
 BOOST_AUTO_TEST_CASE(csv_config_getNodeTypeIds)
 {
     auto csv = brion::CsvConfig(TEST_SONATA_NODE_TYPES_URI);
-    const auto nodeTypeIds = csv.getNodeTypeIds();
+    auto nodeTypeIds = csv.getNodeTypeIds();
+    std::sort(nodeTypeIds.begin(), nodeTypeIds.end());
+
     BOOST_CHECK_EQUAL(nodeTypeIds[0], 0);
     BOOST_CHECK_EQUAL(nodeTypeIds[1], 1);
     BOOST_CHECK_EQUAL(nodeTypeIds[2], 2);
@@ -252,7 +254,9 @@ BOOST_AUTO_TEST_CASE(csv_config_getNodeTypeIds)
 BOOST_AUTO_TEST_CASE(csv_config_getProperties)
 {
     auto csv = brion::CsvConfig(TEST_SONATA_NODE_TYPES_URI);
-    const auto properties = csv.getProperties();
+    auto properties = csv.getProperties();
+    std::sort(properties.begin(), properties.end());
+
     BOOST_CHECK_EQUAL(properties[0], "etype");
     BOOST_CHECK_EQUAL(properties[1], "model_type");
     BOOST_CHECK_EQUAL(properties[2], "mtype");

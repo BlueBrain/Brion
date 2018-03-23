@@ -42,10 +42,10 @@ public:
     CsvConfig(const CsvConfig& other) = delete;
     ~CsvConfig();
 
-    /** Returns all available node_type_id's */
+    /** Returns all available node_type_id's in random order */
     size_ts getNodeTypeIds() const;
 
-    /** Returns all available properties */
+    /** Returns all available properties in random order */
     Strings getProperties() const;
 
     /** Returns the value of a property of the node_type_id
