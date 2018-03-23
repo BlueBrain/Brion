@@ -60,30 +60,35 @@ struct CsvConfig::Impl
         for (const auto& line : lines)
             table.push_back(explode_whitespace(line));
 
-        { // Verify layout
-            const size_t numColumns = table.front().size();
-            for (const auto& row : table)
-            {
-                if (numColumns != row.size())
-                    throw std::runtime_error(
-                        "Number of columns inconsistent in `" + uri + "`");
-            }
+        // Verify layout
+        const size_t numColumns = table.front().size();
+        for (const auto& row : table)
+        {
+            if (numColumns != row.size())
+                throw std::runtime_error("Number of columns inconsistent in `" +
+                                         uri + "`");
         }
 
-        { // Fill access maps
-            size_t ctr = 0;
-            for (const auto& columnName : table.front())
-            {
-                nameToColumnIndex[columnName] = ctr;
-                ctr++;
-            }
+        // Fill access maps
+        size_t ctr = 0;
+        for (const auto& columnName : table.front())
+        {
+            nameToColumnIndex[columnName] = ctr;
+            ctr++;
+        }
 
-            for (size_t i = 1; i < table.size(); i++)
-            {
-                const auto& nodeTypeIdStr = table[i][0];
-                const size_t nodeTypeId = std::stoi(nodeTypeIdStr);
-                nodeTypeIdToRowIndex[nodeTypeId] = i;
-            }
+        const auto nodeTypeIdIt = nameToColumnIndex.find("node_type_id");
+
+        if (nodeTypeIdIt == nameToColumnIndex.end())
+            throw std::runtime_error("Could not find column 'node_type_id'");
+
+        const auto pos = std::distance(nameToColumnIndex.begin(), nodeTypeIdIt);
+
+        for (size_t i = 1; i < table.size(); i++)
+        {
+            const auto& nodeTypeIdStr = table[i][pos];
+            const size_t nodeTypeId = std::stoi(nodeTypeIdStr);
+            nodeTypeIdToRowIndex[nodeTypeId] = i;
         }
     }
 
