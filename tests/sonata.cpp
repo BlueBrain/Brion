@@ -23,6 +23,7 @@
 #include <tests/paths.h>
 
 #include <brion/circuitConfig.h>
+#include <brion/csvConfig.h>
 #include <brion/nodes.h>
 #include <brion/types.h>
 
@@ -43,6 +44,9 @@ const brion::URI TEST_SONATA_SIMPLE_NODES_URI(std::string("file://") +
 const brion::URI TEST_SONATA_SIMPLE_NETWORK_URI(std::string("file://") +
                                                 BRION_TESTDATA +
                                                 "/sonata/simple_network.json");
+const brion::URI TEST_SONATA_NODE_TYPES_URI(std::string("file://") +
+                                            BRION_TESTDATA +
+                                            "/sonata/node_types.csv");
 constexpr char POPULATION_NAME[] = "simple";
 
 BOOST_AUTO_TEST_CASE(sonata_constructors)
@@ -215,4 +219,46 @@ BOOST_AUTO_TEST_CASE(circuit_config_getNetworkEdges)
     const auto edges = config.getEdges();
     BOOST_CHECK_EQUAL(edges[0].elements, "./simple_edges.h5");
     BOOST_CHECK_EQUAL(edges[0].types, "./edge_types.csv");
+}
+
+////////////////////////////////////////////////////////////////////////////
+
+BOOST_AUTO_TEST_CASE(csv_config_constructors)
+{
+    auto csv = brion::CsvConfig(TEST_SONATA_NODE_TYPES_URI);
+}
+
+BOOST_AUTO_TEST_CASE(csv_config_get_property)
+{
+    auto csv = brion::CsvConfig(TEST_SONATA_NODE_TYPES_URI);
+    BOOST_CHECK_EQUAL(csv.getProperty(1, "population"), "simple");
+    BOOST_CHECK_EQUAL(csv.getProperty(0, "mtype"), "pyramidal");
+    BOOST_CHECK_EQUAL(csv.getProperty(2, "etype"), "fast");
+    BOOST_CHECK_EQUAL(csv.getProperty(1, "model_type"), "virtual");
+
+    BOOST_CHECK_THROW(csv.getProperty(99, "population"), std::runtime_error);
+    BOOST_CHECK_THROW(csv.getProperty(0, "void"), std::runtime_error);
+}
+
+BOOST_AUTO_TEST_CASE(csv_config_getNodeTypeIds)
+{
+    auto csv = brion::CsvConfig(TEST_SONATA_NODE_TYPES_URI);
+    auto nodeTypeIds = csv.getNodeTypeIds();
+    std::sort(nodeTypeIds.begin(), nodeTypeIds.end());
+
+    BOOST_CHECK_EQUAL(nodeTypeIds[0], 0);
+    BOOST_CHECK_EQUAL(nodeTypeIds[1], 1);
+    BOOST_CHECK_EQUAL(nodeTypeIds[2], 2);
+}
+
+BOOST_AUTO_TEST_CASE(csv_config_getProperties)
+{
+    auto csv = brion::CsvConfig(TEST_SONATA_NODE_TYPES_URI);
+    auto properties = csv.getProperties();
+    std::sort(properties.begin(), properties.end());
+
+    BOOST_CHECK_EQUAL(properties[0], "etype");
+    BOOST_CHECK_EQUAL(properties[1], "model_type");
+    BOOST_CHECK_EQUAL(properties[2], "mtype");
+    BOOST_CHECK_EQUAL(properties[3], "population");
 }

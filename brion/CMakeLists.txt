@@ -24,6 +24,7 @@ set(BRION_PUBLIC_HEADERS
   nodes.h
   nodeGroup.h
   circuitConfig.h
+  csvConfig.h
   )
 
 set(BRION_HEADERS
@@ -50,6 +51,7 @@ set(BRION_SOURCES
   nodes.cpp
   nodeGroup.cpp
   circuitConfig.cpp
+  csvConfig.cpp
   )
 
 if(MSVC)
