@@ -26,7 +26,7 @@ population = out.create_group("nodes/simple")
 node_group_id = numpy.array([
     0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1], dtype="u4")
 node_group_index = numpy.array([
-    9, 0, 8, 1, 7, 2, 6, 3, 5, 4, 9, 0, 8, 1, 7, 2, 6, 3, 5, 4], dtype="u4")
+    0, 9, 1, 8, 2, 7, 3, 6, 4, 5, 5, 4, 6, 3, 7, 2, 8, 1, 9, 0], dtype="u4")
 # Node ids are optional, but in this example we will make them explicit,
 # non ordered, non contiguous
 node_id = numpy.array([
@@ -89,7 +89,7 @@ columns = {
     "etype": ["fast", "slow", "fast"]}
 
 writer = csv.writer(out, delimiter=' ',
-                    quotechar='|', quoting=csv.QUOTE_MINIMAL)
+                    quotechar='|', quoting=csv.QUOTE_MINIMAL, lineterminator='\n')
 
 writer.writerow(columns.keys())
 def get_row(columns, index):

@@ -99,9 +99,9 @@ BOOST_AUTO_TEST_CASE(sonata_getNodeGroupIndices)
     brion::Nodes nodes(TEST_SONATA_SIMPLE_NODES_URI);
     const auto node_ids = nodes.getNodeGroupIndices(POPULATION_NAME);
     BOOST_CHECK_EQUAL(node_ids.size(), 20);
-    BOOST_CHECK_EQUAL(node_ids[0], 9);
-    BOOST_CHECK_EQUAL(node_ids[10], 9);
-    BOOST_CHECK_EQUAL(node_ids[19], 4);
+    BOOST_CHECK_EQUAL(node_ids[0], 0);
+    BOOST_CHECK_EQUAL(node_ids[10], 5);
+    BOOST_CHECK_EQUAL(node_ids[19], 0);
 }
 
 BOOST_AUTO_TEST_CASE(sonata_getNodeTypes)
@@ -264,6 +264,7 @@ BOOST_AUTO_TEST_CASE(csv_config_getProperties)
     BOOST_CHECK_EQUAL(properties[2], "mtype");
     BOOST_CHECK_EQUAL(properties[3], "population");
 }
+/////////////////////////////////////////////////////////////////////////////
 
 BOOST_AUTO_TEST_CASE(sonata_SonataConfig_constructors)
 {
