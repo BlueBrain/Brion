@@ -270,3 +270,16 @@ BOOST_AUTO_TEST_CASE(sonata_SonataConfig_constructors)
 {
     brain::Circuit circuit(TEST_SONATA_SIMPLE_NETWORK_URI);
 }
+
+BOOST_AUTO_TEST_CASE(sonata_SonataConfig_getPositions)
+{
+    brain::Circuit circuit(TEST_SONATA_SIMPLE_NETWORK_URI);
+    std::cout << TEST_SONATA_SIMPLE_NETWORK_URI << std::endl;
+    brion::GIDSet ids = {0, 2, 3, 7};
+    const auto postitions = circuit.getPositions(ids);
+
+    BOOST_CHECK_EQUAL(postitions[0].x(), 0);
+    BOOST_CHECK_EQUAL(postitions[1].y(), 0);
+    BOOST_CHECK_EQUAL(postitions[2].z(), 0.5);
+    BOOST_CHECK_EQUAL(postitions[3].x(), 1);
+}

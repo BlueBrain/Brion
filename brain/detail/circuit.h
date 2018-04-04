@@ -23,8 +23,10 @@
 #include <brain/neuron/morphology.h>
 #include <brion/blueConfig.h>
 #include <brion/circuit.h>
+#include <brion/circuitConfig.h>
 #include <brion/detail/lockHDF5.h>
 #include <brion/morphology.h>
+#include <brion/nodes.h>
 #include <brion/synapse.h>
 #include <brion/synapseSummary.h>
 #include <brion/target.h>
@@ -214,7 +216,64 @@ public:
 class SonataCircuit : public Circuit::Impl
 {
 public:
-    explicit SonataCircuit(const URI&) {}
+    explicit SonataCircuit(const URI& uri)
+        : config(uri)
+        , basePath(boost::filesystem::path(uri.getPath()).parent_path())
+    {
+        for (auto& node : config.getNodes())
+        {
+            brion::Nodes nodes(URI(basePath.string() + "/" + node.elements));
+
+            const auto populations = nodes.getPopulationNames();
+            if (populations.size() > 1)
+            {
+                LBWARN << "More than one population found, ignored."
+                       << std::endl;
+            }
+
+            const auto population = populations.front();
+            const auto nodeGroupIDs = nodes.getNodeGroupIDs(population);
+            const auto nodeIDs = nodes.getNodeIDs(population);
+            const auto nodeGroupIndices = nodes.getNodeGroupIndices(population);
+            const size_t numNodes = nodeIDs.size();
+
+            if (nodeGroupIDs.size() > 1)
+            {
+                LBWARN << "More than one group ID found, ignored." << std::endl;
+            }
+
+            const auto nodeGroup = nodes.openGroup(population, 0);
+            const auto attributeX = nodeGroup.getAttribute<float>("x");
+            const auto attributeY = nodeGroup.getAttribute<float>("y");
+            const auto attributeZ = nodeGroup.getAttribute<float>("z");
+
+            size_t expectedIdx = 0;
+            for (size_t i = 0; i < numNodes; i++)
+            {
+                const auto groupID = nodeGroupIDs[i];
+                const auto nodeGroupIndex = nodeGroupIndices[i];
+
+                if (groupID != 0)
+                    continue;
+
+                if (expectedIdx != nodeGroupIndex)
+                {
+                    LBTHROW(std::runtime_error(
+                        "Expected node group index '" +
+                        std::to_string(expectedIdx) + "' got '" +
+                        std::to_string(nodeGroupIndex) + "'"));
+                }
+
+                const float x = attributeX[nodeGroupIndex];
+                const float y = attributeY[nodeGroupIndex];
+                const float z = attributeZ[nodeGroupIndex];
+
+                positions.push_back(Vector3f(x, y, z));
+
+                expectedIdx++;
+            }
+        }
+    }
     virtual ~SonataCircuit() {}
     virtual size_t getNumNeurons() const
     {
@@ -228,10 +287,12 @@ public:
         return GIDSet();
     }
 
-    virtual Vector3fs getPositions(const GIDSet& /*gids*/) const
+    virtual Vector3fs getPositions(const GIDSet& gids) const
     {
-        LBUNIMPLEMENTED;
-        return Vector3fs();
+        Vector3fs output;
+        for (auto gid : gids)
+            output.push_back(positions[gid]);
+        return output;
     }
     virtual size_ts getMTypes(const GIDSet& /*gids*/) const
     {
@@ -342,6 +403,10 @@ public:
     }
 
     int* delete_this;
+    brion::CircuitConfig config;
+    boost::filesystem::path basePath;
+
+    Vector3fs positions;
 };
 
 class BBPCircuit : public Circuit::Impl
