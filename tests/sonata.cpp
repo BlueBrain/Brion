@@ -294,15 +294,28 @@ BOOST_AUTO_TEST_CASE(sonata_SonataConfig_getRotations)
     const auto y_axis = V3f(0, 1, 0);
     const auto z_axis = V3f(0, 0, 1);
 
+    // Rotate 180 degrees around X
     const auto rot0 = rotations[0].getRotationMatrix();
+    // Rotate 180 degrees around Y
     const auto rot1 = rotations[1].getRotationMatrix();
+    // Rotate 180 degrees around Z
     const auto rot2 = rotations[2].getRotationMatrix();
+
+    // Rotate 90 degrees around X
     const auto rot3 = rotations[3].getRotationMatrix();
+    // Rotate 90 degrees around Y
     const auto rot4 = rotations[4].getRotationMatrix();
+    // Rotate 90 degrees around Z
     const auto rot5 = rotations[5].getRotationMatrix();
+
+    // Rotate 360 degrees around X
     const auto rot6 = rotations[6].getRotationMatrix();
+    // Rotate 360 degrees around Y
     const auto rot7 = rotations[7].getRotationMatrix();
+    // Rotate 360 degrees around Z
     const auto rot8 = rotations[8].getRotationMatrix();
+
+    // Rotate 90 degrees around X,Y and Z
     const auto rot9 = rotations[9].getRotationMatrix();
 
     BOOST_CHECK_EQUAL((rot0 * x_axis).x(), 1);
