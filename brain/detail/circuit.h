@@ -287,6 +287,9 @@ public:
                 const float sX = std::sin(rX), sY = std::sin(rY),
                             sZ = std::sin(rZ);
 
+                // These are the values given by multiplying the rotation
+                // matrices for R(X)R(Y)R(Z) i.e. extrinsic rotation around Z
+                // then Y then X
                 vmml::Matrix3f mtx;
 
                 mtx(0, 0) = cY * cZ;
