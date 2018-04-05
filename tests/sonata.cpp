@@ -167,13 +167,13 @@ BOOST_AUTO_TEST_CASE(sonata_nodeGroup_getAttribute)
     const auto z = group.getAttribute<float>("z", 6, 10);
 
     BOOST_CHECK_EQUAL(rotation_angle_x.size(), 10);
-    BOOST_CHECK_EQUAL(rotation_angle_x[0], 0.1f);
+    BOOST_CHECK_CLOSE(rotation_angle_x[0], 3.14159, 0.0001);
 
     BOOST_CHECK_EQUAL(rotation_angle_y.size(), 10);
-    BOOST_CHECK_EQUAL(rotation_angle_y[0], 0.2f);
+    BOOST_CHECK_EQUAL(rotation_angle_y[0], 0);
 
     BOOST_CHECK_EQUAL(rotation_angle_z.size(), 10);
-    BOOST_CHECK_EQUAL(rotation_angle_z[0], 0.3f);
+    BOOST_CHECK_EQUAL(rotation_angle_z[0], 0);
 
     BOOST_CHECK_EQUAL(x.size(), 10);
     BOOST_CHECK_EQUAL(x[0], 2.0f);
@@ -282,4 +282,46 @@ BOOST_AUTO_TEST_CASE(sonata_SonataConfig_getPositions)
     BOOST_CHECK_EQUAL(postitions[1].y(), 0);
     BOOST_CHECK_EQUAL(postitions[2].z(), 0.5);
     BOOST_CHECK_EQUAL(postitions[3].x(), 1);
+}
+
+BOOST_AUTO_TEST_CASE(sonata_SonataConfig_getRotations)
+{
+    brain::Circuit circuit(TEST_SONATA_SIMPLE_NETWORK_URI);
+    brion::GIDSet ids = {0, 1, 2, 3, 4, 5, 6, 7, 8, 9};
+    const auto rotations = circuit.getRotations(ids);
+
+    const auto x_axis = V3f(1, 0, 0);
+    const auto y_axis = V3f(0, 1, 0);
+    const auto z_axis = V3f(0, 0, 1);
+
+    const auto rot0 = rotations[0].getRotationMatrix();
+    const auto rot1 = rotations[1].getRotationMatrix();
+    const auto rot2 = rotations[2].getRotationMatrix();
+    const auto rot3 = rotations[3].getRotationMatrix();
+    const auto rot4 = rotations[4].getRotationMatrix();
+    const auto rot5 = rotations[5].getRotationMatrix();
+    const auto rot6 = rotations[6].getRotationMatrix();
+    const auto rot7 = rotations[7].getRotationMatrix();
+    const auto rot8 = rotations[8].getRotationMatrix();
+    const auto rot9 = rotations[9].getRotationMatrix();
+
+    BOOST_CHECK_EQUAL((rot0 * x_axis).x(), 1);
+    BOOST_CHECK_EQUAL((rot1 * y_axis).y(), 1);
+    BOOST_CHECK_EQUAL((rot2 * z_axis).z(), 1);
+
+    BOOST_CHECK_EQUAL((rot0 * y_axis).y(), -1);
+    BOOST_CHECK_EQUAL((rot1 * x_axis).x(), -1);
+    BOOST_CHECK_EQUAL((rot2 * x_axis).x(), -1);
+
+    BOOST_CHECK_CLOSE((rot3 * y_axis).z(), 1, 0.0001);
+    BOOST_CHECK_CLOSE((rot4 * x_axis).z(), -1, 0.0001);
+    BOOST_CHECK_CLOSE((rot5 * x_axis).y(), 1, 0.0001);
+
+    BOOST_CHECK_EQUAL((rot6 * x_axis).x(), 1);
+    BOOST_CHECK_EQUAL((rot7 * y_axis).y(), 1);
+    BOOST_CHECK_EQUAL((rot8 * z_axis).z(), 1);
+
+    BOOST_CHECK_CLOSE((rot9 * x_axis).z(), 1, 0.0001);
+    BOOST_CHECK_CLOSE((rot9 * y_axis).y(), -1, 0.0001);
+    BOOST_CHECK_CLOSE((rot9 * z_axis).x(), 1, 0.0001);
 }

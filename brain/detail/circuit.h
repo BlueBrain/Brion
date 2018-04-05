@@ -247,6 +247,13 @@ public:
             const auto attributeY = nodeGroup.getAttribute<float>("y");
             const auto attributeZ = nodeGroup.getAttribute<float>("z");
 
+            const auto rotationAngleX =
+                nodeGroup.getAttribute<float>("rotation_angle_x");
+            const auto rotationAngleY =
+                nodeGroup.getAttribute<float>("rotation_angle_y");
+            const auto rotationAngleZ =
+                nodeGroup.getAttribute<float>("rotation_angle_z");
+
             size_t expectedIdx = 0;
             for (size_t i = 0; i < numNodes; i++)
             {
@@ -269,6 +276,30 @@ public:
                 const float z = attributeZ[nodeGroupIndex];
 
                 positions.push_back(Vector3f(x, y, z));
+
+                const float rX = rotationAngleX[nodeGroupIndex];
+                const float rY = rotationAngleY[nodeGroupIndex];
+                const float rZ = rotationAngleZ[nodeGroupIndex];
+
+                const float cX = std::cos(rX), cY = std::cos(rY),
+                            cZ = std::cos(rZ);
+
+                const float sX = std::sin(rX), sY = std::sin(rY),
+                            sZ = std::sin(rZ);
+
+                vmml::Matrix3f mtx;
+
+                mtx(0, 0) = cY * cZ;
+                mtx(0, 1) = -cY * sZ;
+                mtx(0, 2) = sY;
+                mtx(1, 0) = cZ * sX * sY + cX * sZ;
+                mtx(1, 1) = cX * cZ - sX * sY * sZ;
+                mtx(1, 2) = -cY * sX;
+                mtx(2, 0) = sX * sZ - cX * cZ * sY;
+                mtx(2, 1) = cZ * sX + cX * sY * sZ;
+                mtx(2, 2) = cX * cY;
+
+                rotations.push_back(Quaternionf(mtx));
 
                 expectedIdx++;
             }
@@ -314,10 +345,12 @@ public:
         LBUNIMPLEMENTED;
         return Strings();
     }
-    virtual Quaternionfs getRotations(const GIDSet& /*gids*/) const
+    virtual Quaternionfs getRotations(const GIDSet& gids) const
     {
-        LBUNIMPLEMENTED;
-        return Quaternionfs();
+        Quaternionfs output;
+        for (auto gid : gids)
+            output.push_back(rotations[gid]);
+        return output;
     }
     virtual Strings getMorphologyNames(const GIDSet& /*gids*/) const
     {
@@ -407,6 +440,7 @@ public:
     boost::filesystem::path basePath;
 
     Vector3fs positions;
+    Quaternionfs rotations;
 };
 
 class BBPCircuit : public Circuit::Impl
