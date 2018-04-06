@@ -337,3 +337,9 @@ BOOST_AUTO_TEST_CASE(sonata_SonataConfig_getRotations)
     BOOST_CHECK_CLOSE((rot9 * y_axis).y(), -1, 0.0001);
     BOOST_CHECK_CLOSE((rot9 * z_axis).x(), 1, 0.0001);
 }
+
+BOOST_AUTO_TEST_CASE(sonata_SonataConfig_numNeurons)
+{
+    brain::Circuit circuit(TEST_SONATA_SIMPLE_NETWORK_URI);
+    BOOST_CHECK_EQUAL(circuit.getNumNeurons(), 10);
+}

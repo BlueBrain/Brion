@@ -267,14 +267,11 @@ public:
 
             expectedIdx++;
         }
+
+        numNeurons = expectedIdx;
     }
     virtual ~SonataCircuit() {}
-    virtual size_t getNumNeurons() const
-    {
-        LBUNIMPLEMENTED;
-        return 0;
-    }
-
+    virtual size_t getNumNeurons() const { return numNeurons; }
     virtual GIDSet getGIDs(const std::string& /*target*/) const
     {
         LBUNIMPLEMENTED;
@@ -461,6 +458,7 @@ public:
     boost::filesystem::path basePath;
 
     brion::NodeGroup nodeGroup;
+    size_t numNeurons = 0;
 };
 
 class BBPCircuit : public Circuit::Impl
