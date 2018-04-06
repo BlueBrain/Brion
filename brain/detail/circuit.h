@@ -220,92 +220,93 @@ public:
         : config(uri)
         , basePath(boost::filesystem::path(uri.getPath()).parent_path())
     {
-        for (auto& node : config.getNodes())
+        const auto& subnetworks = config.getNodes();
+        const auto& node = subnetworks.front();
+        brion::Nodes nodes(URI(basePath.string() + "/" + node.elements));
+
+        if (subnetworks.size() > 1)
         {
-            brion::Nodes nodes(URI(basePath.string() + "/" + node.elements));
+            LBWARN << "More than one subnetwork found, ignored." << std::endl;
+        }
 
-            const auto populations = nodes.getPopulationNames();
-            if (populations.size() > 1)
+        const auto populations = nodes.getPopulationNames();
+        if (populations.size() > 1)
+        {
+            LBWARN << "More than one population found, ignored." << std::endl;
+        }
+
+        const auto population = populations.front();
+        const auto nodeGroupIDs = nodes.getNodeGroupIDs(population);
+        const auto nodeIDs = nodes.getNodeIDs(population);
+        const auto nodeGroupIndices = nodes.getNodeGroupIndices(population);
+        const size_t numNodes = nodeIDs.size();
+
+        if (nodeGroupIDs.size() > 1)
+        {
+            LBWARN << "More than one group ID found, ignored." << std::endl;
+        }
+
+        const auto nodeGroup = nodes.openGroup(population, 0);
+        const auto attributeX = nodeGroup.getAttribute<float>("x");
+        const auto attributeY = nodeGroup.getAttribute<float>("y");
+        const auto attributeZ = nodeGroup.getAttribute<float>("z");
+
+        const auto rotationAngleX =
+            nodeGroup.getAttribute<float>("rotation_angle_x");
+        const auto rotationAngleY =
+            nodeGroup.getAttribute<float>("rotation_angle_y");
+        const auto rotationAngleZ =
+            nodeGroup.getAttribute<float>("rotation_angle_z");
+
+        size_t expectedIdx = 0;
+        for (size_t i = 0; i < numNodes; i++)
+        {
+            const auto groupID = nodeGroupIDs[i];
+            const auto nodeGroupIndex = nodeGroupIndices[i];
+
+            if (groupID != 0)
+                continue;
+
+            if (expectedIdx != nodeGroupIndex)
             {
-                LBWARN << "More than one population found, ignored."
-                       << std::endl;
+                LBTHROW(
+                    std::runtime_error("Expected node group index '" +
+                                       std::to_string(expectedIdx) + "' got '" +
+                                       std::to_string(nodeGroupIndex) + "'"));
             }
 
-            const auto population = populations.front();
-            const auto nodeGroupIDs = nodes.getNodeGroupIDs(population);
-            const auto nodeIDs = nodes.getNodeIDs(population);
-            const auto nodeGroupIndices = nodes.getNodeGroupIndices(population);
-            const size_t numNodes = nodeIDs.size();
+            const float x = attributeX[nodeGroupIndex];
+            const float y = attributeY[nodeGroupIndex];
+            const float z = attributeZ[nodeGroupIndex];
 
-            if (nodeGroupIDs.size() > 1)
-            {
-                LBWARN << "More than one group ID found, ignored." << std::endl;
-            }
+            positions.push_back(Vector3f(x, y, z));
 
-            const auto nodeGroup = nodes.openGroup(population, 0);
-            const auto attributeX = nodeGroup.getAttribute<float>("x");
-            const auto attributeY = nodeGroup.getAttribute<float>("y");
-            const auto attributeZ = nodeGroup.getAttribute<float>("z");
+            const float rX = rotationAngleX[nodeGroupIndex];
+            const float rY = rotationAngleY[nodeGroupIndex];
+            const float rZ = rotationAngleZ[nodeGroupIndex];
 
-            const auto rotationAngleX =
-                nodeGroup.getAttribute<float>("rotation_angle_x");
-            const auto rotationAngleY =
-                nodeGroup.getAttribute<float>("rotation_angle_y");
-            const auto rotationAngleZ =
-                nodeGroup.getAttribute<float>("rotation_angle_z");
+            const float cX = std::cos(rX), cY = std::cos(rY), cZ = std::cos(rZ);
 
-            size_t expectedIdx = 0;
-            for (size_t i = 0; i < numNodes; i++)
-            {
-                const auto groupID = nodeGroupIDs[i];
-                const auto nodeGroupIndex = nodeGroupIndices[i];
+            const float sX = std::sin(rX), sY = std::sin(rY), sZ = std::sin(rZ);
 
-                if (groupID != 0)
-                    continue;
+            // These are the values given by multiplying the rotation
+            // matrices for R(X)R(Y)R(Z) i.e. extrinsic rotation around Z
+            // then Y then X
+            vmml::Matrix3f mtx;
 
-                if (expectedIdx != nodeGroupIndex)
-                {
-                    LBTHROW(std::runtime_error(
-                        "Expected node group index '" +
-                        std::to_string(expectedIdx) + "' got '" +
-                        std::to_string(nodeGroupIndex) + "'"));
-                }
+            mtx(0, 0) = cY * cZ;
+            mtx(0, 1) = -cY * sZ;
+            mtx(0, 2) = sY;
+            mtx(1, 0) = cZ * sX * sY + cX * sZ;
+            mtx(1, 1) = cX * cZ - sX * sY * sZ;
+            mtx(1, 2) = -cY * sX;
+            mtx(2, 0) = sX * sZ - cX * cZ * sY;
+            mtx(2, 1) = cZ * sX + cX * sY * sZ;
+            mtx(2, 2) = cX * cY;
 
-                const float x = attributeX[nodeGroupIndex];
-                const float y = attributeY[nodeGroupIndex];
-                const float z = attributeZ[nodeGroupIndex];
+            rotations.push_back(Quaternionf(mtx));
 
-                positions.push_back(Vector3f(x, y, z));
-
-                const float rX = rotationAngleX[nodeGroupIndex];
-                const float rY = rotationAngleY[nodeGroupIndex];
-                const float rZ = rotationAngleZ[nodeGroupIndex];
-
-                const float cX = std::cos(rX), cY = std::cos(rY),
-                            cZ = std::cos(rZ);
-
-                const float sX = std::sin(rX), sY = std::sin(rY),
-                            sZ = std::sin(rZ);
-
-                // These are the values given by multiplying the rotation
-                // matrices for R(X)R(Y)R(Z) i.e. extrinsic rotation around Z
-                // then Y then X
-                vmml::Matrix3f mtx;
-
-                mtx(0, 0) = cY * cZ;
-                mtx(0, 1) = -cY * sZ;
-                mtx(0, 2) = sY;
-                mtx(1, 0) = cZ * sX * sY + cX * sZ;
-                mtx(1, 1) = cX * cZ - sX * sY * sZ;
-                mtx(1, 2) = -cY * sX;
-                mtx(2, 0) = sX * sZ - cX * cZ * sY;
-                mtx(2, 1) = cZ * sX + cX * sY * sZ;
-                mtx(2, 2) = cX * cY;
-
-                rotations.push_back(Quaternionf(mtx));
-
-                expectedIdx++;
-            }
+            expectedIdx++;
         }
     }
     virtual ~SonataCircuit() {}
