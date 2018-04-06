@@ -276,6 +276,7 @@ public:
         }
 
         numNeurons = expectedIdx;
+        morphologySource = URI(config.getComponentPath("morphologies_dir"));
     }
     virtual ~SonataCircuit() {}
     virtual size_t getNumNeurons() const { return numNeurons; }
@@ -383,12 +384,7 @@ public:
         return Strings();
     }
 
-    virtual URI getMorphologySource() const final
-    {
-        LBUNIMPLEMENTED;
-        return URI("");
-    }
-
+    virtual URI getMorphologySource() const final { return morphologySource; }
     virtual const brion::URI& getCircuitSource() const
     {
         LBUNIMPLEMENTED;
@@ -466,6 +462,7 @@ public:
 
     brion::NodeGroup nodeGroup;
     size_t numNeurons = 0;
+    URI morphologySource;
 };
 
 class BBPCircuit : public Circuit::Impl
