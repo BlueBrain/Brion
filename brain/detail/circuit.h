@@ -320,16 +320,22 @@ public:
     }
     virtual Quaternionfs getRotations(const GIDSet& gids) const
     {
+        if (gids.empty())
+            return Quaternionfs();
+
+        const size_t startIdx = *gids.begin();
+        const size_t endIdx = *gids.rbegin() + 1;
+
         const auto rotationAngleX =
-            nodeGroup.getAttribute<float>("rotation_angle_x");
+            nodeGroup.getAttribute<float>("rotation_angle_x", startIdx, endIdx);
         const auto rotationAngleY =
-            nodeGroup.getAttribute<float>("rotation_angle_y");
+            nodeGroup.getAttribute<float>("rotation_angle_y", startIdx, endIdx);
         const auto rotationAngleZ =
-            nodeGroup.getAttribute<float>("rotation_angle_z");
+            nodeGroup.getAttribute<float>("rotation_angle_z", startIdx, endIdx);
 
         Quaternionfs output;
 
-        for (auto gid : gids)
+        for (const auto gid : gids)
         {
             const float rX = rotationAngleX[gid];
             const float rY = rotationAngleY[gid];
