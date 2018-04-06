@@ -57,9 +57,10 @@ p2=pi*2
 rotation_angle_x = numpy.array([pi,0 ,0 ,ph,0 ,0 ,p2, 0,0 ,ph], dtype="float")
 rotation_angle_y = numpy.array([0 ,pi,0 ,0 ,ph,0 ,0 ,p2,0 ,ph], dtype="float")
 rotation_angle_z = numpy.array([0 ,0 ,pi,0 ,0 ,ph,0 ,0 ,p2,ph], dtype="float")
+dt = h5py.special_dtype(vlen=str) # PY3
 morphology_file = numpy.array(["morph_A", "morph_B", "morph_C", "morph_A",
                                "morph_B", "morph_C", "morph_D", "morph_B",
-                               "morph_A", "morph_C"], dtype=bytes)
+                               "morph_A", "morph_C"], dtype=dt)
 
 group.create_dataset("x", data=x)
 group.create_dataset("y", data=y)
