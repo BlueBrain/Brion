@@ -246,17 +246,7 @@ public:
             LBWARN << "More than one group ID found, ignored." << std::endl;
         }
 
-        const auto nodeGroup = nodes.openGroup(population, 0);
-        const auto attributeX = nodeGroup.getAttribute<float>("x");
-        const auto attributeY = nodeGroup.getAttribute<float>("y");
-        const auto attributeZ = nodeGroup.getAttribute<float>("z");
-
-        const auto rotationAngleX =
-            nodeGroup.getAttribute<float>("rotation_angle_x");
-        const auto rotationAngleY =
-            nodeGroup.getAttribute<float>("rotation_angle_y");
-        const auto rotationAngleZ =
-            nodeGroup.getAttribute<float>("rotation_angle_z");
+        nodeGroup = nodes.openGroup(population, 0);
 
         size_t expectedIdx = 0;
         for (size_t i = 0; i < numNodes; i++)
@@ -274,37 +264,6 @@ public:
                                        std::to_string(expectedIdx) + "' got '" +
                                        std::to_string(nodeGroupIndex) + "'"));
             }
-
-            const float x = attributeX[nodeGroupIndex];
-            const float y = attributeY[nodeGroupIndex];
-            const float z = attributeZ[nodeGroupIndex];
-
-            positions.push_back(Vector3f(x, y, z));
-
-            const float rX = rotationAngleX[nodeGroupIndex];
-            const float rY = rotationAngleY[nodeGroupIndex];
-            const float rZ = rotationAngleZ[nodeGroupIndex];
-
-            const float cX = std::cos(rX), cY = std::cos(rY), cZ = std::cos(rZ);
-
-            const float sX = std::sin(rX), sY = std::sin(rY), sZ = std::sin(rZ);
-
-            // These are the values given by multiplying the rotation
-            // matrices for R(X)R(Y)R(Z) i.e. extrinsic rotation around Z
-            // then Y then X
-            vmml::Matrix3f mtx;
-
-            mtx(0, 0) = cY * cZ;
-            mtx(0, 1) = -cY * sZ;
-            mtx(0, 2) = sY;
-            mtx(1, 0) = cZ * sX * sY + cX * sZ;
-            mtx(1, 1) = cX * cZ - sX * sY * sZ;
-            mtx(1, 2) = -cY * sX;
-            mtx(2, 0) = sX * sZ - cX * cZ * sY;
-            mtx(2, 1) = cZ * sX + cX * sY * sZ;
-            mtx(2, 2) = cX * cY;
-
-            rotations.push_back(Quaternionf(mtx));
 
             expectedIdx++;
         }
@@ -324,9 +283,19 @@ public:
 
     virtual Vector3fs getPositions(const GIDSet& gids) const
     {
+        const auto attributeX = nodeGroup.getAttribute<float>("x");
+        const auto attributeY = nodeGroup.getAttribute<float>("y");
+        const auto attributeZ = nodeGroup.getAttribute<float>("z");
+
         Vector3fs output;
         for (auto gid : gids)
-            output.push_back(positions[gid]);
+        {
+            const float x = attributeX[gid];
+            const float y = attributeY[gid];
+            const float z = attributeZ[gid];
+
+            output.push_back(Vector3f(x, y, z));
+        }
         return output;
     }
     virtual size_ts getMTypes(const GIDSet& /*gids*/) const
@@ -351,9 +320,42 @@ public:
     }
     virtual Quaternionfs getRotations(const GIDSet& gids) const
     {
+        const auto rotationAngleX =
+            nodeGroup.getAttribute<float>("rotation_angle_x");
+        const auto rotationAngleY =
+            nodeGroup.getAttribute<float>("rotation_angle_y");
+        const auto rotationAngleZ =
+            nodeGroup.getAttribute<float>("rotation_angle_z");
+
         Quaternionfs output;
+
         for (auto gid : gids)
-            output.push_back(rotations[gid]);
+        {
+            const float rX = rotationAngleX[gid];
+            const float rY = rotationAngleY[gid];
+            const float rZ = rotationAngleZ[gid];
+
+            const float cX = std::cos(rX), cY = std::cos(rY), cZ = std::cos(rZ);
+            const float sX = std::sin(rX), sY = std::sin(rY), sZ = std::sin(rZ);
+
+            // These are the values given by multiplying the rotation
+            // matrices for R(X)R(Y)R(Z) i.e. extrinsic rotation around Z
+            // then Y then X
+            vmml::Matrix3f mtx;
+
+            mtx(0, 0) = cY * cZ;
+            mtx(0, 1) = -cY * sZ;
+            mtx(0, 2) = sY;
+            mtx(1, 0) = cZ * sX * sY + cX * sZ;
+            mtx(1, 1) = cX * cZ - sX * sY * sZ;
+            mtx(1, 2) = -cY * sX;
+            mtx(2, 0) = sX * sZ - cX * cZ * sY;
+            mtx(2, 1) = cZ * sX + cX * sY * sZ;
+            mtx(2, 2) = cX * cY;
+
+            output.push_back(Quaternionf(mtx));
+        }
+
         return output;
     }
     virtual Strings getMorphologyNames(const GIDSet& /*gids*/) const
@@ -443,8 +445,7 @@ public:
     brion::CircuitConfig config;
     boost::filesystem::path basePath;
 
-    Vector3fs positions;
-    Quaternionfs rotations;
+    brion::NodeGroup nodeGroup;
 };
 
 class BBPCircuit : public Circuit::Impl

@@ -63,8 +63,12 @@ NodeGroup::NodeGroup(const HighFive::Group& group)
 {
     impl->group = group;
 }
+NodeGroup::NodeGroup()
+    : impl(new NodeGroup::Impl()){};
+
 NodeGroup::~NodeGroup() = default;
 NodeGroup::NodeGroup(NodeGroup&&) = default;
+NodeGroup& NodeGroup::operator=(NodeGroup&&) = default;
 
 Strings NodeGroup::getAttributeNames()
 {

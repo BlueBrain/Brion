@@ -40,8 +40,11 @@ class NodeGroup
 {
 public:
     friend class Nodes;
+    NodeGroup();
     NodeGroup(NodeGroup&&);
     ~NodeGroup();
+
+    NodeGroup& operator=(NodeGroup&&);
 
     /** Return the names of all the datasets of the node group */
     Strings getAttributeNames();
