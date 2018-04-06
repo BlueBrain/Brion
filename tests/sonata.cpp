@@ -277,10 +277,10 @@ BOOST_AUTO_TEST_CASE(sonata_SonataConfig_getPositions)
     brion::GIDSet ids = {0, 2, 3, 7};
     const auto postitions = circuit.getPositions(ids);
 
-    BOOST_CHECK_EQUAL(postitions[0].x(), 0);
-    BOOST_CHECK_EQUAL(postitions[1].y(), 0);
-    BOOST_CHECK_EQUAL(postitions[2].z(), 0.5);
-    BOOST_CHECK_EQUAL(postitions[3].x(), 1);
+    BOOST_CHECK_EQUAL(postitions[0], vmml::Vector3f(0, 0, 0.5));
+    BOOST_CHECK_EQUAL(postitions[1], vmml::Vector3f(2, 0, 0.5));
+    BOOST_CHECK_EQUAL(postitions[2], vmml::Vector3f(3, 1, 0.5));
+    BOOST_CHECK_EQUAL(postitions[3], vmml::Vector3f(1, 1, -0.5));
 }
 
 BOOST_AUTO_TEST_CASE(sonata_SonataConfig_getRotations)
@@ -342,4 +342,15 @@ BOOST_AUTO_TEST_CASE(sonata_SonataConfig_numNeurons)
 {
     brain::Circuit circuit(TEST_SONATA_SIMPLE_NETWORK_URI);
     BOOST_CHECK_EQUAL(circuit.getNumNeurons(), 10);
+}
+
+BOOST_AUTO_TEST_CASE(sonata_SonataConfig_getMorphologyURIs)
+{
+    brain::Circuit circuit(TEST_SONATA_SIMPLE_NETWORK_URI);
+    brion::GIDSet ids = {0, 4, 9};
+
+    const auto morphologyURIs = circuit.getMorphologyURIs(ids);
+    BOOST_CHECK_EQUAL(morphologyURIs[0].getPath(), "./morphologies/morph_A.h5");
+    BOOST_CHECK_EQUAL(morphologyURIs[1].getPath(), "./morphologies/morph_B.h5");
+    BOOST_CHECK_EQUAL(morphologyURIs[2].getPath(), "./morphologies/morph_C.h5");
 }

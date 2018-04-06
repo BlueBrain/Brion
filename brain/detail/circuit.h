@@ -304,9 +304,9 @@ public:
         Vector3fs output;
         for (auto gid : gids)
         {
-            const float x = attributeX[gid];
-            const float y = attributeY[gid];
-            const float z = attributeZ[gid];
+            const float x = attributeX[gid - startIdx];
+            const float y = attributeY[gid - startIdx];
+            const float z = attributeZ[gid - startIdx];
 
             output.push_back(Vector3f(x, y, z));
         }
@@ -319,8 +319,7 @@ public:
     }
     virtual Strings getMorphologyNames() const
     {
-        LBUNIMPLEMENTED;
-        return Strings();
+        return nodeGroup.getAttribute<std::string>("morphology_file");
     }
     virtual size_ts getETypes(const GIDSet& /*gids*/) const
     {
@@ -351,9 +350,9 @@ public:
 
         for (const auto gid : gids)
         {
-            const float rX = rotationAngleX[gid];
-            const float rY = rotationAngleY[gid];
-            const float rZ = rotationAngleZ[gid];
+            const float rX = rotationAngleX[gid - startIdx];
+            const float rY = rotationAngleY[gid - startIdx];
+            const float rZ = rotationAngleZ[gid - startIdx];
 
             const float cX = std::cos(rX), cY = std::cos(rY), cZ = std::cos(rZ);
             const float sX = std::sin(rX), sY = std::sin(rY), sZ = std::sin(rZ);
@@ -378,10 +377,22 @@ public:
 
         return output;
     }
-    virtual Strings getMorphologyNames(const GIDSet& /*gids*/) const
+    virtual Strings getMorphologyNames(const GIDSet& gids) const
     {
-        LBUNIMPLEMENTED;
-        return Strings();
+        if (gids.empty())
+            return Strings();
+
+        const size_t startIdx = *gids.begin();
+        const size_t endIdx = *gids.rbegin() + 1;
+
+        const auto names =
+            nodeGroup.getAttribute<std::string>("morphology_file", startIdx,
+                                                endIdx);
+        Strings output;
+        for (const auto gid : gids)
+            output.push_back(names[gid - startIdx]);
+
+        return output;
     }
 
     virtual URI getMorphologySource() const final { return morphologySource; }
