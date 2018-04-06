@@ -187,7 +187,14 @@ public:
     virtual Quaternionfs getRotations(const GIDSet& gids) const = 0;
     virtual Strings getMorphologyNames(const GIDSet& gids) const = 0;
 
-    virtual URI getMorphologyURI(const std::string& name) const = 0;
+    URI getMorphologyURI(const std::string& name) const
+    {
+        URI uri(getMorphologySource());
+        uri.setPath(uri.getPath() + "/" + name + ".h5");
+        return uri;
+    }
+
+    virtual URI getMorphologySource() const = 0;
 
     virtual const brion::URI& getCircuitSource() const = 0;
     virtual void saveMorphologyToCache(
@@ -376,7 +383,7 @@ public:
         return Strings();
     }
 
-    virtual URI getMorphologyURI(const std::string& /*name*/) const
+    virtual URI getMorphologySource() const final
     {
         LBUNIMPLEMENTED;
         return URI("");
@@ -501,13 +508,7 @@ public:
         return brion::Target::parse(_targetParsers, target);
     }
 
-    URI getMorphologyURI(const std::string& name) const final
-    {
-        URI uri(_morphologySource);
-        uri.setPath(uri.getPath() + "/" + name + ".h5");
-        return uri;
-    }
-
+    URI getMorphologySource() const final { return _morphologySource; }
     const brion::SynapseSummary& getSynapseSummary() const final
     {
         lunchbox::ScopedWrite mutex(_synapseSummary);
