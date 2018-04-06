@@ -283,9 +283,18 @@ public:
 
     virtual Vector3fs getPositions(const GIDSet& gids) const
     {
-        const auto attributeX = nodeGroup.getAttribute<float>("x");
-        const auto attributeY = nodeGroup.getAttribute<float>("y");
-        const auto attributeZ = nodeGroup.getAttribute<float>("z");
+        if (gids.empty())
+            return Vector3fs();
+
+        const size_t startIdx = *gids.begin();
+        const size_t endIdx = *gids.rbegin() + 1;
+
+        const auto attributeX =
+            nodeGroup.getAttribute<float>("x", startIdx, endIdx);
+        const auto attributeY =
+            nodeGroup.getAttribute<float>("y", startIdx, endIdx);
+        const auto attributeZ =
+            nodeGroup.getAttribute<float>("z", startIdx, endIdx);
 
         Vector3fs output;
         for (auto gid : gids)
