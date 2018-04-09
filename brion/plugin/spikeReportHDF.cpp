@@ -77,6 +77,7 @@ SpikeReportHDF::SpikeReportHDF(const SpikeReportInitData& initData)
 {
     if (handles(initData))
         impl->initializeReport(initData.getURI().getPath());
+    impl->lastReadPosition = impl->spikes.begin();
 }
 
 bool SpikeReportHDF::handles(const SpikeReportInitData& initData)
