@@ -21,6 +21,7 @@
 #include <BBP/TestDatasets.h>
 #include <brion/brion.h>
 #include <servus/uint128_t.h>
+#include <tests/paths.h>
 
 #define BOOST_TEST_MODULE SpikeReport
 #include <boost/filesystem/operations.hpp>
@@ -30,6 +31,7 @@
 #define BLURON_SPIKE_REPORT_FILE "local/simulations/may17_2011/Control/out.dat"
 #define BINARY_SPIKE_REPORT_FILE \
     "local/simulations/may17_2011/Control/out.spikes"
+#define HDF5_SPIKE_REPORT_FILE "sonata/simple_spikes_sort_by_gid.h5"
 
 #define BLURON_SPIKES_START_TIME 0.15f
 #define BLURON_SPIKES_END_TIME 9.975f
@@ -107,12 +109,6 @@ BOOST_AUTO_TEST_CASE(invalid_open_unknown_extension)
     boost::filesystem::path path(BBP_TESTDATA);
     path /= "local/README";
     BOOST_CHECK_THROW(brion::SpikeReport report1(brion::URI(path.string()),
-                                                 brion::MODE_READ),
-                      std::runtime_error);
-
-    path = BBP_TESTDATA;
-    path /= "local/simulations/may17_2011/Control/voltage.h5";
-    BOOST_CHECK_THROW(brion::SpikeReport report2(brion::URI(path.string()),
                                                  brion::MODE_READ),
                       std::runtime_error);
 }
@@ -652,4 +648,13 @@ BOOST_AUTO_TEST_CASE(seek_and_write_nest)
 BOOST_AUTO_TEST_CASE(seek_and_write_bluron)
 {
     // Not supported
+}
+
+BOOST_AUTO_TEST_CASE(spikeReportHDF_constructor)
+{
+    boost::filesystem::path path(BRION_TESTDATA);
+
+    brion::SpikeReport report(
+        brion::URI((path / std::string(HDF5_SPIKE_REPORT_FILE)).string()),
+        brion::MODE_READ);
 }
