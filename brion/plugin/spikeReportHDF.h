@@ -33,7 +33,7 @@ class BinaryReportMap;
  */
 class SpikeReportHDF : public SpikeReportPlugin
 {
-    class Impl;
+    struct Impl;
 
 public:
     explicit SpikeReportHDF(const SpikeReportInitData& initData);
@@ -43,7 +43,7 @@ public:
 
     void close() final {}
     Spikes read(float min) final;
-    Spikes readUntil(float max) final;
+    Spikes readUntil(float toTimeStamp) final;
     void readSeek(float toTimeStamp) final;
     void writeSeek(float toTimeStamp) final;
     void write(const Spike* spikes, size_t size) final;
