@@ -15,6 +15,7 @@ set(BRIONPLUGINS_HEADERS
   spikeReportASCII.h
   spikeReportBinary.h
   spikeReportBluron.h
+  spikeReportHDF.h
   spikeReportNEST.h
 )
 
@@ -29,6 +30,7 @@ set(BRIONPLUGINS_SOURCES
   spikeReportASCII.cpp
   spikeReportBinary.cpp
   spikeReportBluron.cpp
+  spikeReportHDF.cpp
   spikeReportNEST.cpp
 )
 
