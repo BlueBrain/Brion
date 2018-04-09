@@ -22,6 +22,9 @@
 #include <lunchbox/memoryMap.h>
 #include <lunchbox/pluginRegisterer.h>
 
+#include <boost/filesystem.hpp>
+#include <boost/filesystem/path.hpp>
+
 #include <fstream>
 
 namespace brion
@@ -31,7 +34,7 @@ namespace plugin
 namespace
 {
 lunchbox::PluginRegisterer<SpikeReportHDF> registerer;
-const char* const BINARY_REPORT_FILE_EXT = ".h5";
+constexpr char HDF_REPORT_FILE_EXT[] = ".h5";
 }
 
 class SpikeReportHDF::Impl
@@ -44,9 +47,14 @@ SpikeReportHDF::SpikeReportHDF(const SpikeReportInitData& initData)
 {
 }
 
-bool SpikeReportHDF::handles(const SpikeReportInitData& /*initData*/)
+bool SpikeReportHDF::handles(const SpikeReportInitData& initData)
 {
-    return false;
+    const URI& uri = initData.getURI();
+    if (!uri.getScheme().empty() && uri.getScheme() != "file")
+        return false;
+
+    const auto ext = boost::filesystem::path(uri.getPath()).extension();
+    return ext == brion::plugin::HDF_REPORT_FILE_EXT;
 }
 
 std::string SpikeReportHDF::getDescription()
