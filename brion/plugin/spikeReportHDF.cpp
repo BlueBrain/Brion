@@ -49,13 +49,13 @@ struct SpikeReportHDF::Impl
         file.reset(new HighFive::File(uri));
 
         const HighFive::Group group = file->getGroup("/spikes");
-        const HighFive::DataSet set_gids = group.getDataSet("gids");
-        const HighFive::DataSet set_timestamps = group.getDataSet("timestamps");
+        const HighFive::DataSet setGids = group.getDataSet("gids");
+        const HighFive::DataSet setTimestamps = group.getDataSet("timestamps");
 
         uint32_ts gids;
         floats timestamps;
-        set_gids.read(gids);
-        set_timestamps.read(timestamps);
+        setGids.read(gids);
+        setTimestamps.read(timestamps);
 
         const size_t numElements = gids.size();
 
