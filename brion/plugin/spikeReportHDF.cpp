@@ -48,20 +48,22 @@ struct SpikeReportHDF::Impl
         file.release();
         file.reset(new HighFive::File(uri));
 
-        uint32_ts gids;
-        floats timestamps;
         const HighFive::Group group = file->getGroup("/spikes");
         const HighFive::DataSet set_gids = group.getDataSet("gids");
         const HighFive::DataSet set_timestamps = group.getDataSet("timestamps");
+
+        uint32_ts gids;
+        floats timestamps;
         set_gids.read(gids);
         set_timestamps.read(timestamps);
-
-        // assert timestamps and gids have the same size
 
         const size_t numElements = gids.size();
 
         for (size_t i = 0; i < numElements; i++)
             spikes.push_back(std::make_pair<>(timestamps[i], gids[i]));
+
+        std::sort(spikes.begin(), spikes.end());
+
         initialized = true;
     }
 
