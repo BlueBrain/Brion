@@ -283,8 +283,8 @@ public:
     /**
      * Write the given spikes to the output.
      * Preconditions:
-     * - spikes is a sorted by time stamp
-     * - spikes.front().first < getCurrentTime()
+     * - spikes is sorted by timestamp
+     * - spikes.front().first >= getCurrentTime()
      *
      * Upon return getCurrenTime() is the greatest of all the spike times
      * plus an epsilon.
