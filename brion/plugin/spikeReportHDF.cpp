@@ -175,18 +175,5 @@ void SpikeReportHDF::readSeek(const float toTimeStamp)
         _currentTime = toTimeStamp;
     }
 }
-
-void SpikeReportHDF::writeSeek(float toTimeStamp)
-{
-    if (toTimeStamp < _currentTime)
-        LBTHROW(
-            std::runtime_error("Backward seek not supported in write mode"));
-
-    _currentTime = toTimeStamp;
-}
-
-void SpikeReportHDF::write(const Spike* /*spikes*/, const size_t /*size*/)
-{
-}
 }
 } // namespaces

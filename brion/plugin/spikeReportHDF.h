@@ -45,9 +45,7 @@ public:
     Spikes read(float min) final;
     Spikes readUntil(float toTimeStamp) final;
     void readSeek(float toTimeStamp) final;
-    void writeSeek(float toTimeStamp) final;
-    void write(const Spike* spikes, size_t size) final;
-    bool supportsBackwardSeek() const final { return true; }
+    bool supportsBackwardSeek() const final { return false; }
 private:
     std::unique_ptr<Impl> impl;
     size_t _startIndex = 0;
