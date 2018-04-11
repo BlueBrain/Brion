@@ -31,7 +31,9 @@
 #define BLURON_SPIKE_REPORT_FILE "local/simulations/may17_2011/Control/out.dat"
 #define BINARY_SPIKE_REPORT_FILE \
     "local/simulations/may17_2011/Control/out.spikes"
-#define HDF5_SPIKE_REPORT_FILE "sonata/simple_spikes_sort_by_gid.h5"
+#define HDF5_SPIKE_REPORT_FILE0 "sonata/simple_spikes_sort_none.h5"
+#define HDF5_SPIKE_REPORT_FILE1 "sonata/simple_spikes_sort_by_gid.h5"
+#define HDF5_SPIKE_REPORT_FILE2 "sonata/simple_spikes_sort_by_time.h5"
 
 #define BLURON_SPIKES_START_TIME 0.15f
 #define BLURON_SPIKES_END_TIME 9.975f
@@ -655,6 +657,33 @@ BOOST_AUTO_TEST_CASE(spikeReportHDF_constructor)
     boost::filesystem::path path(BRION_TESTDATA);
 
     brion::SpikeReport report(
-        brion::URI((path / std::string(HDF5_SPIKE_REPORT_FILE)).string()),
+        brion::URI((path / std::string(HDF5_SPIKE_REPORT_FILE0)).string()),
         brion::MODE_READ);
+}
+
+BOOST_AUTO_TEST_CASE(spikeReportHDF_read)
+{
+    boost::filesystem::path path(BRION_TESTDATA);
+
+    for (auto file : {HDF5_SPIKE_REPORT_FILE0, HDF5_SPIKE_REPORT_FILE1,
+                      HDF5_SPIKE_REPORT_FILE2})
+    {
+        brion::SpikeReport report(brion::URI(
+                                      (path / std::string(file)).string()),
+                                  brion::MODE_READ);
+
+        brion::Spikes spikes = report.read(brion::UNDEFINED_TIMESTAMP).get();
+
+        BOOST_REQUIRE_EQUAL(spikes.size(), 7);
+
+        const std::array<float, 7> spikes_ts = {0.0, 0.1, 0.2, 0.3,
+                                                0.3, 0.3, 0.4};
+        const std::array<size_t, 7> spikes_gids = {6, 5, 4, 1, 2, 3, 0};
+
+        for (size_t i = 0; i < 7; i++)
+        {
+            BOOST_CHECK_CLOSE(spikes_ts[i], spikes[i].first, 0.001);
+            BOOST_CHECK_EQUAL(spikes_gids[i], spikes[i].second);
+        }
+    }
 }
