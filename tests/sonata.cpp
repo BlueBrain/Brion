@@ -49,6 +49,8 @@ const brion::URI TEST_SONATA_NODE_TYPES_URI(std::string("file://") +
                                             BRION_TESTDATA +
                                             "/sonata/node_types.csv");
 
+const std::string TEST_SONATA_PATH = std::string(BRION_TESTDATA) + "/sonata";
+
 constexpr char POPULATION_NAME[] = "simple";
 
 BOOST_AUTO_TEST_CASE(sonata_constructors)
@@ -202,25 +204,27 @@ BOOST_AUTO_TEST_CASE(circuit_config_getComponents)
 {
     auto config = brion::CircuitConfig(TEST_SONATA_SIMPLE_NETWORK_URI);
     BOOST_CHECK_EQUAL(config.getComponentPath("morphologies_dir"),
-                      "./morphologies");
+                      TEST_SONATA_PATH + "/./morphologies");
 }
 
 BOOST_AUTO_TEST_CASE(circuit_config_getNetworkNodes)
 {
     auto config = brion::CircuitConfig(TEST_SONATA_SIMPLE_NETWORK_URI);
     const auto nodes = config.getNodes();
-    BOOST_CHECK_EQUAL(nodes[0].elements, "simple_nodes.h5");
-    BOOST_CHECK_EQUAL(nodes[0].types, "node_types.csv");
-    BOOST_CHECK_EQUAL(nodes[1].elements, "./simple_nodes.h5");
-    BOOST_CHECK_EQUAL(nodes[1].types, "./node_types.csv");
+    BOOST_CHECK_EQUAL(nodes[0].elements, TEST_SONATA_PATH + "/simple_nodes.h5");
+    BOOST_CHECK_EQUAL(nodes[0].types, TEST_SONATA_PATH + "/node_types.csv");
+    BOOST_CHECK_EQUAL(nodes[1].elements,
+                      TEST_SONATA_PATH + "/./simple_nodes.h5");
+    BOOST_CHECK_EQUAL(nodes[1].types, TEST_SONATA_PATH + "/./node_types.csv");
 }
 
 BOOST_AUTO_TEST_CASE(circuit_config_getNetworkEdges)
 {
     auto config = brion::CircuitConfig(TEST_SONATA_SIMPLE_NETWORK_URI);
     const auto edges = config.getEdges();
-    BOOST_CHECK_EQUAL(edges[0].elements, "./simple_edges.h5");
-    BOOST_CHECK_EQUAL(edges[0].types, "./edge_types.csv");
+    BOOST_CHECK_EQUAL(edges[0].elements,
+                      TEST_SONATA_PATH + "/./simple_edges.h5");
+    BOOST_CHECK_EQUAL(edges[0].types, TEST_SONATA_PATH + "/./edge_types.csv");
 }
 
 ////////////////////////////////////////////////////////////////////////////
@@ -352,7 +356,10 @@ BOOST_AUTO_TEST_CASE(sonata_SonataConfig_getMorphologyURIs)
     brion::GIDSet ids = {0, 4, 9};
 
     const auto morphologyURIs = circuit.getMorphologyURIs(ids);
-    BOOST_CHECK_EQUAL(morphologyURIs[0].getPath(), "./morphologies/morph_A.h5");
-    BOOST_CHECK_EQUAL(morphologyURIs[1].getPath(), "./morphologies/morph_B.h5");
-    BOOST_CHECK_EQUAL(morphologyURIs[2].getPath(), "./morphologies/morph_C.h5");
+    BOOST_CHECK_EQUAL(morphologyURIs[0].getPath(),
+                      TEST_SONATA_PATH + "/./morphologies/morph_A.h5");
+    BOOST_CHECK_EQUAL(morphologyURIs[1].getPath(),
+                      TEST_SONATA_PATH + "/./morphologies/morph_B.h5");
+    BOOST_CHECK_EQUAL(morphologyURIs[2].getPath(),
+                      TEST_SONATA_PATH + "/./morphologies/morph_C.h5");
 }

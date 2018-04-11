@@ -225,11 +225,11 @@ class SonataCircuit : public Circuit::Impl
 public:
     explicit SonataCircuit(const URI& uri)
         : config(uri)
-        , basePath(boost::filesystem::path(uri.getPath()).parent_path())
+
     {
         const auto& subnetworks = config.getNodes();
         const auto& node = subnetworks.front();
-        brion::Nodes nodes(URI(basePath.string() + "/" + node.elements));
+        brion::Nodes nodes(URI(node.elements));
 
         if (subnetworks.size() > 1)
         {
@@ -469,7 +469,6 @@ public:
 
     int* delete_this;
     brion::CircuitConfig config;
-    boost::filesystem::path basePath;
 
     brion::NodeGroup nodeGroup;
     size_t numNeurons = 0;
