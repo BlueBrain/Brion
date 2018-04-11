@@ -250,10 +250,15 @@ public:
         const auto nodeGroupIndices = nodes.getNodeGroupIndices(population);
         const size_t numNodes = nodeIDs.size();
 
-        if (nodeGroupIDs.size() > 1)
+        for (size_t i = 0; i < numNodes; i++)
         {
-            LBWARN << "More than one group ID found, ignoring extra ones."
-                   << std::endl;
+            const auto groupID = nodeGroupIDs[i];
+            if (groupID != 0)
+            {
+                LBWARN << "More than one group ID found, ignoring extra ones."
+                       << std::endl;
+                break;
+            }
         }
 
         nodeGroup = nodes.openGroup(population, 0);
