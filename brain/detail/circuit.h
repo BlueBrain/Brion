@@ -261,8 +261,6 @@ public:
             }
         }
 
-        nodeGroup = nodes.openGroup(population, 0);
-
         size_t expectedIdx = 0;
         for (size_t i = 0; i < numNodes; i++)
         {
@@ -285,6 +283,7 @@ public:
 
         numNeurons = expectedIdx;
         morphologySource = URI(config.getComponentPath("morphologies_dir"));
+        nodeGroup = nodes.openGroup(population, 0);
     }
     virtual ~SonataCircuit() {}
     virtual size_t getNumNeurons() const { return numNeurons; }
