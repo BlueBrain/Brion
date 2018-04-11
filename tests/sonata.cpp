@@ -269,6 +269,8 @@ BOOST_AUTO_TEST_CASE(csv_config_getProperties)
 BOOST_AUTO_TEST_CASE(sonata_SonataConfig_constructors)
 {
     brain::Circuit circuit(TEST_SONATA_SIMPLE_NETWORK_URI);
+    BOOST_CHECK_THROW(brain::Circuit(brion::URI("file://nonexistentfile.json")),
+                      std::runtime_error);
 }
 
 BOOST_AUTO_TEST_CASE(sonata_SonataConfig_getPositions)
