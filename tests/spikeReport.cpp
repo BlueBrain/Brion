@@ -701,6 +701,11 @@ BOOST_AUTO_TEST_CASE(spikeReportHDF_seek_read)
     BOOST_REQUIRE_EQUAL(spikes.size(), 1);
     BOOST_CHECK_CLOSE(0.4, spikes[0].first, 0.001);
     BOOST_CHECK_EQUAL(0, spikes[0].second);
+
+    report.seek(0.21f).get();
+    spikes = report.read(brion::UNDEFINED_TIMESTAMP).get();
+
+    BOOST_REQUIRE_EQUAL(spikes.size(), 4);
 }
 
 BOOST_AUTO_TEST_CASE(spikeReportHDF_readUntil)
