@@ -478,7 +478,8 @@ HighFive::DataSet CompartmentReportHDF5::_createDataset(const uint32_t gid,
         reportGroup.createDataSet<float>(mappingDatasetName,
                                          HighFive::DataSpace({1, compCount}));
     HighFive::DataSet dataDataset = reportGroup.createDataSet<float>(
-        dataDatasetName, HighFive::DataSpace({numSteps, compCount}));
+        dataDatasetName,
+        HighFive::DataSpace(std::vector<size_t>{numSteps, compCount}));
 
     _datas.emplace(std::make_pair(gid, std::move(dataDataset)));
 
