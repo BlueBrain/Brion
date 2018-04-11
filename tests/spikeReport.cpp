@@ -661,7 +661,7 @@ BOOST_AUTO_TEST_CASE(spikeReportHDF_constructor)
         brion::MODE_READ);
 }
 
-BOOST_AUTO_TEST_CASE(spikeReportHDF_read)
+BOOST_AUTO_TEST_CASE(spikeReportHDF_read_all_files)
 {
     boost::filesystem::path path(BRION_TESTDATA);
 
@@ -686,4 +686,46 @@ BOOST_AUTO_TEST_CASE(spikeReportHDF_read)
             BOOST_CHECK_EQUAL(spikes_gids[i], spikes[i].second);
         }
     }
+}
+
+BOOST_AUTO_TEST_CASE(spikeReportHDF_seek_read)
+{
+    boost::filesystem::path path(BRION_TESTDATA);
+
+    const auto file = HDF5_SPIKE_REPORT_FILE0;
+    brion::SpikeReport report(brion::URI((path / std::string(file)).string()),
+                              brion::MODE_READ);
+    report.seek(0.31f).get();
+    brion::Spikes spikes = report.read(brion::UNDEFINED_TIMESTAMP).get();
+
+    BOOST_REQUIRE_EQUAL(spikes.size(), 1);
+    BOOST_CHECK_CLOSE(0.4, spikes[0].first, 0.001);
+    BOOST_CHECK_EQUAL(0, spikes[0].second);
+}
+
+BOOST_AUTO_TEST_CASE(spikeReportHDF_readUntil)
+{
+    boost::filesystem::path path(BRION_TESTDATA);
+
+    const auto file = HDF5_SPIKE_REPORT_FILE0;
+    brion::SpikeReport report(brion::URI((path / std::string(file)).string()),
+                              brion::MODE_READ);
+    brion::Spikes spikes = report.readUntil(0.3).get();
+
+    BOOST_REQUIRE_EQUAL(spikes.size(), 3);
+    BOOST_CHECK_EQUAL(6, spikes[0].second);
+    BOOST_CHECK_EQUAL(5, spikes[1].second);
+    BOOST_CHECK_EQUAL(4, spikes[2].second);
+
+    spikes = report.readUntil(0.4).get();
+
+    BOOST_REQUIRE_EQUAL(spikes.size(), 3);
+    BOOST_CHECK_EQUAL(1, spikes[0].second);
+    BOOST_CHECK_EQUAL(2, spikes[1].second);
+    BOOST_CHECK_EQUAL(3, spikes[2].second);
+
+    spikes = report.readUntil(0.5).get();
+
+    BOOST_REQUIRE_EQUAL(spikes.size(), 1);
+    BOOST_CHECK_EQUAL(0, spikes[0].second);
 }
