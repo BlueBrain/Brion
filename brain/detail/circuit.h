@@ -233,13 +233,15 @@ public:
 
         if (subnetworks.size() > 1)
         {
-            LBWARN << "More than one subnetwork found, ignored." << std::endl;
+            LBWARN << "More than one subnetwork found, ignoring extra ones."
+                   << std::endl;
         }
 
         const auto populations = nodes.getPopulationNames();
         if (populations.size() > 1)
         {
-            LBWARN << "More than one population found, ignored." << std::endl;
+            LBWARN << "More than one population found, ignoring extra ones."
+                   << std::endl;
         }
 
         const auto population = populations.front();
@@ -250,7 +252,8 @@ public:
 
         if (nodeGroupIDs.size() > 1)
         {
-            LBWARN << "More than one group ID found, ignored." << std::endl;
+            LBWARN << "More than one group ID found, ignoring extra ones."
+                   << std::endl;
         }
 
         nodeGroup = nodes.openGroup(population, 0);
