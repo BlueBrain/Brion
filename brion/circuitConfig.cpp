@@ -35,6 +35,8 @@ std::string toAbsolute(const std::string& pathStr,
                        const boost::filesystem::path& basePath)
 {
     const boost::filesystem::path path(pathStr);
+    if (path.is_absolute())
+        return path.string();
     return boost::filesystem::absolute(path, basePath).string();
 }
 
