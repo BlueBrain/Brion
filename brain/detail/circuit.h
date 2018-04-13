@@ -24,6 +24,7 @@
 #include <brion/blueConfig.h>
 #include <brion/circuit.h>
 #include <brion/circuitConfig.h>
+#include <brion/csvConfig.h>
 #include <brion/detail/lockHDF5.h>
 #include <brion/morphology.h>
 #include <brion/nodes.h>
@@ -45,6 +46,7 @@
 #include <boost/filesystem.hpp>
 
 #include <future>
+#include <memory>
 #include <random>
 #include <unordered_map>
 
@@ -189,6 +191,9 @@ public:
 
     URI getMorphologyURI(const std::string& name) const
     {
+        if (boost::filesystem::path(name).is_absolute())
+            return URI(name);
+
         URI uri(getMorphologySource());
         uri.setPath(uri.getPath() + "/" + name + ".h5");
         return uri;
@@ -225,7 +230,6 @@ class SonataCircuit : public Circuit::Impl
 public:
     explicit SonataCircuit(const URI& uri)
         : config(uri)
-
     {
         const auto& subnetworks = config.getNodes();
         const auto& node = subnetworks.front();
@@ -278,12 +282,14 @@ public:
                                        std::to_string(nodeGroupIndex) + "'"));
             }
 
+            nodeGIDs.insert(expectedIdx);
             expectedIdx++;
         }
 
         numNeurons = expectedIdx;
         morphologySource = URI(config.getComponentPath("morphologies_dir"));
         nodeGroup = nodes.openGroup(population, 0);
+        nodeTypesFile.reset(new brion::CsvConfig(URI(node.types)));
     }
     virtual ~SonataCircuit() {}
     virtual size_t getNumNeurons() const { return numNeurons; }
@@ -326,7 +332,7 @@ public:
     }
     virtual Strings getMorphologyNames() const
     {
-        return nodeGroup.getAttribute<std::string>("morphology_file");
+        return getMorphologyNames(nodeGIDs);
     }
     virtual size_ts getETypes(const GIDSet& /*gids*/) const
     {
@@ -392,12 +398,36 @@ public:
         const size_t startIdx = *gids.begin();
         const size_t endIdx = *gids.rbegin() + 1;
 
-        const auto names =
-            nodeGroup.getAttribute<std::string>("morphology_file", startIdx,
-                                                endIdx);
+        const std::string propertyName = "morphology_file";
+
+        const auto attributeNames = nodeGroup.getAttributeNames();
+        const bool hasMorpholgyFile =
+            std::find(attributeNames.begin(), attributeNames.end(),
+                      propertyName) != attributeNames.end();
+
         Strings output;
-        for (const auto gid : gids)
-            output.push_back(names[gid - startIdx]);
+
+        if (hasMorpholgyFile)
+        {
+            const auto names =
+                nodeGroup.getAttribute<std::string>(propertyName, startIdx,
+                                                    endIdx);
+            for (const auto gid : gids)
+                output.push_back(names[gid - startIdx]);
+        }
+        else
+        {
+            const auto nodeTypeIDs =
+                nodeGroup.getAttribute<size_t>("node_type_id", startIdx,
+                                               endIdx);
+            for (const auto gid : gids)
+            {
+                const auto nodeTypeID = nodeTypeIDs[gid - startIdx];
+                const auto filename =
+                    nodeTypesFile->getProperty(nodeTypeID, propertyName);
+                output.push_back(filename);
+            }
+        }
 
         return output;
     }
@@ -477,8 +507,10 @@ public:
     brion::CircuitConfig config;
 
     brion::NodeGroup nodeGroup;
+    std::unique_ptr<brion::CsvConfig> nodeTypesFile;
     size_t numNeurons = 0;
     URI morphologySource;
+    GIDSet nodeGIDs;
 
     // Unimplemented
     URI synapseSource;

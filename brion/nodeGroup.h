@@ -47,10 +47,10 @@ public:
     NodeGroup& operator=(NodeGroup&&);
 
     /** Return the names of all the datasets of the node group */
-    Strings getAttributeNames();
+    Strings getAttributeNames() const;
 
     /** Return the names of all the datasets in the 'dynamics_params' group */
-    Strings getDynamicParameterNames();
+    Strings getDynamicParameterNames() const;
 
     /** Return the number of nodes in the node group */
     size_t getNumberOfNodes() const;
