@@ -471,30 +471,30 @@ public:
     virtual const brion::SynapseSummary& getSynapseSummary() const
     {
         LBUNIMPLEMENTED;
-        return *(brion::SynapseSummary*)(nullptr);
+        return *synapseSummary;
     }
     virtual const brion::Synapse& getSynapseAttributes(
         const bool /*afferent*/) const
     {
         LBUNIMPLEMENTED;
-        return *(brion::Synapse*)(nullptr);
+        return *synapse;
     }
     virtual const brion::Synapse& getAfferentProjectionAttributes(
         const std::string& /*name*/) const
     {
         LBUNIMPLEMENTED;
-        return *(brion::Synapse*)(nullptr);
+        return *synapse;
     }
     virtual const brion::Synapse* getSynapseExtra() const
     {
         LBUNIMPLEMENTED;
-        return &*(brion::Synapse*)(nullptr);
+        return synapse.get();
     }
     virtual const brion::Synapse& getSynapsePositions(
         const bool /*afferent*/) const
     {
         LBUNIMPLEMENTED;
-        return *(brion::Synapse*)(nullptr);
+        return *synapse;
     }
     virtual const URI& getSynapseSource() const
     {
@@ -514,6 +514,9 @@ public:
     // Unimplemented
     URI synapseSource;
     URI circuitSource;
+
+    std::unique_ptr<brion::Synapse> synapse;
+    std::unique_ptr<brion::SynapseSummary> synapseSummary;
 };
 
 class BBPCircuit : public Circuit::Impl
