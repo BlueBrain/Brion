@@ -208,7 +208,7 @@ size_ts Circuit::getMorphologyTypes(const GIDSet& gids) const
 
 Strings Circuit::getMorphologyTypeNames() const
 {
-    return _impl->getMorphologyNames();
+    return _impl->getMorphologyTypeNames();
 }
 
 size_ts Circuit::getElectrophysiologyTypes(const GIDSet& gids) const

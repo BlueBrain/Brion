@@ -183,7 +183,7 @@ public:
 
     virtual Vector3fs getPositions(const GIDSet& gids) const = 0;
     virtual size_ts getMTypes(const GIDSet& gids) const = 0;
-    virtual Strings getMorphologyNames() const = 0;
+    virtual Strings getMorphologyTypeNames() const = 0;
     virtual size_ts getETypes(const GIDSet& gids) const = 0;
     virtual Strings getElectrophysiologyNames() const = 0;
     virtual Quaternionfs getRotations(const GIDSet& gids) const = 0;
@@ -330,9 +330,10 @@ public:
         LBUNIMPLEMENTED;
         return size_ts();
     }
-    virtual Strings getMorphologyNames() const
+    virtual Strings getMorphologyTypeNames() const
     {
-        return getMorphologyNames(nodeGIDs);
+        LBUNIMPLEMENTED;
+        return Strings();
     }
     virtual size_ts getETypes(const GIDSet& /*gids*/) const
     {
@@ -839,7 +840,7 @@ public:
         return result;
     }
 
-    Strings getMorphologyNames() const final
+    Strings getMorphologyTypeNames() const final
     {
         return _circuit.getTypes(brion::NEURONCLASS_MTYPE);
     }
@@ -967,7 +968,7 @@ struct MVD3 : public BBPCircuit
         }
     }
 
-    Strings getMorphologyNames() const final
+    Strings getMorphologyTypeNames() const final
     {
         return _circuit.listAllMtypes();
     }
