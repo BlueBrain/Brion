@@ -282,7 +282,6 @@ public:
                                        std::to_string(nodeGroupIndex) + "'"));
             }
 
-            nodeGIDs.insert(expectedIdx);
             expectedIdx++;
         }
 
@@ -510,7 +509,6 @@ public:
     std::unique_ptr<brion::CsvConfig> nodeTypesFile;
     size_t numNeurons = 0;
     URI morphologySource;
-    GIDSet nodeGIDs;
     std::string population;
 
     // Unimplemented
