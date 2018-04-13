@@ -233,7 +233,7 @@ public:
     {
         const auto& subnetworks = config.getNodes();
         const auto& node = subnetworks.front();
-        brion::Nodes nodes(URI(node.elements));
+        nodes.reset(new brion::Nodes(URI(node.elements)));
 
         if (subnetworks.size() > 1)
         {
@@ -241,17 +241,17 @@ public:
                    << std::endl;
         }
 
-        const auto populations = nodes.getPopulationNames();
+        const auto populations = nodes->getPopulationNames();
         if (populations.size() > 1)
         {
             LBWARN << "More than one population found, ignoring extra ones."
                    << std::endl;
         }
 
-        const auto population = populations.front();
-        const auto nodeGroupIDs = nodes.getNodeGroupIDs(population);
-        const auto nodeIDs = nodes.getNodeIDs(population);
-        const auto nodeGroupIndices = nodes.getNodeGroupIndices(population);
+        population = populations.front();
+        const auto nodeGroupIDs = nodes->getNodeGroupIDs(population);
+        const auto nodeIDs = nodes->getNodeIDs(population);
+        const auto nodeGroupIndices = nodes->getNodeGroupIndices(population);
         const size_t numNodes = nodeIDs.size();
 
         for (size_t i = 0; i < numNodes; i++)
@@ -288,7 +288,7 @@ public:
 
         numNeurons = expectedIdx;
         morphologySource = URI(config.getComponentPath("morphologies_dir"));
-        nodeGroup = nodes.openGroup(population, 0);
+        nodeGroup = nodes->openGroup(population, 0);
         nodeTypesFile.reset(new brion::CsvConfig(URI(node.types)));
     }
     virtual ~SonataCircuit() {}
@@ -417,9 +417,7 @@ public:
         }
         else
         {
-            const auto nodeTypeIDs =
-                nodeGroup.getAttribute<size_t>("node_type_id", startIdx,
-                                               endIdx);
+            const auto nodeTypeIDs = nodes->getNodeTypes(population);
             for (const auto gid : gids)
             {
                 const auto nodeTypeID = nodeTypeIDs[gid - startIdx];
@@ -506,11 +504,13 @@ public:
 
     brion::CircuitConfig config;
 
+    std::unique_ptr<brion::Nodes> nodes;
     brion::NodeGroup nodeGroup;
     std::unique_ptr<brion::CsvConfig> nodeTypesFile;
     size_t numNeurons = 0;
     URI morphologySource;
     GIDSet nodeGIDs;
+    std::string population;
 
     // Unimplemented
     URI synapseSource;
