@@ -17,7 +17,7 @@
  * 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
  */
 
-#include "spikeReportHDF.h"
+#include "spikeReportHDF5.h"
 
 #include <lunchbox/memoryMap.h>
 #include <lunchbox/pluginRegisterer.h>
@@ -37,11 +37,11 @@ namespace plugin
 {
 namespace
 {
-lunchbox::PluginRegisterer<SpikeReportHDF> registerer;
+lunchbox::PluginRegisterer<SpikeReportHDF5> registerer;
 constexpr char HDF_REPORT_FILE_EXT[] = ".h5";
 }
 
-struct SpikeReportHDF::Impl
+struct SpikeReportHDF5::Impl
 {
     void initializeReport(const std::string& uri)
     {
@@ -73,7 +73,7 @@ struct SpikeReportHDF::Impl
     Spikes::iterator lastReadPosition;
 };
 
-SpikeReportHDF::SpikeReportHDF(const SpikeReportInitData& initData)
+SpikeReportHDF5::SpikeReportHDF5(const SpikeReportInitData& initData)
     : SpikeReportPlugin(initData)
     , impl(new Impl())
 {
@@ -82,7 +82,7 @@ SpikeReportHDF::SpikeReportHDF(const SpikeReportInitData& initData)
     impl->lastReadPosition = impl->spikes.begin();
 }
 
-bool SpikeReportHDF::handles(const SpikeReportInitData& initData)
+bool SpikeReportHDF5::handles(const SpikeReportInitData& initData)
 {
     const URI& uri = initData.getURI();
     if (!uri.getScheme().empty() && uri.getScheme() != "file")
@@ -92,14 +92,14 @@ bool SpikeReportHDF::handles(const SpikeReportInitData& initData)
     return ext == brion::plugin::HDF_REPORT_FILE_EXT;
 }
 
-std::string SpikeReportHDF::getDescription()
+std::string SpikeReportHDF5::getDescription()
 {
     return "Sonata spike reports: "
            "[file://]/path/to/report" +
            std::string(HDF_REPORT_FILE_EXT);
 }
 
-Spikes SpikeReportHDF::read(const float)
+Spikes SpikeReportHDF5::read(const float)
 {
     // In file based reports, this function reads all remaining data.
     Spikes spikes;
@@ -114,7 +114,7 @@ Spikes SpikeReportHDF::read(const float)
     return spikes;
 }
 
-Spikes SpikeReportHDF::readUntil(const float toTimeStamp)
+Spikes SpikeReportHDF5::readUntil(const float toTimeStamp)
 {
     Spikes spikes;
     auto start = impl->lastReadPosition;
@@ -143,7 +143,7 @@ Spikes SpikeReportHDF::readUntil(const float toTimeStamp)
     return spikes;
 }
 
-void SpikeReportHDF::readSeek(const float toTimeStamp)
+void SpikeReportHDF5::readSeek(const float toTimeStamp)
 {
     if (impl->spikes.empty())
     {

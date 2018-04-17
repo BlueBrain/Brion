@@ -652,7 +652,7 @@ BOOST_AUTO_TEST_CASE(seek_and_write_bluron)
     // Not supported
 }
 
-BOOST_AUTO_TEST_CASE(spikeReportHDF_constructor)
+BOOST_AUTO_TEST_CASE(spikeReportHDF5_constructor)
 {
     boost::filesystem::path path(BRION_TESTDATA);
 
@@ -661,7 +661,7 @@ BOOST_AUTO_TEST_CASE(spikeReportHDF_constructor)
         brion::MODE_READ);
 }
 
-BOOST_AUTO_TEST_CASE(spikeReportHDF_read_all_files)
+BOOST_AUTO_TEST_CASE(spikeReportHDF5_read_all_files)
 {
     boost::filesystem::path path(BRION_TESTDATA);
 
@@ -688,7 +688,7 @@ BOOST_AUTO_TEST_CASE(spikeReportHDF_read_all_files)
     }
 }
 
-BOOST_AUTO_TEST_CASE(spikeReportHDF_seek_read)
+BOOST_AUTO_TEST_CASE(spikeReportHDF5_seek_read)
 {
     boost::filesystem::path path(BRION_TESTDATA);
 
@@ -708,7 +708,7 @@ BOOST_AUTO_TEST_CASE(spikeReportHDF_seek_read)
     BOOST_REQUIRE_EQUAL(spikes.size(), 4);
 }
 
-BOOST_AUTO_TEST_CASE(spikeReportHDF_readUntil)
+BOOST_AUTO_TEST_CASE(spikeReportHDF5_readUntil)
 {
     boost::filesystem::path path(BRION_TESTDATA);
 

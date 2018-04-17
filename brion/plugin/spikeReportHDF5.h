@@ -31,12 +31,12 @@ class BinaryReportMap;
  * A HDF spike report reader.
  *
  */
-class SpikeReportHDF : public SpikeReportPlugin
+class SpikeReportHDF5 : public SpikeReportPlugin
 {
     struct Impl;
 
 public:
-    explicit SpikeReportHDF(const SpikeReportInitData& initData);
+    explicit SpikeReportHDF5(const SpikeReportInitData& initData);
 
     static bool handles(const SpikeReportInitData& initData);
     static std::string getDescription();
