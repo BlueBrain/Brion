@@ -42,14 +42,10 @@ constexpr char HDF_REPORT_FILE_EXT[] = ".h5";
 
 struct SpikeReportHDF5::Impl
 {
-    Impl(const bool initialize, const std::string& uri)
+    Impl(const std::string& uri)
+        : file(uri)
     {
-        if (!initialize)
-            return;
-
-        file.reset(new HighFive::File(uri));
-
-        const HighFive::Group group = file->getGroup("/spikes");
+        const HighFive::Group group = file.getGroup("/spikes");
         const HighFive::DataSet setGids = group.getDataSet("gids");
         const HighFive::DataSet setTimestamps = group.getDataSet("timestamps");
 
@@ -64,18 +60,19 @@ struct SpikeReportHDF5::Impl
             spikes.push_back(std::make_pair<>(timestamps[i], gids[i]));
 
         std::sort(spikes.begin(), spikes.end());
+        lastReadPosition = spikes.begin();
     }
 
-    std::unique_ptr<HighFive::File> file;
+    HighFive::File file;
     Spikes spikes;
     Spikes::iterator lastReadPosition;
 };
 
 SpikeReportHDF5::SpikeReportHDF5(const SpikeReportInitData& initData)
     : SpikeReportPlugin(initData)
-    , impl(new Impl(handles(initData), initData.getURI().getPath()))
 {
-    impl->lastReadPosition = impl->spikes.begin();
+    if (handles(initData))
+        impl.reset(new Impl(initData.getURI().getPath()));
 }
 
 bool SpikeReportHDF5::handles(const SpikeReportInitData& initData)
