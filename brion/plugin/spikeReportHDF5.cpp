@@ -28,7 +28,6 @@
 #include <highfive/H5DataSet.hpp>
 #include <highfive/H5File.hpp>
 
-#include <fstream>
 #include <memory>
 
 namespace brion
