@@ -14,16 +14,19 @@ class Sorting:
     by_gid = 1
     by_time = 2
 
-# The original pairs (gid, timestamp):
-# (0,0.4),(1,0.3),(2,0.3),(3,0.3),(4,0.2),(5,0.1),(6,0.0)
+gids = numpy.arange(0,7)
+times = numpy.array([0.4, 0.3, 0.3, 0.3, 0.2, 0.1, 0.0])
 
-gid_by_gid = list(range(0,7))
-gid_by_time = [6, 5, 4, 1, 2, 3, 0]
-gid_none = list(gid_by_gid)
+sorted_idx_time = numpy.array(numpy.argsort(times))
+sorted_idx_gids = numpy.array(numpy.argsort(gids))
 
-time_by_gid =  [0.4, 0.3, 0.3, 0.3, 0.2, 0.1, 0.0]
-time_by_time = [0.0, 0.1, 0.2, 0.3, 0.3, 0.3, 0.4]
-time_none = list(time_by_gid)
+gid_by_gid = gids[sorted_idx_gids][:]
+gid_by_time = gids[sorted_idx_time][:]
+gid_none = gids[:]
+
+time_by_gid = times[sorted_idx_gids][:]
+time_by_time = times[sorted_idx_time][:]
+time_none = times[:]
 
 sort_names = [ "none"      , "by_gid"      , "by_time"       ]
 sort_enums = [ Sorting.none, Sorting.by_gid, Sorting.by_time ]
