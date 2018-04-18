@@ -110,13 +110,18 @@ Spikes SpikeReportHDF5::read(const float)
 Spikes SpikeReportHDF5::readUntil(const float toTimeStamp)
 {
     Spikes spikes;
-    auto start = impl->lastReadPosition;
 
-    impl->lastReadPosition =
-        std::lower_bound(impl->lastReadPosition, impl->spikes.end(),
-                         toTimeStamp, [](const Spike& spike, float val) {
-                             return spike.first < val;
-                         });
+    const auto end = impl->spikes.end();
+
+    for (; impl->lastReadPosition != end; ++impl->lastReadPosition)
+    {
+        if (impl->lastReadPosition->first >= toTimeStamp)
+        {
+            _currentTime = impl->lastReadPosition->first;
+            break;
+        }
+        pushBack(*impl->lastReadPosition, spikes);
+    }
 
     if (impl->lastReadPosition != impl->spikes.end())
         _currentTime = impl->lastReadPosition->first;
@@ -126,13 +131,6 @@ Spikes SpikeReportHDF5::readUntil(const float toTimeStamp)
         _state = State::ended;
     }
 
-    if (start != impl->spikes.end())
-    {
-        std::for_each(start, impl->lastReadPosition,
-                      [&spikes, this](const Spike& spike) {
-                          pushBack(spike, spikes);
-                      });
-    }
     return spikes;
 }
 
