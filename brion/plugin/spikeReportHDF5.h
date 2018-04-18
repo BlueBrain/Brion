@@ -48,7 +48,6 @@ public:
     bool supportsBackwardSeek() const final { return true; }
 private:
     std::unique_ptr<Impl> impl;
-    size_t _startIndex = 0;
 };
 }
 }

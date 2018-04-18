@@ -676,9 +676,9 @@ BOOST_AUTO_TEST_CASE(spikeReportHDF5_read_all_files)
 
         BOOST_REQUIRE_EQUAL(spikes.size(), 7);
 
-        const std::array<float, 7> spikes_ts = {0.0, 0.1, 0.2, 0.3,
-                                                0.3, 0.3, 0.4};
-        const std::array<size_t, 7> spikes_gids = {6, 5, 4, 1, 2, 3, 0};
+        const std::array<float, 7> spikes_ts = {
+            {0.0, 0.1, 0.2, 0.3, 0.3, 0.3, 0.4}};
+        const std::array<size_t, 7> spikes_gids = {{6, 5, 4, 1, 2, 3, 0}};
 
         for (size_t i = 0; i < 7; i++)
         {
