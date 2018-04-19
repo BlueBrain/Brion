@@ -40,7 +40,8 @@ std::string toAbsolute(const std::string& pathStr,
     return boost::filesystem::absolute(path, basePath).string();
 }
 
-std::map<std::string, std::string> _readVariables(const nlohmann::json& json)
+std::map<std::string, std::string> _readVariables(
+    const brion_nlohmann::json& json)
 {
     auto manifest = json["manifest"];
 
@@ -111,8 +112,8 @@ std::map<std::string, std::string> _resolveVariables(
     return variables;
 }
 
-nlohmann::json _expandVariables(
-    const nlohmann::json& json,
+brion_nlohmann::json _expandVariables(
+    const brion_nlohmann::json& json,
     const std::map<std::string, std::string>& variables)
 {
     auto jsonFlat = json.flatten();
@@ -143,9 +144,9 @@ nlohmann::json _expandVariables(
     return jsonFlat.unflatten();
 }
 
-nlohmann::json _parseCircuitJson(const std::string& jsonStr)
+brion_nlohmann::json _parseCircuitJson(const std::string& jsonStr)
 {
-    const auto json = nlohmann::json::parse(jsonStr);
+    const auto json = brion_nlohmann::json::parse(jsonStr);
 
     auto variables = _readVariables(json);
     variables = _resolveVariables(variables);
@@ -153,7 +154,7 @@ nlohmann::json _parseCircuitJson(const std::string& jsonStr)
 }
 
 std::map<std::string, std::string> _fillComponents(
-    const nlohmann::json& json, const boost::filesystem::path& basePath)
+    const brion_nlohmann::json& json, const boost::filesystem::path& basePath)
 {
     const auto comps = json["components_dir"];
     std::map<std::string, std::string> output;
@@ -165,7 +166,7 @@ std::map<std::string, std::string> _fillComponents(
 }
 
 std::vector<brion::CircuitConfig::SubnetworkFiles> _fillSubnetwork(
-    const nlohmann::json& json, const std::string& networkType,
+    const brion_nlohmann::json& json, const std::string& networkType,
     const std::string& elementName, const std::string& typeName,
     const boost::filesystem::path& basePath)
 {

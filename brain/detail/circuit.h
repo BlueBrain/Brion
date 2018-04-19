@@ -1,4 +1,4 @@
-/* Copyright (c) 2013-2017, EPFL/Blue Brain Project
+/* Copyright (c) 2013-2018, EPFL/Blue Brain Project
  *                          Juan Hernando <jhernando@fi.upm.es>
  *                          Adrien.Devresse@epfl.ch
  *                          Daniel.Nachbaur@epfl.ch
@@ -148,7 +148,188 @@ void _shuffle(T& container)
 using CachedMorphologies =
     std::unordered_map<std::string, neuron::MorphologyPtr>;
 using CachedSynapses = std::unordered_map<std::string, brion::SynapseMatrix>;
-} // anonymous namespace
+}
+
+class SynapseCache
+{
+public:
+    SynapseCache(const keyv::MapPtr& cache, const URI& synapseSource)
+        : _cache(cache)
+        , _synapsePath(fs::canonical(synapseSource.getPath()).generic_string())
+    {
+    }
+
+    operator bool() const { return _cache != nullptr; }
+    Strings createKeys(const GIDSet& gids, const bool afferent) const
+    {
+        Strings keys;
+        keys.reserve(gids.size());
+
+        for (const auto gid : gids)
+        {
+            std::string hash = _synapsePath;
+            hash += afferent ? "_afferent" : "_efferent";
+            hash += std::to_string(gid);
+            keys.emplace_back(servus::make_uint128(hash).getString());
+        }
+        return keys;
+    }
+
+    void savePositions(const uint32_t gid, const std::string& hash,
+                       const brion::SynapseMatrix& value) const
+    {
+        if (!_cache)
+            return;
+
+        const size_t size = value.num_elements() * sizeof(float);
+        if (!_cache->insert(hash, value.data(), size))
+        {
+            LBWARN << "Failed to insert synapse positions for GID " << gid
+                   << " into cache; item size is " << float(size) / LB_1MB
+                   << " MB" << std::endl;
+        }
+    }
+
+    CachedSynapses loadPositions(const Strings& keys,
+                                 const bool hasSurfacePositions) const
+    {
+        CachedSynapses loaded;
+        if (!_cache)
+            return loaded;
+        LBDEBUG << "Using cache for synapses position loading" << std::endl;
+        typedef std::future<std::pair<std::string, brion::SynapseMatrix>>
+            Future;
+
+        std::vector<Future> futures;
+        futures.reserve(keys.size());
+
+        // 3 columns for afferent, 3 for efferent (x2 if there are surface
+        // positions) plus an extra one for a cell GID.
+        const size_t numColumns = hasSurfacePositions
+                                      ? int(brion::SYNAPSE_POSITION_ALL)
+                                      : int(brion::SYNAPSE_OLD_POSITION_ALL);
+
+        _cache->takeValues(keys, [this, &futures,
+                                  numColumns](const std::string& key,
+                                              char* data, const size_t size) {
+            futures.push_back(std::async([this, key, data, size, numColumns] {
+                // there is no constructor in multi_array which just accepts the
+                // size in bytes (although there's a getter for it used in
+                // saveSynapsePositionsToCache()), so we reconstruct the row and
+                // column count here.
+                const size_t numRows = size / sizeof(float) / numColumns;
+                brion::SynapseMatrix values(
+                    boost::extents[numRows][numColumns]);
+                ::memmove(values.data(), data, size);
+                std::free(data);
+                return std::make_pair(key, values);
+            }));
+        });
+
+        for (auto& future : futures)
+            loaded.insert(future.get());
+
+        LBDEBUG << "Loaded synapse positions for " << loaded.size()
+                << " out of " << keys.size() << " neurons from cache"
+                << std::endl;
+        return loaded;
+    }
+
+private:
+    keyv::MapPtr _cache;
+    std::string _synapsePath;
+};
+
+class MorphologyCache
+{
+public:
+    MorphologyCache(const keyv::MapPtr& cache, const URI& circuitSource)
+        : _cache(cache)
+        , _circuitPath(fs::canonical(circuitSource.getPath()).generic_string())
+    {
+    }
+
+    operator bool() const { return _cache != nullptr; }
+    Strings createKeys(const URIs& uris) const
+    {
+        Strings keys;
+        keys.reserve(uris.size());
+        for (auto& uri : uris)
+        {
+            keys.emplace_back(
+                servus::make_uint128(uri.getPath() + "v2").getString());
+        }
+        return keys;
+    }
+
+    Strings createKeys(const URIs& uris, const GIDSet& gids) const
+    {
+        assert(uris.size() == gids.size());
+        Strings keys;
+        keys.reserve(uris.size());
+        auto gid = gids.begin();
+        for (const auto& uri : uris)
+        {
+            auto key = uri.getPath() + _circuitPath + std::to_string(*gid);
+            key = servus::make_uint128(key + "v2").getString();
+            keys.emplace_back(std::move(key));
+            ++gid;
+        }
+        return keys;
+    }
+
+    void save(const std::string& uri, const std::string& key,
+              neuron::MorphologyPtr morphology)
+    {
+        if (!_cache)
+            return;
+
+        servus::Serializable::Data data = morphology->toBinary();
+        if (!_cache->insert(key, data.ptr.get(), data.size))
+        {
+            LBWARN << "Failed to insert morphology " << uri
+                   << " into cache; item size is " << float(data.size) / LB_1MB
+                   << " MB" << std::endl;
+        }
+    }
+
+    CachedMorphologies load(const std::set<std::string>& keySet)
+    {
+        CachedMorphologies loaded;
+        if (!_cache)
+            return loaded;
+
+        LBDEBUG << "Using cache for morphology loading" << std::endl;
+        typedef std::future<std::pair<std::string, neuron::MorphologyPtr>>
+            Future;
+        std::vector<Future> futures;
+
+        Strings keys(keySet.begin(), keySet.end());
+        futures.reserve(keys.size());
+
+        _cache->takeValues(keys, [&futures](const std::string& key, char* data,
+                                            const size_t size) {
+            futures.push_back(std::async([key, data, size] {
+                neuron::MorphologyPtr morphology(
+                    new neuron::Morphology(data, size));
+                std::free(data);
+                return std::make_pair(key, morphology);
+            }));
+        });
+
+        for (auto& future : futures)
+            loaded.insert(future.get());
+
+        LBINFO << "Loaded " << loaded.size() << " morphologies from cache, "
+               << "loading " << keySet.size() - loaded.size()
+               << " remaining from file" << std::endl;
+        return loaded;
+    }
+
+private:
+    keyv::MapPtr _cache;
+    const std::string _circuitPath;
+};
 
 class Circuit::Impl
 {
@@ -201,19 +382,8 @@ public:
 
     virtual URI getMorphologySource() const = 0;
 
-    virtual const brion::URI& getCircuitSource() const = 0;
-    virtual void saveMorphologyToCache(
-        const std::string& uri, const std::string& hash,
-        neuron::MorphologyPtr morphology) const = 0;
-
-    virtual CachedMorphologies loadMorphologiesFromCache(
-        const std::set<std::string>& hashes) const = 0;
-    virtual void saveSynapsePositionsToCache(
-        const uint32_t gid, const std::string& hash,
-        const brion::SynapseMatrix& value) const = 0;
-    virtual CachedSynapses loadSynapsePositionsFromCache(
-        const Strings& keys) const = 0;
-    virtual void _findSynapsePositionsColumns() const = 0;
+    virtual MorphologyCache* getMorphologyCache() const { return nullptr; }
+    virtual SynapseCache* getSynapseCache() const { return nullptr; }
     virtual const brion::SynapseSummary& getSynapseSummary() const = 0;
     virtual const brion::Synapse& getSynapseAttributes(
         const bool afferent) const = 0;
@@ -222,7 +392,6 @@ public:
     virtual const brion::Synapse* getSynapseExtra() const = 0;
     virtual const brion::Synapse& getSynapsePositions(
         const bool afferent) const = 0;
-    virtual const URI& getSynapseSource() const = 0;
 };
 
 class SonataCircuit : public Circuit::Impl
@@ -291,14 +460,14 @@ public:
         nodeTypesFile.reset(new brion::CsvConfig(URI(node.types)));
     }
     virtual ~SonataCircuit() {}
-    virtual size_t getNumNeurons() const { return numNeurons; }
-    virtual GIDSet getGIDs(const std::string& /*target*/) const
+    size_t getNumNeurons() const final { return numNeurons; }
+    GIDSet getGIDs(const std::string& /*target*/) const final
     {
         LBUNIMPLEMENTED;
         return GIDSet();
     }
 
-    virtual Vector3fs getPositions(const GIDSet& gids) const
+    Vector3fs getPositions(const GIDSet& gids) const final
     {
         if (gids.empty())
             return Vector3fs();
@@ -324,27 +493,27 @@ public:
         }
         return output;
     }
-    virtual size_ts getMTypes(const GIDSet& /*gids*/) const
+    size_ts getMTypes(const GIDSet& /*gids*/) const final
     {
         LBUNIMPLEMENTED;
         return size_ts();
     }
-    virtual Strings getMorphologyTypeNames() const
+    Strings getMorphologyTypeNames() const final
     {
         LBUNIMPLEMENTED;
         return Strings();
     }
-    virtual size_ts getETypes(const GIDSet& /*gids*/) const
+    size_ts getETypes(const GIDSet& /*gids*/) const final
     {
         LBUNIMPLEMENTED;
         return size_ts();
     }
-    virtual Strings getElectrophysiologyNames() const
+    Strings getElectrophysiologyNames() const final
     {
         LBUNIMPLEMENTED;
         return Strings();
     }
-    virtual Quaternionfs getRotations(const GIDSet& gids) const
+    Quaternionfs getRotations(const GIDSet& gids) const final
     {
         if (gids.empty())
             return Quaternionfs();
@@ -390,7 +559,7 @@ public:
 
         return output;
     }
-    virtual Strings getMorphologyNames(const GIDSet& gids) const
+    Strings getMorphologyNames(const GIDSet& gids) const final
     {
         if (gids.empty())
             return Strings();
@@ -430,76 +599,32 @@ public:
         return output;
     }
 
-    virtual URI getMorphologySource() const final { return morphologySource; }
-    virtual const brion::URI& getCircuitSource() const
-    {
-        LBUNIMPLEMENTED;
-        return circuitSource;
-    }
-    virtual void saveMorphologyToCache(
-        const std::string& /*uri*/, const std::string& /*hash*/,
-        neuron::MorphologyPtr /*morphology*/) const
-    {
-        LBUNIMPLEMENTED;
-        return;
-    }
-
-    virtual CachedMorphologies loadMorphologiesFromCache(
-        const std::set<std::string>& /*hashes*/) const
-    {
-        LBUNIMPLEMENTED;
-        return CachedMorphologies();
-    }
-    virtual void saveSynapsePositionsToCache(
-        const uint32_t /*gid*/, const std::string& /*hash*/,
-        const brion::SynapseMatrix& /*value*/) const
-    {
-        LBUNIMPLEMENTED;
-        return;
-    }
-    virtual CachedSynapses loadSynapsePositionsFromCache(
-        const Strings& /*keys*/) const
-    {
-        LBUNIMPLEMENTED;
-        return CachedSynapses();
-    }
-    virtual void _findSynapsePositionsColumns() const
-    {
-        LBUNIMPLEMENTED;
-        return;
-    }
-    virtual const brion::SynapseSummary& getSynapseSummary() const
+    URI getMorphologySource() const final { return morphologySource; }
+    const brion::SynapseSummary& getSynapseSummary() const final
     {
         LBUNIMPLEMENTED;
         return *synapseSummary;
     }
-    virtual const brion::Synapse& getSynapseAttributes(
-        const bool /*afferent*/) const
+    const brion::Synapse& getSynapseAttributes(const bool) const final
     {
         LBUNIMPLEMENTED;
         return *synapse;
     }
-    virtual const brion::Synapse& getAfferentProjectionAttributes(
-        const std::string& /*name*/) const
+    const brion::Synapse& getAfferentProjectionAttributes(
+        const std::string&) const final
     {
         LBUNIMPLEMENTED;
         return *synapse;
     }
-    virtual const brion::Synapse* getSynapseExtra() const
+    const brion::Synapse* getSynapseExtra() const final
     {
         LBUNIMPLEMENTED;
         return synapse.get();
     }
-    virtual const brion::Synapse& getSynapsePositions(
-        const bool /*afferent*/) const
+    const brion::Synapse& getSynapsePositions(const bool) const final
     {
         LBUNIMPLEMENTED;
         return *synapse;
-    }
-    virtual const URI& getSynapseSource() const
-    {
-        LBUNIMPLEMENTED;
-        return synapseSource;
     }
 
     brion::CircuitConfig config;
@@ -523,12 +648,12 @@ class BBPCircuit : public Circuit::Impl
 {
 public:
     explicit BBPCircuit(const brion::BlueConfig& config)
-        : _circuitSource(config.getCircuitSource())
-        , _morphologySource(config.getMorphologySource())
+        : _morphologySource(config.getMorphologySource())
         , _synapseSource(config.getSynapseSource())
         , _targetSources(config.getTargetSources())
         , _cache(keyv::Map::createCache())
-        , _synapsePositionColumns(0)
+        , _morphologyCache(_cache, config.getCircuitSource())
+        , _synapseCache(_cache, _synapseSource)
     {
         for (auto&& projection :
              config.getSectionNames(brion::CONFIGSECTION_PROJECTION))
@@ -538,7 +663,6 @@ public:
         }
     }
 
-    const brion::URI& getCircuitSource() const final { return _circuitSource; }
     GIDSet getGIDs(const std::string& target) const final
     {
         if (_targetParsers.empty())
@@ -560,6 +684,20 @@ public:
     }
 
     URI getMorphologySource() const final { return _morphologySource; }
+    MorphologyCache* getMorphologyCache() const final
+    {
+        if (_morphologyCache)
+            return &_morphologyCache;
+        return nullptr;
+    }
+
+    SynapseCache* getSynapseCache() const final
+    {
+        if (_synapseCache)
+            return &_synapseCache;
+        return nullptr;
+    }
+
     const brion::SynapseSummary& getSynapseSummary() const final
     {
         lunchbox::ScopedWrite mutex(_synapseSummary);
@@ -638,139 +776,17 @@ public:
                 new brion::Synapse(_synapseSource.getPath() +
                                    (afferent ? afferentPositionsFilename
                                              : efferentPositionsFilename)));
-
-        if (_synapsePositionColumns == 0)
-            _synapsePositionColumns = positions->getNumAttributes();
-        assert(_synapsePositionColumns == positions->getNumAttributes());
-
         return *positions;
     }
 
-    void saveMorphologyToCache(const std::string& uri, const std::string& hash,
-                               neuron::MorphologyPtr morphology) const final
-    {
-        if (!_cache)
-            return;
-
-        servus::Serializable::Data data = morphology->toBinary();
-        if (!_cache->insert(hash, data.ptr.get(), data.size))
-        {
-            LBWARN << "Failed to insert morphology " << uri
-                   << " into cache; item size is " << float(data.size) / LB_1MB
-                   << " MB" << std::endl;
-        }
-    }
-
-    CachedMorphologies loadMorphologiesFromCache(
-        const std::set<std::string>& hashes) const final
-    {
-        CachedMorphologies loaded;
-        if (!_cache)
-            return loaded;
-
-        LBDEBUG << "Using cache for morphology loading" << std::endl;
-        typedef std::future<std::pair<std::string, neuron::MorphologyPtr>>
-            Future;
-        std::vector<Future> futures;
-
-        Strings keys(hashes.begin(), hashes.end());
-        futures.reserve(keys.size());
-
-        _cache->takeValues(keys, [&futures](const std::string& key, char* data,
-                                            const size_t size) {
-            futures.push_back(std::async([key, data, size] {
-                neuron::MorphologyPtr morphology(
-                    new neuron::Morphology(data, size));
-                std::free(data);
-                return std::make_pair(key, morphology);
-            }));
-        });
-
-        for (auto& future : futures)
-            loaded.insert(future.get());
-
-        LBINFO << "Loaded " << loaded.size() << " morphologies from cache, "
-               << "loading " << hashes.size() - loaded.size()
-               << " remaining from file" << std::endl;
-        return loaded;
-    }
-
-    void saveSynapsePositionsToCache(
-        const uint32_t gid, const std::string& hash,
-        const brion::SynapseMatrix& value) const final
-    {
-        if (!_cache)
-            return;
-
-        const size_t size = value.num_elements() * sizeof(float);
-        if (!_cache->insert(hash, value.data(), size))
-        {
-            LBWARN << "Failed to insert synapse positions for GID " << gid
-                   << " into cache; item size is " << float(size) / LB_1MB
-                   << " MB" << std::endl;
-        }
-    }
-
-    CachedSynapses loadSynapsePositionsFromCache(
-        const Strings& keys) const final
-    {
-        CachedSynapses loaded;
-        if (!_cache)
-            return loaded;
-
-        LBDEBUG << "Using cache for synapses position loading" << std::endl;
-        typedef std::future<std::pair<std::string, brion::SynapseMatrix>>
-            Future;
-
-        std::vector<Future> futures;
-        futures.reserve(keys.size());
-
-        _findSynapsePositionsColumns();
-
-        _cache->takeValues(keys, [this, &futures](const std::string& key,
-                                                  char* data,
-                                                  const size_t size) {
-            futures.push_back(std::async([this, key, data, size] {
-                // there is no constructor in multi_array which just accepts the
-                // size in bytes (although there's a getter for it used in
-                // saveSynapsePositionsToCache()), so we reconstruct the row and
-                // column count here.
-                const size_t numColumns = _synapsePositionColumns;
-                const size_t numRows = size / sizeof(float) / numColumns;
-                brion::SynapseMatrix values(
-                    boost::extents[numRows][numColumns]);
-                ::memmove(values.data(), data, size);
-                std::free(data);
-                return std::make_pair(key, values);
-            }));
-        });
-
-        for (auto& future : futures)
-            loaded.insert(future.get());
-
-        LBDEBUG << "Loaded synapse positions for " << loaded.size()
-                << " out of " << keys.size() << " neurons from cache"
-                << std::endl;
-        return loaded;
-    }
-
-    void _findSynapsePositionsColumns() const final
-    {
-        lunchbox::ScopedWrite mutex(_synapsePositions[0]);
-        if (!(*_synapsePositions[0]))
-            _synapsePositions[0]->reset(new brion::Synapse(
-                _synapseSource.getPath() + afferentPositionsFilename));
-        _synapsePositionColumns = (*_synapsePositions[0])->getNumAttributes();
-    }
-
-    virtual const URI& getSynapseSource() const final { return _synapseSource; }
-    const brion::URI _circuitSource;
     const brion::URI _morphologySource;
     const brion::URI _synapseSource;
     std::unordered_map<std::string, brion::URI> _afferentProjectionSources;
     const brion::URIs _targetSources;
     mutable brion::Targets _targetParsers;
-    mutable keyv::MapPtr _cache;
+    keyv::MapPtr _cache;
+    mutable MorphologyCache _morphologyCache;
+    mutable SynapseCache _synapseCache;
 
     template <typename T>
     using LockPtr = lunchbox::Lockable<std::unique_ptr<T>>;
@@ -779,7 +795,6 @@ public:
     mutable LockPtr<brion::Synapse> _synapseAttributes[2];
     mutable LockPtr<brion::Synapse> _synapseExtra;
     mutable LockPtr<brion::Synapse> _synapsePositions[2];
-    mutable size_t _synapsePositionColumns;
 
     mutable std::unordered_map<std::string, LockPtr<brion::Synapse>>
         _externalAfferents;

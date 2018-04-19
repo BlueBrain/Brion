@@ -29,7 +29,7 @@
 
 namespace brain
 {
-class BBPCircuit;
+class MorphologyCache;
 
 namespace neuron
 {
@@ -139,7 +139,7 @@ public:
 
 private:
     friend class brain::Circuit;
-    friend class brain::BBPCircuit;
+    friend class brain::MorphologyCache;
 
     Morphology(const void* data, const size_t size);
     servus::Serializable::Data toBinary() const;
