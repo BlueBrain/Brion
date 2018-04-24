@@ -87,12 +87,17 @@ class BlueConfig
 public:
     explicit BlueConfig(const std::string& source)
     {
-        std::ifstream file(source.c_str());
-        if (!file.is_open())
-            LBTHROW(
-                std::runtime_error("Cannot open BlueConfig file " + source));
         std::stringstream buffer;
-        buffer << file.rdbuf();
+        if (boost::filesystem::is_regular_file(source))
+        {
+            std::ifstream file(source.c_str());
+            if (!file.is_open())
+                LBTHROW(std::runtime_error("Cannot open BlueConfig file " +
+                                           source));
+            buffer << file.rdbuf();
+        }
+        else
+            buffer << source;
 
         boost::regex commentregx("#.*?\\n");
         const std::string fileString =
