@@ -63,10 +63,14 @@ NodeGroup::NodeGroup(const HighFive::Group& group)
 {
     impl->group = group;
 }
+NodeGroup::NodeGroup()
+    : impl(new NodeGroup::Impl()){};
+
 NodeGroup::~NodeGroup() = default;
 NodeGroup::NodeGroup(NodeGroup&&) = default;
+NodeGroup& NodeGroup::operator=(NodeGroup&&) = default;
 
-Strings NodeGroup::getAttributeNames()
+Strings NodeGroup::getAttributeNames() const
 {
     Strings attributeNames;
     const size_t num_objects = impl->group.getNumberObjects();
@@ -77,7 +81,7 @@ Strings NodeGroup::getAttributeNames()
     return attributeNames;
 }
 
-Strings NodeGroup::getDynamicParameterNames()
+Strings NodeGroup::getDynamicParameterNames() const
 {
     Strings parameterNames;
 

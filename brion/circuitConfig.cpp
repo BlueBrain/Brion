@@ -19,6 +19,7 @@
 
 #include "circuitConfig.h"
 
+#include <boost/filesystem.hpp>
 #include <fstream>
 #include <iostream>
 #include <memory>
@@ -30,7 +31,17 @@
 
 namespace
 {
-std::map<std::string, std::string> _readVariables(const nlohmann::json& json)
+std::string toAbsolute(const std::string& pathStr,
+                       const boost::filesystem::path& basePath)
+{
+    const boost::filesystem::path path(pathStr);
+    if (path.is_absolute())
+        return path.string();
+    return boost::filesystem::absolute(path, basePath).string();
+}
+
+std::map<std::string, std::string> _readVariables(
+    const brion_nlohmann::json& json)
 {
     auto manifest = json["manifest"];
 
@@ -101,8 +112,8 @@ std::map<std::string, std::string> _resolveVariables(
     return variables;
 }
 
-nlohmann::json _expandVariables(
-    const nlohmann::json& json,
+brion_nlohmann::json _expandVariables(
+    const brion_nlohmann::json& json,
     const std::map<std::string, std::string>& variables)
 {
     auto jsonFlat = json.flatten();
@@ -133,29 +144,31 @@ nlohmann::json _expandVariables(
     return jsonFlat.unflatten();
 }
 
-nlohmann::json _parseCircuitJson(const std::string& jsonStr)
+brion_nlohmann::json _parseCircuitJson(const std::string& jsonStr)
 {
-    const auto json = nlohmann::json::parse(jsonStr);
+    const auto json = brion_nlohmann::json::parse(jsonStr);
 
     auto variables = _readVariables(json);
     variables = _resolveVariables(variables);
     return _expandVariables(json, variables);
 }
 
-std::map<std::string, std::string> _fillComponents(const nlohmann::json& json)
+std::map<std::string, std::string> _fillComponents(
+    const brion_nlohmann::json& json, const boost::filesystem::path& basePath)
 {
     const auto comps = json["components_dir"];
     std::map<std::string, std::string> output;
 
     for (auto it = comps.begin(); it != comps.end(); ++it)
-        output[it.key()] = it.value();
+        output[it.key()] = toAbsolute(it.value(), basePath);
 
     return output;
 }
 
 std::vector<brion::CircuitConfig::SubnetworkFiles> _fillSubnetwork(
-    const nlohmann::json& json, const std::string& networkType,
-    const std::string& elementName, const std::string& typeName)
+    const brion_nlohmann::json& json, const std::string& networkType,
+    const std::string& elementName, const std::string& typeName,
+    const boost::filesystem::path& basePath)
 {
     std::vector<brion::CircuitConfig::SubnetworkFiles> output;
 
@@ -164,8 +177,8 @@ std::vector<brion::CircuitConfig::SubnetworkFiles> _fillSubnetwork(
     for (const auto& node : nodes)
     {
         brion::CircuitConfig::SubnetworkFiles network;
-        network.elements = node[elementName];
-        network.types = node[typeName];
+        network.elements = toAbsolute(node[elementName], basePath);
+        network.types = toAbsolute(node[typeName], basePath);
         output.push_back(network);
     }
 
@@ -178,6 +191,7 @@ namespace brion
 struct CircuitConfig::Impl
 {
     Impl(const std::string& uri)
+        : basePath(boost::filesystem::path(uri).parent_path())
     {
         std::ifstream file(uri);
 
@@ -195,17 +209,18 @@ struct CircuitConfig::Impl
 
         const auto json = _parseCircuitJson(contents);
         targetSimulator = json["target_simulator"];
-        componentDirs = _fillComponents(json);
-        networkEdges =
-            _fillSubnetwork(json, "edges", "edges_file", "edge_types_file");
-        networkNodes =
-            _fillSubnetwork(json, "nodes", "nodes_file", "node_types_file");
+        componentDirs = _fillComponents(json, basePath);
+        networkEdges = _fillSubnetwork(json, "edges", "edges_file",
+                                       "edge_types_file", basePath);
+        networkNodes = _fillSubnetwork(json, "nodes", "nodes_file",
+                                       "node_types_file", basePath);
     }
 
     std::string targetSimulator;
     std::map<std::string, std::string> componentDirs;
     std::vector<CircuitConfig::SubnetworkFiles> networkNodes;
     std::vector<CircuitConfig::SubnetworkFiles> networkEdges;
+    boost::filesystem::path basePath;
 };
 
 CircuitConfig::CircuitConfig(const URI& uri)

@@ -3,6 +3,10 @@ Changelog {#Changelog}
 
 # git master
 
+* [222](https://github.com/BlueBrain/Brion/pull/222):
+  Implemented basic support for reading circuit in SONATA file format
+  - The implementation is limited to node, no edges are read
+  - Only one population and one node group are read, the rest are ignored.
 * [204](https://github.com/BlueBrain/Brion/pull/204):
   Fixed brain::Circuit methods to not crash with empty gids lists.
 * [191](https://github.com/BlueBrain/Brion/pull/191):

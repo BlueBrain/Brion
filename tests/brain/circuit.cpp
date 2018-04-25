@@ -226,7 +226,7 @@ void _checkMorphology(const brain::neuron::Morphology& morphology,
         transform);
     const auto& p = morphology.getPoints();
     const auto& q = reference.getPoints();
-    BOOST_CHECK(reference.getTransformation().equals(transform));
+    BOOST_REQUIRE(reference.getTransformation().equals(transform));
 
     BOOST_REQUIRE(p.size() == q.size());
     for (size_t i = 0; i != p.size(); ++i)

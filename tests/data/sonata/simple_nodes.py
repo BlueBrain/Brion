@@ -26,7 +26,7 @@ population = out.create_group("nodes/simple")
 node_group_id = numpy.array([
     0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1], dtype="u4")
 node_group_index = numpy.array([
-    9, 0, 8, 1, 7, 2, 6, 3, 5, 4, 9, 0, 8, 1, 7, 2, 6, 3, 5, 4], dtype="u4")
+    0, 9, 1, 8, 2, 7, 3, 6, 4, 5, 5, 4, 6, 3, 7, 2, 8, 1, 9, 0], dtype="u4")
 # Node ids are optional, but in this example we will make them explicit,
 # non ordered, non contiguous
 node_id = numpy.array([
@@ -50,12 +50,17 @@ y = numpy.array([0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1], dtype="float")
 z = numpy.array([0.5, 0.5, 0.5, 0.5, 0.5, -0.5, -0.5, -0.5, -0.5, -0.5,],
                 dtype="float")
 # Not clear how this fields go
-rotation_angle_x = numpy.array([0.1] * 10, dtype="float")
-rotation_angle_y = numpy.array([0.2] * 10, dtype="float")
-rotation_angle_z = numpy.array([0.3] * 10, dtype="float")
+pi=3.14159265359
+ph=pi/2
+p2=pi*2
+
+rotation_angle_x = numpy.array([pi,0 ,0 ,ph,0 ,0 ,p2, 0,0 ,ph], dtype="float")
+rotation_angle_y = numpy.array([0 ,pi,0 ,0 ,ph,0 ,0 ,p2,0 ,ph], dtype="float")
+rotation_angle_z = numpy.array([0 ,0 ,pi,0 ,0 ,ph,0 ,0 ,p2,ph], dtype="float")
+dt = h5py.special_dtype(vlen=str) # PY3
 morphology_file = numpy.array(["morph_A", "morph_B", "morph_C", "morph_A",
                                "morph_B", "morph_C", "morph_D", "morph_B",
-                               "morph_A", "morph_C"], dtype=bytes)
+                               "morph_A", "morph_C"], dtype=dt)
 
 group.create_dataset("x", data=x)
 group.create_dataset("y", data=y)
@@ -89,7 +94,7 @@ columns = {
     "etype": ["fast", "slow", "fast"]}
 
 writer = csv.writer(out, delimiter=' ',
-                    quotechar='|', quoting=csv.QUOTE_MINIMAL)
+                    quotechar='|', quoting=csv.QUOTE_MINIMAL, lineterminator='\n')
 
 writer.writerow(columns.keys())
 def get_row(columns, index):

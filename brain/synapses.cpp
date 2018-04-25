@@ -56,6 +56,14 @@ void _allocate(T& data, const size_t size)
     data.reset((typename T::element_type*)ptr);
     // cppcheck-suppress memleak
 }
+
+bool _hasSurfacePositions(const Circuit::Impl& circuit)
+{
+    const auto& synapse = circuit.getSynapsePositions(true);
+    assert(synapse.getNumAttributes() == brion::SYNAPSE_OLD_POSITION_ALL ||
+           synapse.getNumAttributes() == brion::SYNAPSE_POSITION_ALL);
+    return synapse.getNumAttributes() == brion::SYNAPSE_POSITION_ALL;
+}
 }
 
 struct Synapses::Impl : public Synapses::BaseImpl
@@ -211,21 +219,17 @@ struct Synapses::Impl : public Synapses::BaseImpl
         if (_preCenterPositionX)
             return;
 
-        Strings hashes;
-        hashes.reserve(gids.size());
-        const auto& path = _circuit._impl->_synapseSource.getPath();
-        const std::string baseHash(fs::canonical(path).generic_string());
-        for (const auto gid : gids)
-        {
-            std::string gidHash = baseHash;
-            gidHash += _afferent ? "_afferent" : "_efferent";
-            gidHash += std::to_string(gid);
-            gidHash = servus::make_uint128(gidHash).getString();
-            hashes.push_back(gidHash);
-        }
+        Strings keys;
+        CachedSynapses loaded;
 
-        const CachedSynapses loaded =
-            _circuit._impl->loadSynapsePositionsFromCache(hashes);
+        auto cache = _circuit._impl->getSynapseCache();
+        if (cache)
+        {
+            keys = cache->createKeys(gids, _afferent);
+            loaded =
+                cache->loadPositions(keys,
+                                     _hasSurfacePositions(*_circuit._impl));
+        }
 
         const bool haveSize = _size > 0;
 
@@ -236,31 +240,34 @@ struct Synapses::Impl : public Synapses::BaseImpl
 
         if (!haveSize)
         {
-            auto hash = hashes.begin();
+            auto key = keys.begin();
             for (const auto gid : gids)
             {
-                const auto it = loaded.find(*hash);
-                ++hash;
-                if (it != loaded.end())
-                    _size += it->second.shape()[0];
-                else
+                if (cache)
                 {
-                    if (!positions)
-                        positions =
-                            &_circuit._impl->getSynapsePositions(_afferent);
-                    _size += positions->getNumSynapses(GIDSet{gid});
+                    const auto it = loaded.find(*key);
+                    ++key;
+                    if (it != loaded.end())
+                    {
+                        _size += it->second.shape()[0];
+                        continue;
+                    }
                 }
+
+                if (!positions)
+                    positions = &_circuit._impl->getSynapsePositions(_afferent);
+                _size += positions->getNumSynapses(GIDSet{gid});
             }
         }
 
         _allocatePositions(_size);
 
         size_t i = 0;
-        auto hash = hashes.begin();
+        auto key = keys.begin();
         bool haveSurfacePositions = false;
         for (const auto gid : gids)
         {
-            auto it = loaded.find(*hash);
+            auto it = cache ? loaded.find(*key) : loaded.end();
             const bool cached = it != loaded.end();
 
             const auto readFromFile = [&] {
@@ -276,9 +283,12 @@ struct Synapses::Impl : public Synapses::BaseImpl
             const brion::SynapseMatrix pos =
                 cached ? it->second : readFromFile();
 
-            if (!cached)
-                _circuit._impl->saveSynapsePositionsToCache(gid, *hash, pos);
-            ++hash;
+            if (cache)
+            {
+                if (!cached)
+                    cache->savePositions(gid, *key, pos);
+                ++key;
+            }
 
             for (size_t j = 0; j < pos.size(); ++j)
             {
