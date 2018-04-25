@@ -21,37 +21,24 @@
 #include <BBP/TestDatasets.h>
 #include <brion/brion.h>
 #include <servus/uint128_t.h>
+#include <tests/paths.h>
 
 #define BOOST_TEST_MODULE SpikeReport
 #include <boost/filesystem/operations.hpp>
 #include <boost/filesystem/path.hpp>
 #include <boost/test/unit_test.hpp>
 
-#define BLURON_SPIKE_REPORT_FILE "local/simulations/may17_2011/Control/out.dat"
-#define BINARY_SPIKE_REPORT_FILE \
-    "local/simulations/may17_2011/Control/out.spikes"
+constexpr auto BLURON_SPIKE_FILE = "spikes/spikes.dat";
+constexpr auto NEST_SPIKE_FILE = "spikes/spikes-*.gdf";
+constexpr auto BINARY_SPIKE_FILE = "spikes/binary.spikes";
+constexpr auto HDF5_SPIKE_FILE0 = "spikes/spikes_unsorted.h5";
+constexpr auto HDF5_SPIKE_FILE1 = "spikes/spikes_by_gid.h5";
+constexpr auto HDF5_SPIKE_FILE2 = "spikes/spikes_by_time.h5";
+constexpr auto ALL_FILES = {BLURON_SPIKE_FILE, NEST_SPIKE_FILE,
+                            BINARY_SPIKE_FILE, HDF5_SPIKE_FILE0,
+                            HDF5_SPIKE_FILE1,  HDF5_SPIKE_FILE2};
 
-#define BLURON_SPIKES_START_TIME 0.15f
-#define BLURON_SPIKES_END_TIME 9.975f
-
-#define NEST_SPIKES_START_TIME 1.8f
-#define NEST_SPIKES_END_TIME 98.9f
-
-#define BLURON_SPIKES_COUNT 274
-#define NEST_SPIKES_COUNT 1540096
-
-#define BLURON_FIRST_SPIKE_TIME BLURON_SPIKES_START_TIME
-#define BLURON_FIRST_SPIKE_GID 290
-
-#define NEST_FIRST_SPIKE_TIME NEST_SPIKES_START_TIME
-#define NEST_FIRST_SPIKE_GID 32826
-#define NEST_FIRST_SPIKE_GID_COUNT 1114
-
-#define BLURON_LAST_SPIKE_TIME BLURON_SPIKES_END_TIME
-#define BLURON_LAST_SPIKE_GID 353
-
-#define NEST_LAST_SPIKE_TIME NEST_SPIKES_END_TIME
-#define NEST_LAST_SPIKE_GID 40596
+constexpr auto SPIKES_END_TIME = 9.955f;
 
 inline void debugSpikes(const brion::Spikes& v)
 {
@@ -86,7 +73,6 @@ public:
 };
 
 // uri
-
 BOOST_AUTO_TEST_CASE(spikes_uri)
 {
     TemporaryData data("dat");
@@ -104,15 +90,9 @@ BOOST_AUTO_TEST_CASE(invalid_open_unknown_extension)
                                                  brion::MODE_READ),
                       std::runtime_error);
 
-    boost::filesystem::path path(BBP_TESTDATA);
+    boost::filesystem::path path(BRION_TESTDATA);
     path /= "local/README";
     BOOST_CHECK_THROW(brion::SpikeReport report1(brion::URI(path.string()),
-                                                 brion::MODE_READ),
-                      std::runtime_error);
-
-    path = BBP_TESTDATA;
-    path /= "local/simulations/may17_2011/Control/voltage.h5";
-    BOOST_CHECK_THROW(brion::SpikeReport report2(brion::URI(path.string()),
                                                  brion::MODE_READ),
                       std::runtime_error);
 }
@@ -140,10 +120,17 @@ BOOST_AUTO_TEST_CASE(invalid_open_file_notfound_nest)
                       std::runtime_error);
 }
 
+BOOST_AUTO_TEST_CASE(invalid_open_file_notfound_h5)
+{
+    BOOST_CHECK_THROW(brion::SpikeReport report(brion::URI("/path/file.h5"),
+                                                brion::MODE_READ),
+                      std::runtime_error);
+}
+
 BOOST_AUTO_TEST_CASE(bluron_invalid_report_information)
 {
-    boost::filesystem::path path(BBP_TESTDATA);
-    path /= BLURON_SPIKE_REPORT_FILE;
+    boost::filesystem::path path(BRION_TESTDATA);
+    path /= BLURON_SPIKE_FILE;
 
     BOOST_CHECK_THROW(const brion::SpikeReport report(
                           brion::URI(path.string() + ";" + path.string()),
@@ -155,8 +142,8 @@ BOOST_AUTO_TEST_CASE(bluron_invalid_report_information)
 
 BOOST_AUTO_TEST_CASE(invoke_invalid_method_binary)
 {
-    boost::filesystem::path path(BBP_TESTDATA);
-    path /= BINARY_SPIKE_REPORT_FILE;
+    boost::filesystem::path path(BRION_TESTDATA);
+    path /= BINARY_SPIKE_FILE;
 
     brion::SpikeReport report(brion::URI(path.string()), brion::MODE_READ);
     BOOST_CHECK_THROW(report.write(brion::Spikes{}), std::runtime_error);
@@ -164,8 +151,8 @@ BOOST_AUTO_TEST_CASE(invoke_invalid_method_binary)
 
 BOOST_AUTO_TEST_CASE(invoke_invalid_method_bluron)
 {
-    boost::filesystem::path path(BBP_TESTDATA);
-    path /= BLURON_SPIKE_REPORT_FILE;
+    boost::filesystem::path path(BRION_TESTDATA);
+    path /= BLURON_SPIKE_FILE;
 
     brion::SpikeReport report(brion::URI(path.string()), brion::MODE_READ);
     BOOST_CHECK_THROW(report.write(brion::Spikes{}), std::runtime_error);
@@ -173,32 +160,262 @@ BOOST_AUTO_TEST_CASE(invoke_invalid_method_bluron)
 
 BOOST_AUTO_TEST_CASE(invoke_invalid_method_nest)
 {
-    boost::filesystem::path path(BBP_TESTDATA);
-    const std::string files("NESTSpikeData/spike_detector-65537-*.gdf");
-    brion::SpikeReport report(brion::URI((path / files).string()),
+    boost::filesystem::path path(BRION_TESTDATA);
+    brion::SpikeReport report(brion::URI((path / NEST_SPIKE_FILE).string()),
                               brion::MODE_READ);
     BOOST_CHECK_THROW(report.write(brion::Spikes{}), std::runtime_error);
 }
 
 BOOST_AUTO_TEST_CASE(end_time)
 {
-    boost::filesystem::path path(BBP_TESTDATA);
+    auto test = [](const char* suffix) {
+        boost::filesystem::path path(BRION_TESTDATA);
+        brion::SpikeReport report(brion::URI((path / suffix).string()),
+                                  brion::MODE_READ);
+        const auto t = report.getEndTime();
+        BOOST_CHECK_MESSAGE(t == SPIKES_END_TIME, suffix << ", " << t
+                                                         << " instead of "
+                                                         << SPIKES_END_TIME);
+    };
 
-    const std::string filename1("NESTSpikeData/spike_detector-65537-*.gdf");
-    brion::SpikeReport report1(brion::URI((path / filename1).string()),
-                               brion::MODE_READ);
-    BOOST_CHECK_EQUAL(report1.getEndTime(), 98.90f);
-
-    const std::string filename2(BLURON_SPIKE_REPORT_FILE);
-    brion::SpikeReport report2(brion::URI((path / filename2).string()),
-                               brion::MODE_READ);
-    BOOST_CHECK_EQUAL(report2.getEndTime(), 9.975f);
-
-    const std::string filename3(BINARY_SPIKE_REPORT_FILE);
-    brion::SpikeReport report3(brion::URI((path / filename3).string()),
-                               brion::MODE_READ);
-    BOOST_CHECK_EQUAL(report3.getEndTime(), 9.975f);
+    for (auto&& file : ALL_FILES)
+        test(file);
 }
+
+BOOST_AUTO_TEST_CASE(simple_read)
+{
+    auto test = [](const char* suffix) {
+        boost::filesystem::path path(BRION_TESTDATA);
+        brion::SpikeReport report(brion::URI((path / suffix).string()),
+                                  brion::MODE_READ);
+
+        // All the reports to be tested are file based, so they read until
+        // the end.
+        const auto spikes = report.read(0.3).get();
+        BOOST_CHECK_MESSAGE(spikes.size() == 500, suffix << " bad spike count "
+                                                         << spikes.size());
+        const auto t = report.getCurrentTime();
+        BOOST_CHECK_MESSAGE(t == brion::UNDEFINED_TIMESTAMP,
+                            suffix << " bad current time " << t);
+        const auto state = report.getState();
+        BOOST_CHECK_MESSAGE(state == brion::SpikeReport::State::ended,
+                            suffix << " bad state " << state);
+
+        auto spike = *spikes.cbegin();
+        BOOST_CHECK_MESSAGE(spike.first == 0.005f,
+                            suffix << " bad first spike time " << spike.first);
+        BOOST_CHECK_MESSAGE(spike.second == 162,
+                            suffix << " bad first spike gid " << spike.second);
+
+        spike = *spikes.crbegin();
+        BOOST_CHECK_MESSAGE(spike.first == SPIKES_END_TIME,
+                            suffix << " bad last spike time " << spike.first);
+        BOOST_CHECK_MESSAGE(spike.second == 225,
+                            suffix << " bad last spike gid " << spike.second);
+
+        BOOST_CHECK_THROW(report.read(report.getCurrentTime()),
+                          std::logic_error);
+    };
+
+    for (auto&& file : ALL_FILES)
+        test(file);
+}
+
+BOOST_AUTO_TEST_CASE(filtered_read)
+{
+    auto test = [](const char* suffix) {
+        boost::filesystem::path path(BRION_TESTDATA);
+        brion::SpikeReport report(brion::URI((path / suffix).string()),
+                                  brion::GIDSet{100, 101});
+
+        // All the reports to be tested are file based, so they read until
+        // the end.
+        const auto spikes = report.read(0.3).get();
+
+        BOOST_CHECK_MESSAGE(spikes.size() == 5, suffix << " bad spike count "
+                                                       << spikes.size());
+        const auto t = report.getCurrentTime();
+        BOOST_CHECK_MESSAGE(t == brion::UNDEFINED_TIMESTAMP,
+                            suffix << " bad current time " << t);
+        const auto state = report.getState();
+        BOOST_CHECK_MESSAGE(state == brion::SpikeReport::State::ended,
+                            suffix << " bad state " << state);
+
+        auto spike = *spikes.cbegin();
+        BOOST_CHECK_MESSAGE(spike.first == 2.05f,
+                            suffix << " bad first spike time " << spike.first);
+        BOOST_CHECK_MESSAGE(spike.second == 100,
+                            suffix << " bad first spike gid " << spike.second);
+
+        spike = *spikes.crbegin();
+        BOOST_CHECK_MESSAGE(spike.first == 9.38f,
+                            suffix << " bad last spike time " << spike.first);
+        BOOST_CHECK_MESSAGE(spike.second == 101,
+                            suffix << " bad last spike gid " << spike.second);
+
+        BOOST_CHECK_THROW(report.read(report.getCurrentTime()),
+                          std::logic_error);
+    };
+
+    for (auto&& file : ALL_FILES)
+        test(file);
+}
+
+BOOST_AUTO_TEST_CASE(read_until)
+{
+    auto test = [](const char* suffix) {
+        boost::filesystem::path path(BRION_TESTDATA);
+        brion::SpikeReport report(brion::URI((path / suffix).string()),
+                                  brion::MODE_READ);
+
+        auto spikes = report.readUntil(1.0).get();
+        BOOST_CHECK_MESSAGE(spikes.size() == 49, suffix << " spike count "
+                                                        << spikes.size());
+        BOOST_CHECK_MESSAGE(report.getCurrentTime() >= 1.0,
+                            suffix << " bad current time");
+        BOOST_CHECK_MESSAGE(spikes.rbegin()->first < 1.0,
+                            suffix << " bad last spike time");
+        BOOST_CHECK_MESSAGE(report.getState() == brion::SpikeReport::State::ok,
+                            suffix << " bad state");
+
+        spikes = report.read(brion::UNDEFINED_TIMESTAMP).get();
+        BOOST_CHECK_MESSAGE(spikes.size() == 451, suffix << " spike count "
+                                                         << spikes.size());
+        BOOST_CHECK_MESSAGE(report.getCurrentTime() ==
+                                brion::UNDEFINED_TIMESTAMP,
+                            suffix << " bad final current time");
+        BOOST_CHECK_MESSAGE(report.getState() ==
+                                brion::SpikeReport::State::ended,
+                            suffix << " bad final state");
+        ;
+    };
+
+    for (auto&& file : ALL_FILES)
+        test(file);
+}
+
+BOOST_AUTO_TEST_CASE(read_until_filtered)
+{
+    auto test = [](const char* suffix) {
+        boost::filesystem::path path(BRION_TESTDATA);
+        brion::SpikeReport report(brion::URI((path / suffix).string()),
+                                  brion::GIDSet{100, 101});
+
+        auto spikes = report.readUntil(5.0).get();
+        BOOST_CHECK_MESSAGE(spikes.size() == 2, suffix << " spike count "
+                                                       << spikes.size());
+        BOOST_CHECK_MESSAGE(report.getCurrentTime() >= 5.0,
+                            suffix << " bad current time");
+        BOOST_CHECK_MESSAGE(spikes.rbegin()->first < 5.0,
+                            suffix << " bad last spike time");
+        BOOST_CHECK_MESSAGE(report.getState() == brion::SpikeReport::State::ok,
+                            suffix << " bad state");
+
+        spikes = report.read(brion::UNDEFINED_TIMESTAMP).get();
+        BOOST_CHECK_MESSAGE(spikes.size() == 3, suffix << " spike count "
+                                                       << spikes.size());
+        BOOST_CHECK_MESSAGE(report.getCurrentTime() ==
+                                brion::UNDEFINED_TIMESTAMP,
+                            suffix << " bad final current time");
+        BOOST_CHECK_MESSAGE(report.getState() ==
+                                brion::SpikeReport::State::ended,
+                            suffix << " bad final state");
+        ;
+    };
+
+    for (auto&& file : ALL_FILES)
+        test(file);
+}
+
+BOOST_AUTO_TEST_CASE(read_seek)
+{
+    auto test = [](const char* suffix) {
+        boost::filesystem::path path(BRION_TESTDATA);
+        brion::SpikeReport report(brion::URI((path / suffix).string()),
+                                  brion::MODE_READ);
+
+        report.seek(1.0f).get();
+        BOOST_CHECK_MESSAGE(report.getCurrentTime() == 1.0,
+                            suffix << " bad current time");
+        BOOST_CHECK_MESSAGE(report.getState() == brion::SpikeReport::State::ok,
+                            suffix << " bad state");
+        ;
+
+        auto spikes = report.read(brion::UNDEFINED_TIMESTAMP).get();
+        BOOST_CHECK_MESSAGE(spikes.size() == 451, suffix << " spike count "
+                                                         << spikes.size());
+        BOOST_CHECK_MESSAGE(report.getCurrentTime() ==
+                                brion::UNDEFINED_TIMESTAMP,
+                            suffix << " bad final current time");
+        BOOST_CHECK_MESSAGE(report.getState() ==
+                                brion::SpikeReport::State::ended,
+                            suffix << " bad final state");
+        ;
+
+        report.seek(5.0f).get();
+        BOOST_CHECK_MESSAGE(report.getCurrentTime() == 5.0f,
+                            suffix << " bad current time");
+        BOOST_CHECK_MESSAGE(report.getState() == brion::SpikeReport::State::ok,
+                            suffix << " bad state");
+        ;
+
+        spikes = report.read(brion::UNDEFINED_TIMESTAMP).get();
+        BOOST_CHECK_MESSAGE(spikes.size() == 257, suffix << " spike count "
+                                                         << spikes.size());
+        BOOST_CHECK_MESSAGE(report.getCurrentTime() ==
+                                brion::UNDEFINED_TIMESTAMP,
+                            suffix << " bad final current time");
+        BOOST_CHECK_MESSAGE(report.getState() ==
+                                brion::SpikeReport::State::ended,
+                            suffix << " bad final state");
+        ;
+
+        report.seek(-2.f).get();
+        BOOST_CHECK_MESSAGE(report.getCurrentTime() == -2.f,
+                            suffix << " bad current time");
+        BOOST_CHECK_MESSAGE(report.getState() == brion::SpikeReport::State::ok,
+                            suffix << " bad state");
+        ;
+
+        spikes = report.read(brion::UNDEFINED_TIMESTAMP).get();
+        BOOST_CHECK_MESSAGE(spikes.size() == 500, suffix << " spike count "
+                                                         << spikes.size());
+        BOOST_CHECK_MESSAGE(report.getCurrentTime() ==
+                                brion::UNDEFINED_TIMESTAMP,
+                            suffix << " bad final current time");
+        BOOST_CHECK_MESSAGE(report.getState() ==
+                                brion::SpikeReport::State::ended,
+                            suffix << " bad final state");
+        ;
+
+        report.seek(10.f).get();
+        BOOST_CHECK_MESSAGE(report.getCurrentTime() ==
+                                brion::UNDEFINED_TIMESTAMP,
+                            suffix << " bad current time");
+        BOOST_CHECK_MESSAGE(report.getState() ==
+                                brion::SpikeReport::State::ended,
+                            suffix << " bad state");
+    };
+    for (auto&& file : ALL_FILES)
+        test(file);
+}
+
+BOOST_AUTO_TEST_CASE(invalid_read_binary)
+{
+    auto test = [](const char* suffix) {
+        boost::filesystem::path path(BRION_TESTDATA);
+        brion::SpikeReport report(brion::URI((path / suffix).string()),
+                                  brion::MODE_READ);
+        report.readUntil(0.3).get();
+        BOOST_CHECK_NO_THROW(report.read(0.1));
+        BOOST_CHECK_THROW(report.readUntil(0.1), std::logic_error);
+    };
+
+    for (auto&& file : ALL_FILES)
+        test(file);
+}
+
+// write
 
 inline void testWrite(const char* format)
 {
@@ -242,371 +459,50 @@ BOOST_AUTO_TEST_CASE(write_data_bluron)
     testWrite("dat");
 }
 
-inline void testRead(const char* format)
+BOOST_AUTO_TEST_CASE(invalid_write)
 {
-    TemporaryData data{format};
+    auto test = [](const char* format) {
+        TemporaryData data{format};
+        brion::SpikeReport report(brion::URI(data.tmpFileName),
+                                  brion::MODE_WRITE);
+        report.write(data.spikes);
 
-    brion::SpikeReport reportWrite(brion::URI(data.tmpFileName),
-                                   brion::MODE_WRITE);
-    reportWrite.write(data.spikes);
-    reportWrite.close();
+        BOOST_CHECK_THROW(report.write({{0.0, 0}}), std::logic_error);
 
-    brion::SpikeReport reportRead(brion::URI(data.tmpFileName),
-                                  brion::MODE_READ);
+        BOOST_CHECK_THROW(report.write(
+                              {{10.0, 0}, {10.0, 1}, {11.0, 0}, {0.5, 1}}),
+                          std::logic_error);
 
-    // All the reports to be tested are file based, so they read until the end.
-    auto spikes = reportRead.read(0.3).get();
-    BOOST_CHECK_EQUAL(spikes.size(), 5);
-    BOOST_CHECK_EQUAL(reportRead.getCurrentTime(), brion::UNDEFINED_TIMESTAMP);
-    BOOST_CHECK_EQUAL(reportRead.getState(), brion::SpikeReport::State::ended);
+        brion::SpikeReport reportRead{brion::URI(data.tmpFileName),
+                                      brion::MODE_READ};
+        BOOST_CHECK_THROW(reportRead.write({{100.0, 0}}), std::runtime_error);
+    };
 
-    BOOST_CHECK_THROW(reportRead.read(reportRead.getCurrentTime()),
-                      std::logic_error);
+    for (auto&& format : {"spikes", "gdf", "dat"})
+        test(format);
 }
 
-inline void testReadFiltered(const char* format)
+BOOST_AUTO_TEST_CASE(write_incremental)
 {
-    TemporaryData data{format};
-
-    brion::SpikeReport reportWrite(brion::URI(data.tmpFileName),
-                                   brion::MODE_WRITE);
-    reportWrite.write(data.spikes);
-    reportWrite.close();
-
-    brion::SpikeReport reportRead(brion::URI(data.tmpFileName),
-                                  brion::GIDSet{22, 25});
-
-    // All the reports to be tested are file based, so they read until the end.
-    auto spikes = reportRead.read(0.3).get();
-    BOOST_CHECK_EQUAL(spikes.size(), 2);
-    BOOST_CHECK_EQUAL(reportRead.getCurrentTime(), brion::UNDEFINED_TIMESTAMP);
-    BOOST_CHECK_EQUAL(reportRead.getState(), brion::SpikeReport::State::ended);
-}
-
-BOOST_AUTO_TEST_CASE(read_binary)
-{
-    testRead("spikes");
-}
-
-BOOST_AUTO_TEST_CASE(read_nest)
-{
-    testRead("gdf");
-}
-
-BOOST_AUTO_TEST_CASE(read_bluron)
-{
-    testRead("dat");
-}
-
-BOOST_AUTO_TEST_CASE(read_filtered_binary)
-{
-    testReadFiltered("spikes");
-}
-
-BOOST_AUTO_TEST_CASE(read_filtered_nest)
-{
-    testReadFiltered("gdf");
-}
-
-BOOST_AUTO_TEST_CASE(read_filtered_bluron)
-{
-    testReadFiltered("dat");
-}
-
-BOOST_AUTO_TEST_CASE(read_content_bluron)
-{
-    boost::filesystem::path path(BBP_TESTDATA);
-    path /= BLURON_SPIKE_REPORT_FILE;
-
-    brion::SpikeReport report(brion::URI(path.string()), brion::MODE_READ);
-    brion::Spikes spikes = report.read(brion::UNDEFINED_TIMESTAMP).get();
-
-    BOOST_REQUIRE_EQUAL(spikes.size(), BLURON_SPIKES_COUNT);
-
-    BOOST_CHECK_EQUAL(spikes.begin()->first, BLURON_SPIKES_START_TIME);
-    BOOST_CHECK_EQUAL(spikes.begin()->second, BLURON_FIRST_SPIKE_GID);
-
-    BOOST_CHECK_EQUAL(spikes.rbegin()->first, BLURON_LAST_SPIKE_TIME);
-    BOOST_CHECK_EQUAL(spikes.rbegin()->second, BLURON_LAST_SPIKE_GID);
-}
-
-BOOST_AUTO_TEST_CASE(read_content_nest)
-{
-    boost::filesystem::path path(BBP_TESTDATA);
-    const std::string& files = "NESTSpikeData/spike_detector-65537-*.gdf";
-
-    brion::SpikeReport report(brion::URI((path / files).string()),
-                              brion::MODE_READ);
-
-    brion::Spikes spikes = report.read(brion::UNDEFINED_TIMESTAMP).get();
-
-    BOOST_REQUIRE_EQUAL(spikes.size(), NEST_SPIKES_COUNT);
-
-    BOOST_CHECK_EQUAL(spikes.front().first, NEST_SPIKES_START_TIME);
-    BOOST_CHECK_EQUAL(spikes.back().first, NEST_SPIKES_END_TIME);
-
-    // The spikes are ordered by time but not by GIDs.
-    // Extract the sorted set of GIDs corresponding to the first spike time.
-    std::set<int> gids;
-    std::vector<brion::Spike>::iterator it = spikes.begin();
-    while (it != spikes.end() && it->first == NEST_SPIKES_START_TIME)
-    {
-        gids.insert(it->second);
-        ++it;
-    }
-    BOOST_REQUIRE_EQUAL(gids.size(), NEST_FIRST_SPIKE_GID_COUNT);
-    BOOST_CHECK_EQUAL(*gids.begin(), NEST_FIRST_SPIKE_GID);
-
-    BOOST_CHECK_EQUAL(spikes.rbegin()->first, NEST_LAST_SPIKE_TIME);
-    BOOST_CHECK_EQUAL(spikes.rbegin()->second, NEST_LAST_SPIKE_GID);
-}
-
-inline void testReadUntil(const char* format)
-{
-    TemporaryData data{format};
-
-    brion::SpikeReport reportWrite(brion::URI(data.tmpFileName),
-                                   brion::MODE_WRITE);
-    reportWrite.write(data.spikes);
-    reportWrite.close();
-
-    brion::SpikeReport reportRead(brion::URI(data.tmpFileName),
-                                  brion::MODE_READ);
-
-    auto spikes = reportRead.readUntil(0.15).get();
-    BOOST_CHECK_EQUAL(spikes.size(), 1);
-    BOOST_CHECK(reportRead.getCurrentTime() >= 0.15f);
-
-    spikes = reportRead.readUntil(0.3).get();
-    BOOST_CHECK_EQUAL(spikes.size(), 2);
-    BOOST_CHECK(reportRead.getCurrentTime() >= 0.3f);
-    BOOST_CHECK(spikes.rbegin()->first < 0.3);
-    BOOST_CHECK_EQUAL(reportRead.getState(), brion::SpikeReport::State::ok);
-
-    spikes = reportRead.read(brion::UNDEFINED_TIMESTAMP).get();
-    BOOST_CHECK_EQUAL(spikes.size(), 2);
-    BOOST_CHECK_EQUAL(reportRead.getCurrentTime(), brion::UNDEFINED_TIMESTAMP);
-    BOOST_CHECK_EQUAL(reportRead.getState(), brion::SpikeReport::State::ended);
-}
-
-inline void testReadUntilFiltered(const char* format)
-{
-    TemporaryData data{format};
-
-    brion::SpikeReport reportWrite(brion::URI(data.tmpFileName),
-                                   brion::MODE_WRITE);
-    reportWrite.write(data.spikes);
-    reportWrite.close();
-
-    brion::SpikeReport reportRead(brion::URI(data.tmpFileName),
-                                  brion::GIDSet{22, 25});
-
-    auto spikes = reportRead.readUntil(0.4).get();
-    BOOST_CHECK_EQUAL(spikes.size(), 1);
-    BOOST_CHECK(reportRead.getCurrentTime() >= 0.4f);
-    BOOST_CHECK(spikes.rbegin()->first < 0.4);
-    BOOST_CHECK_EQUAL(reportRead.getState(), brion::SpikeReport::State::ok);
-
-    spikes = reportRead.readUntil(brion::UNDEFINED_TIMESTAMP).get();
-    BOOST_CHECK_EQUAL(spikes.size(), 1);
-    BOOST_CHECK_EQUAL(reportRead.getCurrentTime(), brion::UNDEFINED_TIMESTAMP);
-    BOOST_CHECK_EQUAL(reportRead.getState(), brion::SpikeReport::State::ended);
-
-    BOOST_CHECK_THROW(reportRead.read(reportRead.getCurrentTime()),
-                      std::logic_error);
-}
-
-BOOST_AUTO_TEST_CASE(read_until_binary)
-{
-    testReadUntil("spikes");
-}
-
-BOOST_AUTO_TEST_CASE(read_until_nest)
-{
-    testReadUntil("gdf");
-}
-
-BOOST_AUTO_TEST_CASE(read_until_bluron)
-{
-    testReadUntil("dat");
-}
-
-BOOST_AUTO_TEST_CASE(read_until_filtered_binary)
-{
-    testReadUntilFiltered("spikes");
-}
-
-BOOST_AUTO_TEST_CASE(read_until_filtered_nest)
-{
-    testReadUntilFiltered("gdf");
-}
-
-BOOST_AUTO_TEST_CASE(read_until_filtered_bluron)
-{
-    testReadUntilFiltered("dat");
-}
-
-// read_seek
-
-inline void testReadSeek(const char* format)
-{
-    TemporaryData data{format};
-
-    brion::SpikeReport reportWrite{brion::URI(data.tmpFileName),
-                                   brion::MODE_WRITE};
-    reportWrite.write(data.spikes);
-    reportWrite.close();
-
-    brion::SpikeReport reportRead{brion::URI(data.tmpFileName),
-                                  brion::MODE_READ};
-    BOOST_CHECK(reportRead.supportsBackwardSeek());
-    reportRead.seek(0.3f).get();
-
-    BOOST_CHECK_EQUAL(reportRead.getCurrentTime(), 0.3f);
-
-    auto spikes = reportRead.read(brion::UNDEFINED_TIMESTAMP).get();
-
-    BOOST_CHECK_EQUAL(spikes.size(), 2);
-    BOOST_CHECK_EQUAL(reportRead.getCurrentTime(), brion::UNDEFINED_TIMESTAMP);
-    BOOST_CHECK_EQUAL(reportRead.getState(), brion::SpikeReport::State::ended);
-
-    reportRead.seek(0.25f).get();
-    BOOST_CHECK_EQUAL(reportRead.getCurrentTime(), 0.25f);
-    BOOST_CHECK_EQUAL(reportRead.getState(), brion::SpikeReport::State::ok);
-
-    spikes = reportRead.read(brion::UNDEFINED_TIMESTAMP).get();
-    BOOST_CHECK_EQUAL(spikes.size(), 2);
-    BOOST_CHECK_EQUAL(reportRead.getState(), brion::SpikeReport::State::ended);
-
-    reportRead.seek(-2.f).get();
-    BOOST_CHECK_EQUAL(reportRead.getCurrentTime(), -2.f);
-    BOOST_CHECK_EQUAL(reportRead.getState(), brion::SpikeReport::State::ok);
-
-    spikes = reportRead.read(brion::UNDEFINED_TIMESTAMP).get();
-    BOOST_CHECK_EQUAL(spikes.size(), 5);
-    BOOST_CHECK_EQUAL(reportRead.getState(), brion::SpikeReport::State::ended);
-
-    reportRead.seek(10.f).get();
-    BOOST_CHECK_EQUAL(reportRead.getCurrentTime(), brion::UNDEFINED_TIMESTAMP);
-    BOOST_CHECK_EQUAL(reportRead.getState(), brion::SpikeReport::State::ended);
-}
-
-BOOST_AUTO_TEST_CASE(read_seek_binary)
-{
-    testReadSeek("spikes");
-}
-
-BOOST_AUTO_TEST_CASE(read_seek_nest)
-{
-    testReadSeek("gdf");
-}
-
-BOOST_AUTO_TEST_CASE(read_seek_bluron)
-{
-    testReadSeek("dat");
-}
-
-// invalid_read
-
-inline void testInvalidRead(const char* format)
-{
-    TemporaryData data{format};
-
-    brion::SpikeReport reportWrite{brion::URI(data.tmpFileName),
-                                   brion::MODE_WRITE};
-    reportWrite.write(data.spikes);
-    reportWrite.close();
-
-    brion::SpikeReport reportRead{brion::URI(data.tmpFileName),
-                                  brion::MODE_READ};
-    reportRead.readUntil(0.3).get();
-
-    BOOST_CHECK_NO_THROW(reportRead.read(0.1));
-    BOOST_CHECK_THROW(reportRead.readUntil(0.1), std::logic_error);
-}
-
-BOOST_AUTO_TEST_CASE(invalid_read_binary)
-{
-    testInvalidRead("spikes");
-}
-
-BOOST_AUTO_TEST_CASE(invalid_read_nest)
-{
-    testInvalidRead("gdf");
-}
-
-BOOST_AUTO_TEST_CASE(invalid_read_bluron)
-{
-    testInvalidRead("dat");
-}
-
-// invalid write
-
-inline void testInvalidWrite(const char* format)
-{
-    TemporaryData data{format};
-    brion::SpikeReport reportWrite(brion::URI(data.tmpFileName),
-                                   brion::MODE_WRITE);
-    reportWrite.write(data.spikes);
-
-    BOOST_CHECK_THROW(reportWrite.write({{0.0, 0}}), std::logic_error);
-
-    BOOST_CHECK_THROW(reportWrite.write(
-                          {{10.0, 0}, {10.0, 1}, {11.0, 0}, {0.5, 1}}),
-                      std::logic_error);
-
-    brion::SpikeReport reportRead{brion::URI(data.tmpFileName),
-                                  brion::MODE_READ};
-    BOOST_CHECK_THROW(reportRead.write({{100.0, 0}}), std::runtime_error);
-}
-
-BOOST_AUTO_TEST_CASE(invalid_write_binary)
-{
-    testInvalidWrite("spikes");
-}
-
-BOOST_AUTO_TEST_CASE(invalid_write_nest)
-{
-    testInvalidWrite("gdf");
-}
-
-BOOST_AUTO_TEST_CASE(invalid_write_bluron)
-{
-    testInvalidWrite("dat");
-}
-
-// write incremental
-
-inline void testWriteIncremental(const char* format)
-{
-    TemporaryData data{format};
-    brion::SpikeReport reportWrite(brion::URI(data.tmpFileName),
-                                   brion::MODE_WRITE);
-    reportWrite.write({{0.1, 1}});
-    reportWrite.write({{0.2, 1}});
-    reportWrite.write({{0.3, 1}});
-    reportWrite.close();
-
-    brion::SpikeReport reportRead(brion::URI(data.tmpFileName),
-                                  brion::MODE_READ);
-
-    brion::Spikes spikes = reportRead.read(brion::UNDEFINED_TIMESTAMP).get();
-    BOOST_CHECK_EQUAL(spikes.size(), 3);
-}
-
-BOOST_AUTO_TEST_CASE(write_incremental_binary)
-{
-    testWriteIncremental("spikes");
-}
-
-BOOST_AUTO_TEST_CASE(write_incremental_nest)
-{
-    testWriteIncremental("gdf");
-}
-
-BOOST_AUTO_TEST_CASE(write_incremental_bluron)
-{
-    testWriteIncremental("dat");
+    auto test = [](const char* format) {
+        TemporaryData data{format};
+        brion::SpikeReport reportWrite(brion::URI(data.tmpFileName),
+                                       brion::MODE_WRITE);
+        reportWrite.write({{0.1, 1}});
+        reportWrite.write({{0.2, 1}});
+        reportWrite.write({{0.3, 1}});
+        reportWrite.close();
+
+        brion::SpikeReport reportRead(brion::URI(data.tmpFileName),
+                                      brion::MODE_READ);
+
+        brion::Spikes spikes =
+            reportRead.read(brion::UNDEFINED_TIMESTAMP).get();
+        BOOST_CHECK_MESSAGE(spikes.size() == 3, format);
+    };
+
+    for (auto&& format : {"spikes", "gdf", "dat"})
+        test(format);
 }
 
 // seek and write
@@ -642,14 +538,4 @@ inline void testSeekAndWrite(const char* format)
 BOOST_AUTO_TEST_CASE(seek_and_write_binary)
 {
     testSeekAndWrite("spikes");
-}
-
-BOOST_AUTO_TEST_CASE(seek_and_write_nest)
-{
-    // Not supported
-}
-
-BOOST_AUTO_TEST_CASE(seek_and_write_bluron)
-{
-    // Not supported
 }
