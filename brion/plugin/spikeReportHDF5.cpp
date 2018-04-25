@@ -26,7 +26,7 @@
 #include <boost/filesystem/path.hpp>
 
 #include <highfive/H5DataSet.hpp>
-#include <highfive/H5File.hpp>
+#include <highfive/H5Utility.hpp>
 
 #include <memory>
 
@@ -40,39 +40,41 @@ lunchbox::PluginRegisterer<SpikeReportHDF5> registerer;
 constexpr char HDF_REPORT_FILE_EXT[] = ".h5";
 }
 
-struct SpikeReportHDF5::Impl
-{
-    Impl(const std::string& uri)
-        : file(uri)
-    {
-        const HighFive::Group group = file.getGroup("/spikes");
-        const HighFive::DataSet setGids = group.getDataSet("gids");
-        const HighFive::DataSet setTimestamps = group.getDataSet("timestamps");
-
-        uint32_ts gids;
-        floats timestamps;
-        setGids.read(gids);
-        setTimestamps.read(timestamps);
-
-        const size_t numElements = gids.size();
-
-        for (size_t i = 0; i < numElements; i++)
-            spikes.push_back(std::make_pair<>(timestamps[i], gids[i]));
-
-        std::sort(spikes.begin(), spikes.end());
-        lastReadPosition = spikes.begin();
-    }
-
-    HighFive::File file;
-    Spikes spikes;
-    Spikes::iterator lastReadPosition;
-};
-
 SpikeReportHDF5::SpikeReportHDF5(const SpikeReportInitData& initData)
     : SpikeReportPlugin(initData)
+    , _file([initData]() {
+        // For consistency with the other spike plugins, we convert
+        // Highfive exceptions into std::runtime_error
+        try
+        {
+            HighFive::SilenceHDF5 silence;
+            return HighFive::File(initData.getURI().getPath());
+        }
+        catch (const HighFive::Exception& e)
+        {
+            throw std::runtime_error(e.what());
+        }
+    }())
 {
-    if (handles(initData))
-        impl.reset(new Impl(initData.getURI().getPath()));
+    const auto group = _file.getGroup("/spikes");
+    const auto setGids = group.getDataSet("gids");
+    const auto setTimestamps = group.getDataSet("timestamps");
+
+    uint32_ts gids;
+    floats timestamps;
+    setGids.read(gids);
+    setTimestamps.read(timestamps);
+
+    const size_t numElements = gids.size();
+
+    for (size_t i = 0; i < numElements; i++)
+        _spikes.push_back(std::make_pair<>(timestamps[i], gids[i]));
+
+    std::sort(_spikes.begin(), _spikes.end());
+    _lastReadPosition = _spikes.begin();
+
+    if (!_spikes.empty())
+        _endTime = _spikes.rbegin()->first;
 }
 
 bool SpikeReportHDF5::handles(const SpikeReportInitData& initData)
@@ -96,12 +98,12 @@ Spikes SpikeReportHDF5::read(const float)
 {
     // In file based reports, this function reads all remaining data.
     Spikes spikes;
-    auto start = impl->lastReadPosition;
-    impl->lastReadPosition = impl->spikes.end();
+    auto start = _lastReadPosition;
+    _lastReadPosition = _spikes.end();
     _currentTime = UNDEFINED_TIMESTAMP;
     _state = State::ended;
 
-    for (; start != impl->spikes.end(); ++start)
+    for (; start != _spikes.end(); ++start)
         pushBack(*start, spikes);
 
     return spikes;
@@ -111,20 +113,20 @@ Spikes SpikeReportHDF5::readUntil(const float toTimeStamp)
 {
     Spikes spikes;
 
-    const auto end = impl->spikes.end();
+    const auto end = _spikes.end();
 
-    for (; impl->lastReadPosition != end; ++impl->lastReadPosition)
+    for (; _lastReadPosition != end; ++_lastReadPosition)
     {
-        if (impl->lastReadPosition->first >= toTimeStamp)
+        if (_lastReadPosition->first >= toTimeStamp)
         {
-            _currentTime = impl->lastReadPosition->first;
+            _currentTime = _lastReadPosition->first;
             break;
         }
-        pushBack(*impl->lastReadPosition, spikes);
+        pushBack(*_lastReadPosition, spikes);
     }
 
-    if (impl->lastReadPosition != impl->spikes.end())
-        _currentTime = impl->lastReadPosition->first;
+    if (_lastReadPosition != _spikes.end())
+        _currentTime = _lastReadPosition->first;
     else
     {
         _currentTime = UNDEFINED_TIMESTAMP;
@@ -136,30 +138,30 @@ Spikes SpikeReportHDF5::readUntil(const float toTimeStamp)
 
 void SpikeReportHDF5::readSeek(const float toTimeStamp)
 {
-    if (impl->spikes.empty())
+    if (_spikes.empty())
     {
         _currentTime = UNDEFINED_TIMESTAMP;
         _state = State::ended;
         return;
     }
 
-    if (toTimeStamp < impl->spikes.begin()->first)
+    if (toTimeStamp < _spikes.begin()->first)
     {
-        impl->lastReadPosition = impl->spikes.begin();
+        _lastReadPosition = _spikes.begin();
         _state = State::ok;
         _currentTime = toTimeStamp;
     }
-    else if (toTimeStamp > impl->spikes.rbegin()->first)
+    else if (toTimeStamp > _spikes.rbegin()->first)
     {
-        impl->lastReadPosition = impl->spikes.end();
+        _lastReadPosition = _spikes.end();
         _state = State::ended;
         _currentTime = brion::UNDEFINED_TIMESTAMP;
     }
     else
     {
-        impl->lastReadPosition =
-            std::lower_bound(impl->spikes.begin(), impl->spikes.end(),
-                             toTimeStamp, [](const Spike& spike, float val) {
+        _lastReadPosition =
+            std::lower_bound(_spikes.begin(), _spikes.end(), toTimeStamp,
+                             [](const Spike& spike, float val) {
                                  return spike.first < val;
                              });
         _state = State::ok;

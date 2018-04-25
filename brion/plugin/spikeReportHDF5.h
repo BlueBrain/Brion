@@ -22,6 +22,8 @@
 #include <brion/spikeReportPlugin.h>
 #include <brion/types.h>
 
+#include <highfive/H5File.hpp>
+
 namespace brion
 {
 namespace plugin
@@ -33,8 +35,6 @@ class BinaryReportMap;
  */
 class SpikeReportHDF5 : public SpikeReportPlugin
 {
-    struct Impl;
-
 public:
     explicit SpikeReportHDF5(const SpikeReportInitData& initData);
 
@@ -47,7 +47,9 @@ public:
     void readSeek(float toTimeStamp) final;
     bool supportsBackwardSeek() const final { return true; }
 private:
-    std::unique_ptr<Impl> impl;
+    HighFive::File _file;
+    Spikes _spikes;
+    Spikes::iterator _lastReadPosition;
 };
 }
 }
