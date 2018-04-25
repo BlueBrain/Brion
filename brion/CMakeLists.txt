@@ -4,6 +4,14 @@
 # This file is part of Brion <https://github.com/BlueBrain/Brion>
 #
 
+list(APPEND CPPCHECK_EXTRA_ARGS
+  --suppress=*:${CMAKE_CURRENT_SOURCE_DIR}/json.hpp)
+
+# bug while checking json.hpp, --suppress does not remove the error exit code
+if(CPPCHECK_VERSION VERSION_LESS 1.78)
+  list(APPEND CPPCHECK_EXTRA_ARGS --error-exitcode=0)
+endif()
+
 set(BRION_PUBLIC_HEADERS
   blueConfig.h
   circuit.h
@@ -29,6 +37,7 @@ set(BRION_PUBLIC_HEADERS
 
 set(BRION_HEADERS
   constants.h
+  json.hpp
   detail/mesh.h
   detail/meshBinary.h
   detail/lockHDF5.h

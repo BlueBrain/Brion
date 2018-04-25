@@ -44,9 +44,13 @@ const brion::URI TEST_SONATA_SIMPLE_NODES_URI(std::string("file://") +
 const brion::URI TEST_SONATA_SIMPLE_NETWORK_URI(std::string("file://") +
                                                 BRION_TESTDATA +
                                                 "/sonata/simple_network.json");
+
 const brion::URI TEST_SONATA_NODE_TYPES_URI(std::string("file://") +
                                             BRION_TESTDATA +
                                             "/sonata/node_types.csv");
+
+const std::string TEST_SONATA_PATH = std::string(BRION_TESTDATA) + "/sonata";
+
 constexpr char POPULATION_NAME[] = "simple";
 
 BOOST_AUTO_TEST_CASE(sonata_constructors)
@@ -97,9 +101,9 @@ BOOST_AUTO_TEST_CASE(sonata_getNodeGroupIndices)
     brion::Nodes nodes(TEST_SONATA_SIMPLE_NODES_URI);
     const auto node_ids = nodes.getNodeGroupIndices(POPULATION_NAME);
     BOOST_CHECK_EQUAL(node_ids.size(), 20);
-    BOOST_CHECK_EQUAL(node_ids[0], 9);
-    BOOST_CHECK_EQUAL(node_ids[10], 9);
-    BOOST_CHECK_EQUAL(node_ids[19], 4);
+    BOOST_CHECK_EQUAL(node_ids[0], 0);
+    BOOST_CHECK_EQUAL(node_ids[10], 5);
+    BOOST_CHECK_EQUAL(node_ids[19], 0);
 }
 
 BOOST_AUTO_TEST_CASE(sonata_getNodeTypes)
@@ -165,13 +169,13 @@ BOOST_AUTO_TEST_CASE(sonata_nodeGroup_getAttribute)
     const auto z = group.getAttribute<float>("z", 6, 10);
 
     BOOST_CHECK_EQUAL(rotation_angle_x.size(), 10);
-    BOOST_CHECK_EQUAL(rotation_angle_x[0], 0.1f);
+    BOOST_CHECK_CLOSE(rotation_angle_x[0], 3.14159, 0.0001);
 
     BOOST_CHECK_EQUAL(rotation_angle_y.size(), 10);
-    BOOST_CHECK_EQUAL(rotation_angle_y[0], 0.2f);
+    BOOST_CHECK_EQUAL(rotation_angle_y[0], 0);
 
     BOOST_CHECK_EQUAL(rotation_angle_z.size(), 10);
-    BOOST_CHECK_EQUAL(rotation_angle_z[0], 0.3f);
+    BOOST_CHECK_EQUAL(rotation_angle_z[0], 0);
 
     BOOST_CHECK_EQUAL(x.size(), 10);
     BOOST_CHECK_EQUAL(x[0], 2.0f);
@@ -200,25 +204,27 @@ BOOST_AUTO_TEST_CASE(circuit_config_getComponents)
 {
     auto config = brion::CircuitConfig(TEST_SONATA_SIMPLE_NETWORK_URI);
     BOOST_CHECK_EQUAL(config.getComponentPath("morphologies_dir"),
-                      "./morphologies");
+                      TEST_SONATA_PATH + "/./morphologies");
 }
 
 BOOST_AUTO_TEST_CASE(circuit_config_getNetworkNodes)
 {
     auto config = brion::CircuitConfig(TEST_SONATA_SIMPLE_NETWORK_URI);
     const auto nodes = config.getNodes();
-    BOOST_CHECK_EQUAL(nodes[0].elements, "simple_nodes.h5");
-    BOOST_CHECK_EQUAL(nodes[0].types, "node_types.csv");
-    BOOST_CHECK_EQUAL(nodes[1].elements, "./simple_nodes.h5");
-    BOOST_CHECK_EQUAL(nodes[1].types, "./node_types.csv");
+    BOOST_CHECK_EQUAL(nodes[0].elements, TEST_SONATA_PATH + "/simple_nodes.h5");
+    BOOST_CHECK_EQUAL(nodes[0].types, TEST_SONATA_PATH + "/node_types.csv");
+    BOOST_CHECK_EQUAL(nodes[1].elements,
+                      TEST_SONATA_PATH + "/./simple_nodes.h5");
+    BOOST_CHECK_EQUAL(nodes[1].types, TEST_SONATA_PATH + "/./node_types.csv");
 }
 
 BOOST_AUTO_TEST_CASE(circuit_config_getNetworkEdges)
 {
     auto config = brion::CircuitConfig(TEST_SONATA_SIMPLE_NETWORK_URI);
     const auto edges = config.getEdges();
-    BOOST_CHECK_EQUAL(edges[0].elements, "./simple_edges.h5");
-    BOOST_CHECK_EQUAL(edges[0].types, "./edge_types.csv");
+    BOOST_CHECK_EQUAL(edges[0].elements,
+                      TEST_SONATA_PATH + "/./simple_edges.h5");
+    BOOST_CHECK_EQUAL(edges[0].types, TEST_SONATA_PATH + "/./edge_types.csv");
 }
 
 ////////////////////////////////////////////////////////////////////////////
@@ -261,4 +267,99 @@ BOOST_AUTO_TEST_CASE(csv_config_getProperties)
     BOOST_CHECK_EQUAL(properties[1], "model_type");
     BOOST_CHECK_EQUAL(properties[2], "mtype");
     BOOST_CHECK_EQUAL(properties[3], "population");
+}
+/////////////////////////////////////////////////////////////////////////////
+
+BOOST_AUTO_TEST_CASE(sonata_SonataConfig_constructors)
+{
+    brain::Circuit circuit(TEST_SONATA_SIMPLE_NETWORK_URI);
+    BOOST_CHECK_THROW(brain::Circuit(brion::URI("file://nonexistentfile.json")),
+                      std::runtime_error);
+}
+
+BOOST_AUTO_TEST_CASE(sonata_SonataConfig_getPositions)
+{
+    brain::Circuit circuit(TEST_SONATA_SIMPLE_NETWORK_URI);
+    brion::GIDSet ids = {0, 2, 3, 7};
+    const auto postitions = circuit.getPositions(ids);
+
+    BOOST_CHECK_EQUAL(postitions[0], vmml::Vector3f(0, 0, 0.5));
+    BOOST_CHECK_EQUAL(postitions[1], vmml::Vector3f(2, 0, 0.5));
+    BOOST_CHECK_EQUAL(postitions[2], vmml::Vector3f(3, 1, 0.5));
+    BOOST_CHECK_EQUAL(postitions[3], vmml::Vector3f(1, 1, -0.5));
+}
+
+BOOST_AUTO_TEST_CASE(sonata_SonataConfig_getRotations)
+{
+    brain::Circuit circuit(TEST_SONATA_SIMPLE_NETWORK_URI);
+    brion::GIDSet ids = {0, 1, 2, 3, 4, 5, 6, 7, 8, 9};
+    const auto rotations = circuit.getRotations(ids);
+
+    const auto x_axis = V3f(1, 0, 0);
+    const auto y_axis = V3f(0, 1, 0);
+    const auto z_axis = V3f(0, 0, 1);
+
+    // Rotate 180 degrees around X
+    const auto rot0 = rotations[0].getRotationMatrix();
+    // Rotate 180 degrees around Y
+    const auto rot1 = rotations[1].getRotationMatrix();
+    // Rotate 180 degrees around Z
+    const auto rot2 = rotations[2].getRotationMatrix();
+
+    // Rotate 90 degrees around X
+    const auto rot3 = rotations[3].getRotationMatrix();
+    // Rotate 90 degrees around Y
+    const auto rot4 = rotations[4].getRotationMatrix();
+    // Rotate 90 degrees around Z
+    const auto rot5 = rotations[5].getRotationMatrix();
+
+    // Rotate 360 degrees around X
+    const auto rot6 = rotations[6].getRotationMatrix();
+    // Rotate 360 degrees around Y
+    const auto rot7 = rotations[7].getRotationMatrix();
+    // Rotate 360 degrees around Z
+    const auto rot8 = rotations[8].getRotationMatrix();
+
+    // Rotate 90 degrees around X,Y and Z
+    const auto rot9 = rotations[9].getRotationMatrix();
+
+    BOOST_CHECK_EQUAL((rot0 * x_axis).x(), 1);
+    BOOST_CHECK_EQUAL((rot1 * y_axis).y(), 1);
+    BOOST_CHECK_EQUAL((rot2 * z_axis).z(), 1);
+
+    BOOST_CHECK_EQUAL((rot0 * y_axis).y(), -1);
+    BOOST_CHECK_EQUAL((rot1 * x_axis).x(), -1);
+    BOOST_CHECK_EQUAL((rot2 * x_axis).x(), -1);
+
+    BOOST_CHECK_CLOSE((rot3 * y_axis).z(), 1, 0.0001);
+    BOOST_CHECK_CLOSE((rot4 * x_axis).z(), -1, 0.0001);
+    BOOST_CHECK_CLOSE((rot5 * x_axis).y(), 1, 0.0001);
+
+    BOOST_CHECK_EQUAL((rot6 * x_axis).x(), 1);
+    BOOST_CHECK_EQUAL((rot7 * y_axis).y(), 1);
+    BOOST_CHECK_EQUAL((rot8 * z_axis).z(), 1);
+
+    BOOST_CHECK_CLOSE((rot9 * x_axis).z(), 1, 0.0001);
+    BOOST_CHECK_CLOSE((rot9 * y_axis).y(), -1, 0.0001);
+    BOOST_CHECK_CLOSE((rot9 * z_axis).x(), 1, 0.0001);
+}
+
+BOOST_AUTO_TEST_CASE(sonata_SonataConfig_numNeurons)
+{
+    brain::Circuit circuit(TEST_SONATA_SIMPLE_NETWORK_URI);
+    BOOST_CHECK_EQUAL(circuit.getNumNeurons(), 10);
+}
+
+BOOST_AUTO_TEST_CASE(sonata_SonataConfig_getMorphologyURIs)
+{
+    brain::Circuit circuit(TEST_SONATA_SIMPLE_NETWORK_URI);
+    brion::GIDSet ids = {0, 4, 9};
+
+    const auto morphologyURIs = circuit.getMorphologyURIs(ids);
+    BOOST_CHECK_EQUAL(morphologyURIs[0].getPath(),
+                      TEST_SONATA_PATH + "/./morphologies/morph_A.h5");
+    BOOST_CHECK_EQUAL(morphologyURIs[1].getPath(),
+                      TEST_SONATA_PATH + "/./morphologies/morph_B.h5");
+    BOOST_CHECK_EQUAL(morphologyURIs[2].getPath(),
+                      TEST_SONATA_PATH + "/./morphologies/morph_C.h5");
 }
