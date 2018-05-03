@@ -47,6 +47,14 @@ class TestCircuit(unittest.TestCase):
         assert(len(self.circuit.random_gids(0.1)) == 100)
         assert(len(self.circuit.random_gids(0.1, 'Column')) == 100)
 
+    def test_bad_gids_conversion(self):
+        bad = numpy.array([0.0, 1.0, 2.0])
+        self.assertRaises(ValueError,
+                          lambda: self.circuit.positions(bad))
+        bad = numpy.array(["foo", "bar"])
+        self.assertRaises(ValueError,
+                          lambda: self.circuit.positions(bad))
+
     def test_iteration_order(self):
 
         def get(functor, *args):

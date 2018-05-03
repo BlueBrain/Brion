@@ -58,6 +58,8 @@ public:
     BRION_API BlueConfig(BlueConfig&&) = default;
     BRION_API BlueConfig& operator=(BlueConfig&&) = default;
 
+    BRION_API const std::string& getSource() const;
+
     /** Get names of given section type.
      *
      * @param section type of section to get their names from

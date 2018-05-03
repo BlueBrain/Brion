@@ -339,7 +339,6 @@ bool gidsFromNumpy(const boost::python::object& object,
     PyArray_Descr* desc = PyArray_DESCR(array);
     msg << "Cannot convert numpy array of type " << desc->kind << desc->elsize
         << " to GID set" << std::endl;
-    // XXX segfaults invalid types (?)
     PyErr_SetString(PyExc_ValueError, msg.str().c_str());
     boost::python::throw_error_already_set();
     return false; // Unreachable

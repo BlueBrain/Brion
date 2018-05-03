@@ -20,6 +20,7 @@
 
 #include "morphologyImpl.h"
 #include "section.h"
+#include "soma.h"
 
 #include <brion/morphology.h>
 #include <brion/morphologyPlugin.h>
@@ -222,12 +223,22 @@ const uint32_ts& Morphology::Impl::getChildren(const uint32_t sectionID) const
 const AABB& Morphology::Impl::getBoundingBox() const
 {
     std::call_once(_boundingBoxValid, [this]() {
+        // Dealing with single point soma;
+        const auto points = getSectionSamples(somaSection);
+        if (points.size() == 1)
+        {
+            const auto center = points[0].get_sub_vector<3, 0>();
+            const auto radius = points[0][3];
+            const auto diagonal = Vector3f(radius, radius, radius);
+            _aabb.merge(center + diagonal);
+            _aabb.merge(center - diagonal);
+        }
         for (const auto& sample : data->getPoints())
         {
             // The soma profile points are not excluded, but it
             // shouldn't matter.
             const auto point = Vector3f(sample[0], sample[1], sample[2]);
-            const auto radius = Vector3f(sample[3], sample[3], sample[3]);
+            auto radius = Vector3f(sample[3], sample[3], sample[3]) * 0.5;
             _aabb.merge(point + radius);
             _aabb.merge(point - radius);
         }

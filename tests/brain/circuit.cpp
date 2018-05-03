@@ -141,11 +141,11 @@ BOOST_AUTO_TEST_CASE(test_types)
 
 BOOST_AUTO_TEST_CASE(brain_circuit_constructor)
 {
-    brain::Circuit circuit{brain::URI{bbp::test::getBlueconfig()}};
-    BOOST_CHECK_EQUAL(circuit.getSource().getPath(),
-                      bbp::test::getBlueconfig());
-    brain::Circuit circuit2((brion::BlueConfig(bbp::test::getBlueconfig())));
-    BOOST_CHECK_EQUAL(circuit2.getSource().getPath(), "");
+    const auto path = bbp::test::getBlueconfig();
+    brain::Circuit circuit{brain::URI{path}};
+    BOOST_CHECK_EQUAL(circuit.getSource().getPath(), path);
+    brain::Circuit circuit2((brion::BlueConfig(path)));
+    BOOST_CHECK_EQUAL(circuit2.getSource().getPath(), path);
     BOOST_CHECK_THROW(brain::Circuit{brain::URI{"pluto"}}, std::runtime_error);
 }
 

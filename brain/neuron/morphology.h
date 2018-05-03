@@ -137,6 +137,8 @@ public:
      */
     BRAIN_API const Matrix4f& getTransformation() const;
 
+    /** @return the axis aligned bounding box of this morphology, considering
+        also single sample somas. */
     BRAIN_API void getBoundingBox(Vector3f& min, Vector3f& max) const;
 
 private:

@@ -85,7 +85,8 @@ namespace detail
 class BlueConfig
 {
 public:
-    explicit BlueConfig(const std::string& source)
+    explicit BlueConfig(const std::string& source_)
+        : source(source_)
     {
         std::ifstream file(source.c_str());
         if (!file.is_open())
@@ -208,6 +209,7 @@ public:
         return true;
     }
 
+    std::string source;
     Strings names[CONFIGSECTION_ALL];
     ValueTable table[CONFIGSECTION_ALL];
 };
@@ -220,6 +222,11 @@ BlueConfig::BlueConfig(const std::string& source)
 
 BlueConfig::~BlueConfig()
 {
+}
+
+const std::string& BlueConfig::getSource() const
+{
+    return _impl->source;
 }
 
 const Strings& BlueConfig::getSectionNames(

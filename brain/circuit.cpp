@@ -31,13 +31,20 @@ namespace brain
 Circuit::Impl* newImpl(const brion::BlueConfig& config)
 {
     const std::string circuit = config.getCircuitSource().getPath();
+    Circuit::Impl* out;
     if (boost::algorithm::ends_with(circuit, ".mvd2"))
-        return new MVD2(config);
+        out = new MVD2(config);
+    else
+    {
 #ifdef BRAIN_USE_MVD3
-    return new MVD3(config);
+
+        out = new MVD3(config);
 #else
-    throw std::runtime_error("MVD3 support requires CMake 3");
+        throw std::runtime_error("MVD3 not supported");
 #endif
+    }
+    out->_source = brion::URI(config.getSource());
+    return out;
 }
 
 Circuit::Impl* newImpl(const URI& source)
