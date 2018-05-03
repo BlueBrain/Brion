@@ -23,6 +23,8 @@
 #include <brain/api.h>
 #include <brain/types.h>
 
+#include <brain/synapses.h>
+
 namespace brain
 {
 /**
@@ -115,9 +117,9 @@ public:
 
 private:
     friend class Synapses;
-    Synapse(const Synapses& synapses, size_t index);
+    Synapse(const Synapses& synapses, size_t index) noexcept;
 
-    const Synapses& _synapses;
+    Synapses _synapses; // This object is cheap to copy
     const size_t _index;
 };
 }

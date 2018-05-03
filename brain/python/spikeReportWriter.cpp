@@ -1,4 +1,4 @@
-/* Copyright (c) 2006-2017, Ahmet Bilgili <ahmet.bilgili@epfl.ch>
+/* Copyright (c) 2006-2018, Ahmet Bilgili <ahmet.bilgili@epfl.ch>
  *                          Juan Hernando <jhernando@fi.upm.es>
  *
  * This file is part of Brion <https://github.com/BlueBrain/Brion>
@@ -32,6 +32,8 @@ namespace brain
 {
 namespace
 {
+using namespace brain_python;
+
 SpikeReportWriterPtr _initURI(const std::string& uri)
 {
     return SpikeReportWriterPtr(new SpikeReportWriter(brion::URI(uri)));

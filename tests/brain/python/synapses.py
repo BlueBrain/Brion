@@ -86,14 +86,11 @@ class TestSynapseArrays(unittest.TestCase):
                          "post_distances", "post_surface_x_positions",
                          "post_surface_y_positions", "post_surface_z_positions",
                          "post_center_x_positions", "post_center_y_positions",
-                         "post_center_z_positions",
+                         "post_center_z_positions", "indices",
                          "delays", "conductances", "utilizations", "depressions",
                          "facilitations", "decays", "efficacies"]:
             array = getattr(self.synapses, function)()
             assert(array.shape == (size,))
-        # This data is not available in the test dataset, so we only check the
-        # function exists
-        self.assertRaises(RuntimeError, lambda: self.synapses.indices())
 
 class TestSynapse(unittest.TestCase):
 
@@ -103,10 +100,7 @@ class TestSynapse(unittest.TestCase):
         self.synapse = self.synapses[0]
 
     def test_synapse(self):
-        # This data is not available in the test dataset, so we only check the
-        # function exists
-        self.assertRaises(RuntimeError, lambda: self.synapse.gid())
-
+        gid = self.synapse.gid()
         pre_gid = self.synapse.pre_gid()
         pre_section_id = self.synapse.pre_section()
         pre_segment_id = self.synapse.pre_segment()

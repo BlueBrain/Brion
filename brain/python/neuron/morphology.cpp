@@ -1,4 +1,4 @@
-/* Copyright (c) 2013-2016, EPFL/Blue Brain Project
+/* Copyright (c) 2013-2018, EPFL/Blue Brain Project
  *                          Juan Hernando <juan.hernando@epfl.ch>
  *
  * This file is part of Brion <https://github.com/BlueBrain/Brion>
@@ -39,6 +39,8 @@ namespace neuron
 {
 namespace
 {
+using namespace brain_python;
+
 template <typename Part>
 class MorphologyPartWrapper : public Part
 {
@@ -58,6 +60,17 @@ typedef MorphologyPartWrapper<Section> SectionWrapper;
 bp::object Soma_getProfilePoints(const SomaWrapper& soma)
 {
     return toNumpy(soma.getProfilePoints());
+}
+
+Vector4f Section_getIndex(const SectionWrapper& section, int index)
+{
+    if (index >= int(section.getNumSamples()) ||
+        index <= -int(section.getNumSamples()))
+    {
+        PyErr_SetString(PyExc_IndexError, "Sample index out of range");
+        bp::throw_error_already_set();
+    }
+    return section[index];
 }
 
 #define GET_SECTION_ARRAY(Array)                                 \
@@ -190,6 +203,8 @@ bp::class_<SomaWrapper>(
          DOXY_FN(brain::neuron::Soma::getProfilePoints))
     .def("mean_radius", &Soma::getMeanRadius, (selfarg),
          DOXY_FN(brain::neuron::Soma::getMeanRadius))
+    .def("max_radius", &Soma::getMaxRadius, (selfarg),
+         DOXY_FN(brain::neuron::Soma::getMaxRadius))
     .def("centroid", &Soma::getCentroid, (selfarg),
          DOXY_FN(brain::neuron::Soma::getCentroid));
 
@@ -198,6 +213,7 @@ bp::class_<SectionWrapper>(
     .def(bp::self == bp::self)
     .def("id", &Section::getID, (selfarg),
          DOXY_FN(brain::neuron::Section::getID))
+    .def("__getitem__", Section_getIndex)
     .def("type", &Section::getType, (selfarg),
          DOXY_FN(brain::neuron::Section::getType))
     .def("length", &Section::getLength, (selfarg),
@@ -207,6 +223,8 @@ bp::class_<SectionWrapper>(
     .def("samples", Section_getSamplesFromPositions,
          (selfarg, bp::arg("positions")),
          DOXY_FN(brain::neuron::Section::getSamples(const floats&) const))
+    .def("num_samples", &Section::getNumSamples, (selfarg),
+         DOXY_FN(brain::neuron::Section::getNumSamples))
     .def("distance_to_soma", &Section::getDistanceToSoma, (selfarg),
          DOXY_FN(brain::neuron::Section::getDistanceToSoma))
     .def("sample_distances_to_soma", Section_getSampleDistancesToSoma, (selfarg),

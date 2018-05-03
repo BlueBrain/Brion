@@ -1,4 +1,4 @@
-/* Copyright (c) 2013-2017, EPFL/Blue Brain Project
+/* Copyright (c) 2013-2018, EPFL/Blue Brain Project
  *                          Daniel.Nachbaur@epfl.ch
  *
  * This file is part of Brion <https://github.com/BlueBrain/Brion>
@@ -32,7 +32,8 @@
 #include <brion/synapseSummary.h>
 
 #include <lunchbox/log.h>
-#include <lunchbox/scopedMutex.h>
+
+#include <mutex>
 
 namespace brain
 {
@@ -70,51 +71,55 @@ struct Synapses::Impl : public Synapses::BaseImpl
 {
     Impl(const Circuit& circuit, const GIDSet& gids, const GIDSet& filterGIDs,
          const bool afferent, const SynapsePrefetch prefetch)
-        : _circuit(circuit)
+        : _circuit(circuit._impl)
         , _gids(prefetch != SynapsePrefetch::all ? gids : GIDSet())
         , _filterGIDs(prefetch != SynapsePrefetch::all ? filterGIDs : GIDSet())
         , _afferent(afferent)
         , _size(0)
     {
-        if (prefetch == SynapsePrefetch::none)
-        {
-            _loadConnectivity(gids, filterGIDs);
-            return;
-        }
+        _loadConnectivity(&gids, &filterGIDs);
 
         if (int(prefetch) & int(SynapsePrefetch::attributes))
-            _loadAttributes(gids, filterGIDs);
+            std::call_once(_attributeFlag, &Impl::_loadAttributes, this, &gids,
+                           &filterGIDs);
         if (int(prefetch) & int(SynapsePrefetch::positions))
-            _loadPositions(gids, filterGIDs);
+            std::call_once(_positionFlag, &Impl::_loadPositions, this, &gids,
+                           &filterGIDs);
     }
 
     Impl(const Circuit& circuit, const GIDSet& gids, const std::string& source,
          const SynapsePrefetch prefetch)
-        : _circuit(circuit)
+        : _circuit(circuit._impl)
         , _gids(prefetch != SynapsePrefetch::all ? gids : GIDSet())
         , _afferent(true)
         , _externalSource(source)
         , _size(0)
     {
-        if (prefetch == SynapsePrefetch::none)
-            // We don't have a summary file for projected afferent synapses.
-            return;
+        // We don't have a summary file for projected afferent synapses.
+        // But at least we have to figure out the size of the container.
+        const auto& synapses =
+            _circuit->getAfferentProjectionAttributes(source);
+        _size = synapses.getNumSynapses(gids);
 
         if (int(prefetch) & int(SynapsePrefetch::attributes))
-            _loadAttributes(gids, GIDSet());
+        {
+            GIDSet empty;
+            std::call_once(_attributeFlag, &Impl::_loadAttributes, this, &gids,
+                           &empty);
+        }
     }
 
-#define FILTER(gid)                                                      \
-    if (!filterGIDs.empty() && filterGIDs.find(gid) == filterGIDs.end()) \
+#define FILTER(gid)                                                         \
+    if (!filterGIDs->empty() && filterGIDs->find(gid) == filterGIDs->end()) \
         continue;
 
-    void _loadConnectivity(const GIDSet& gids, const GIDSet& filterGIDs) const
+    void _loadConnectivity(const GIDSet* gids, const GIDSet* filterGIDs) const
     {
         const brion::SynapseSummary& synapseSummary =
-            _circuit._impl->getSynapseSummary();
+            _circuit->getSynapseSummary();
 
         uint32_ts pres, posts;
-        for (const auto gid : gids)
+        for (const auto gid : *gids)
         {
             const auto& summary = synapseSummary.read(gid);
 
@@ -141,32 +146,38 @@ struct Synapses::Impl : public Synapses::BaseImpl
             _preGID.swap(_postGID);
     }
 
-    void _loadAttributes(const GIDSet& gids, const GIDSet& filterGIDs) const
+    void _loadAttributes(const GIDSet* gids, const GIDSet* filterGIDs) const
     {
+        std::lock_guard<std::mutex> lock(_mutex);
+
         if (_efficacy)
             return;
 
         const brion::Synapse& synapseAttributes =
             _externalSource.empty()
-                ? _circuit._impl->getSynapseAttributes(_afferent)
-                : _circuit._impl->getAfferentProjectionAttributes(
-                      _externalSource);
+                ? _circuit->getSynapseAttributes(_afferent)
+                : _circuit->getAfferentProjectionAttributes(_externalSource);
         const brion::Synapse* synapseExtra =
-            _externalSource.empty() ? _circuit._impl->getSynapseExtra() : 0;
+            _externalSource.empty() ? _circuit->getSynapseExtra() : 0;
+
+        // For external afferent projections we haven't had the chance to
+        // get the connectivity.
+        const bool haveGIDs = _externalSource.empty();
+        if (!haveGIDs)
+        {
+            _allocate(_preGID, _size);
+            _allocate(_postGID, _size);
+        }
 
         const bool haveExtra = _afferent && synapseExtra;
-        const bool haveSize = _size > 0;
-        _allocateAttributes(haveSize ? _size
-                                     : synapseAttributes.getNumSynapses(gids),
-                            haveExtra);
-        const bool haveGIDs = _externalSource.empty() && haveSize;
+        _allocateAttributes(_size, haveExtra || _afferent);
 
         size_t i = 0;
-        for (const auto gid : gids)
+        for (const auto gid : *gids)
         {
-            const auto& attr =
+            auto&& attr =
                 synapseAttributes.read(gid, brion::SYNAPSE_ALL_ATTRIBUTES);
-            const auto extra =
+            auto&& extra =
                 haveExtra ? synapseExtra->read(gid, 1) : brion::SynapseMatrix();
             for (size_t j = 0; j < attr.shape()[0]; ++j)
             {
@@ -181,6 +192,9 @@ struct Synapses::Impl : public Synapses::BaseImpl
 
                 if (haveExtra)
                     _index.get()[i] = extra[j][0];
+                else if (_afferent)
+                    // Fallback assigment of synapses index for afferent views
+                    _index.get()[i] = j;
 
                 _delay.get()[i] = attr[j][1];
                 _postSectionID.get()[i] = attr[j][2];
@@ -198,17 +212,12 @@ struct Synapses::Impl : public Synapses::BaseImpl
                 ++i;
             }
         }
-
-        if (!haveSize)
-        {
-            if (!_afferent)
-                _preGID.swap(_postGID);
-            _size = i;
-        }
     }
 
-    void _loadPositions(const GIDSet& gids, const GIDSet& filterGIDs) const
+    void _loadPositions(const GIDSet* gids, const GIDSet* filterGIDs) const
     {
+        std::lock_guard<std::mutex> lock(_mutex);
+
         if (!_externalSource.empty())
         {
             LBTHROW(
@@ -219,60 +228,38 @@ struct Synapses::Impl : public Synapses::BaseImpl
         if (_preCenterPositionX)
             return;
 
+        _allocatePositions(_size);
+
         Strings keys;
         CachedSynapses loaded;
 
-        auto cache = _circuit._impl->getSynapseCache();
+        auto cache = _circuit->getSynapseCache();
         if (cache)
         {
-            keys = cache->createKeys(gids, _afferent);
+            keys = cache->createKeys(*gids, _afferent);
             loaded =
-                cache->loadPositions(keys,
-                                     _hasSurfacePositions(*_circuit._impl));
+                cache->loadPositions(keys, _hasSurfacePositions(*_circuit));
         }
-
-        const bool haveSize = _size > 0;
 
         // delay the opening of the synapse file as much as possible, even
         // though the code looks ugly... As the circuit impl keeps the file
         // opened, we can safely just get a loose pointer here.
         const brion::Synapse* positions = nullptr;
 
-        if (!haveSize)
-        {
-            auto key = keys.begin();
-            for (const auto gid : gids)
-            {
-                if (cache)
-                {
-                    const auto it = loaded.find(*key);
-                    ++key;
-                    if (it != loaded.end())
-                    {
-                        _size += it->second.shape()[0];
-                        continue;
-                    }
-                }
-
-                if (!positions)
-                    positions = &_circuit._impl->getSynapsePositions(_afferent);
-                _size += positions->getNumSynapses(GIDSet{gid});
-            }
-        }
-
-        _allocatePositions(_size);
-
         size_t i = 0;
         auto key = keys.begin();
         bool haveSurfacePositions = false;
-        for (const auto gid : gids)
+        for (const auto gid : *gids)
         {
             auto it = cache ? loaded.find(*key) : loaded.end();
             const bool cached = it != loaded.end();
 
             const auto readFromFile = [&] {
                 if (!positions)
-                    positions = &_circuit._impl->getSynapsePositions(_afferent);
+                {
+                    positions = &_circuit->getSynapsePositions(_afferent);
+                }
+
                 if (positions->getNumAttributes() ==
                     brion::SYNAPSE_POSITION_ALL)
                     return positions->read(gid, brion::SYNAPSE_POSITION);
@@ -294,12 +281,6 @@ struct Synapses::Impl : public Synapses::BaseImpl
             {
                 const uint32_t preGid = pos[j][0];
                 FILTER(preGid);
-
-                if (!haveSize)
-                {
-                    _preGID.get()[i] = preGid;
-                    _postGID.get()[i] = gid;
-                }
 
                 if (pos.shape()[1] == brion::SYNAPSE_POSITION_ALL)
                 {
@@ -339,13 +320,6 @@ struct Synapses::Impl : public Synapses::BaseImpl
             _postSurfacePositionY.reset();
             _postSurfacePositionZ.reset();
         }
-
-        if (!haveSize)
-        {
-            if (!_afferent)
-                _preGID.swap(_postGID);
-            _size = i;
-        }
     }
 
     void _allocateAttributes(const size_t size, const bool allocateIndex) const
@@ -353,12 +327,10 @@ struct Synapses::Impl : public Synapses::BaseImpl
         if (allocateIndex)
             _allocate(_index, size);
 
-        _allocate(_preGID, size);
         _allocate(_preSectionID, size);
         _allocate(_preSegmentID, size);
         _allocate(_preDistance, size);
 
-        _allocate(_postGID, size);
         _allocate(_postSectionID, size);
         _allocate(_postSegmentID, size);
         _allocate(_postDistance, size);
@@ -374,7 +346,6 @@ struct Synapses::Impl : public Synapses::BaseImpl
 
     void _allocatePositions(const size_t size) const
     {
-        _allocate(_preGID, size);
         _allocate(_preSurfacePositionX, size);
         _allocate(_preSurfacePositionY, size);
         _allocate(_preSurfacePositionZ, size);
@@ -382,7 +353,6 @@ struct Synapses::Impl : public Synapses::BaseImpl
         _allocate(_preCenterPositionY, size);
         _allocate(_preCenterPositionZ, size);
 
-        _allocate(_postGID, size);
         _allocate(_postSurfacePositionX, size);
         _allocate(_postSurfacePositionY, size);
         _allocate(_postSurfacePositionZ, size);
@@ -393,60 +363,30 @@ struct Synapses::Impl : public Synapses::BaseImpl
 
     void _ensureGIDs() const
     {
-        if (_externalSource.empty() || _hasAttributes())
+        if (_externalSource.empty())
             return;
 
-        lunchbox::ScopedWrite mutex(_lock);
-        // For external projections we don't have a summary file, so we load
-        // all the attributes instead.
-        _loadAttributes(_gids, _filterGIDs);
+        // Until C++17 call_once is using decay_copy
+        std::call_once(_attributeFlag, &Impl::_loadAttributes, this, &_gids,
+                       &_filterGIDs);
     }
 
     void _ensureAttributes() const
     {
-        if (_hasAttributes())
-            return;
-
-        lunchbox::ScopedWrite mutex(_lock);
-        _loadAttributes(_gids, _filterGIDs);
+        // Until C++17 call_once is using decay_copy
+        std::call_once(_attributeFlag, &Impl::_loadAttributes, this, &_gids,
+                       &_filterGIDs);
     }
 
     void _ensurePositions() const
     {
-        if (_hasPositions())
-            return;
-
-        lunchbox::ScopedWrite mutex(_lock);
-        _loadPositions(_gids, _filterGIDs);
+        // Until C++17 call_once is using decay_copy
+        std::call_once(_positionFlag, &Impl::_loadPositions, this, &_gids,
+                       &_filterGIDs);
     }
 
-    bool _hasAttributes() const
-    {
-        lunchbox::ScopedRead mutex(_lock);
-        return _efficacy.get() != nullptr;
-    }
-
-    bool _hasPositions() const
-    {
-        lunchbox::ScopedRead mutex(_lock);
-        return _preCenterPositionX.get() != nullptr;
-    }
-
-    size_t _getSize() const
-    {
-        lunchbox::ScopedRead mutex(_lock);
-
-        if (!_externalSource.empty() && _size == 0)
-        {
-            const brion::Synapse& attributes =
-                _circuit._impl->getAfferentProjectionAttributes(
-                    _externalSource);
-            _size = attributes.getNumSynapses(_gids);
-        }
-        return _size;
-    }
-
-    const Circuit& _circuit;
+    size_t _getSize() const { return _size; }
+    const std::shared_ptr<const Circuit::Impl> _circuit;
     const GIDSet _gids;
     const GIDSet _filterGIDs;
     const bool _afferent;
@@ -497,7 +437,12 @@ struct Synapses::Impl : public Synapses::BaseImpl
     mutable floatPtr _decay;
     mutable IntPtr _efficacy;
 
-    mutable std::mutex _lock;
+    mutable std::once_flag _attributeFlag;
+    mutable std::once_flag _positionFlag;
+    mutable std::once_flag _indexFlag;
+    // Besides the call_once flags, we still need to ensure exclusive access
+    // to state.
+    mutable std::mutex _mutex;
 };
 
 Synapses::Synapses(const Circuit& circuit, const GIDSet& gids,
@@ -528,24 +473,22 @@ Synapses::Synapses(const SynapsesStream& stream)
 {
 }
 
-Synapses::Synapses(const Synapses& rhs)
-    : _impl(rhs._impl)
+Synapses::Synapses(const Synapses& rhs) noexcept : _impl(rhs._impl)
 {
 }
 
-Synapses::Synapses(Synapses&& rhs)
-    : _impl(std::move(rhs._impl))
+Synapses::Synapses(Synapses&& rhs) noexcept : _impl(std::move(rhs._impl))
 {
 }
 
-Synapses& Synapses::operator=(const Synapses& rhs)
+Synapses& Synapses::operator=(const Synapses& rhs) noexcept
 {
     if (this != &rhs)
         _impl = rhs._impl;
     return *this;
 }
 
-Synapses& Synapses::operator=(Synapses&& rhs)
+Synapses& Synapses::operator=(Synapses&& rhs) noexcept
 {
     if (this != &rhs)
         _impl = std::move(rhs._impl);
@@ -581,9 +524,9 @@ Synapse Synapses::operator[](const size_t index_) const
 const size_t* Synapses::indices() const
 {
     const Impl& impl = static_cast<const Impl&>(*_impl);
-    lunchbox::ScopedRead mutex(impl._lock);
+    impl._ensureAttributes();
     if (!impl._index)
-        LBTHROW(std::runtime_error("No synapse index file available"));
+        LBTHROW(std::runtime_error("Synapse index not available"));
     return impl._index.get();
 }
 

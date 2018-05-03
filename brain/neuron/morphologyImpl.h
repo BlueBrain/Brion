@@ -25,7 +25,10 @@
 
 #include <brion/morphology.h>
 #include <lunchbox/lfVector.h>
-#include <vmmlib/matrix.hpp> // member
+#include <vmmlib/aabb.hpp>
+#include <vmmlib/matrix.hpp>
+
+#include <mutex>
 
 namespace brain
 {
@@ -66,6 +69,8 @@ public:
 
     const uint32_ts& getChildren(const uint32_t sectionID) const;
 
+    const AABB& getBoundingBox() const;
+
 private:
     // Distances caches. These caches need to be thread-safe to follow the
     // recommendations for C++11 about mutable and const correctness.
@@ -75,6 +80,9 @@ private:
     mutable LFFloats _sectionLengths;
 
     std::vector<uint32_ts> _sectionChildren;
+
+    mutable std::once_flag _boundingBoxValid;
+    mutable AABB _aabb;
 
     void _transform(brion::MorphologyPtr morphology);
     void _extractInformation();

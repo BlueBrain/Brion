@@ -1,4 +1,4 @@
-/* Copyright (c) 2013-2016, EPFL/Blue Brain Project
+/* Copyright (c) 2013-2018, EPFL/Blue Brain Project
  *                          Daniel Nachbaur <daniel.nachbaur@epfl.ch>
  *
  * This file is part of Brion <https://github.com/BlueBrain/Brion>
@@ -90,15 +90,40 @@ BOOST_AUTO_TEST_CASE(afferent_synapses)
     BOOST_CHECK_CLOSE(synapses[1].getPostsynapticDistance(), 1.34995711f,
                       0.00001f);
     BOOST_CHECK_CLOSE(synapses[2].getConductance(), 0.34758395f, 0.00001f);
-    BOOST_CHECK_THROW(synapses[3].getGID(), std::runtime_error);
+}
+
+BOOST_AUTO_TEST_CASE(synapse_gids)
+{
+    const brain::Circuit circuit(brion::URI(BBP_TEST_BLUECONFIG3));
+    brain::Synapses synapses1 =
+        circuit.getAfferentSynapses({100}, brain::SynapsePrefetch::all);
+    brain::Synapses synapses2 =
+        circuit.getAfferentSynapses({100, 200, 300},
+                                    brain::SynapsePrefetch::all);
+    auto i = synapses1.begin();
+    auto j = synapses2.begin();
+    size_t index = 0;
+    for (auto synapse : synapses2)
+    {
+        if (synapse.getPostsynapticGID() == 100)
+        {
+            auto gid = synapse.getGID();
+            BOOST_CHECK(gid == (*j).getGID());
+            BOOST_CHECK_EQUAL(gid.second, index);
+            ++index;
+            ++j;
+        }
+    }
+
+    synapses1 = circuit.getEfferentSynapses({100});
+    BOOST_CHECK_THROW((*synapses1.begin()).getGID(), std::runtime_error);
 }
 
 BOOST_AUTO_TEST_CASE(bad_external_afferent_synapses)
 {
     const brain::Circuit circuit(brion::URI(BBP_TEST_CIRCUITCONFIG));
-    const brain::Synapses& bad =
-        circuit.getExternalAfferentSynapses({1}, "Unexistent");
-    BOOST_CHECK_THROW(bad.size(), std::runtime_error);
+    auto synapses = circuit.getExternalAfferentSynapses({1}, "Unexistent");
+    BOOST_CHECK_THROW(brain::Synapses{synapses}, std::runtime_error);
 }
 
 BOOST_AUTO_TEST_CASE(external_afferent_synapses)
@@ -147,23 +172,46 @@ BOOST_AUTO_TEST_CASE(retrograde_projection)
         BOOST_CHECK_EQUAL(synapse.getPresynapticGID(), 10);
 }
 
+BOOST_AUTO_TEST_CASE(anterograde_projection)
+{
+    const brain::Circuit circuit(brion::URI(BBP_TEST_BLUECONFIG3));
+    const brion::GIDSet& postNeurons = circuit.getGIDs("Layer1");
+    const brion::GIDSet preNeuron = {1};
+    const brain::Synapses& synapses =
+        circuit.getProjectedSynapses(preNeuron, postNeurons,
+                                     brain::SynapsePrefetch::all);
+    BOOST_CHECK(!synapses.empty());
+    BOOST_CHECK_EQUAL(synapses.size(), 6);
+    for (const auto& synapse : synapses)
+    {
+        BOOST_CHECK_EQUAL(synapse.getPresynapticGID(), 1);
+        BOOST_CHECK_EQUAL(synapse.getPostsynapticGID(), 10);
+    }
+}
+
 BOOST_AUTO_TEST_CASE(lazy_loading_afferent)
 {
     const brain::Circuit circuit(brion::URI(BBP_TEST_BLUECONFIG3));
     const brain::Synapses& synapses =
         circuit.getAfferentSynapses(circuit.getGIDs("Layer1"),
                                     brain::SynapsePrefetch::all);
-    const brain::Synapses& synapsesLazy =
-        circuit.getAfferentSynapses(circuit.getGIDs("Layer1"));
-    BOOST_CHECK_EQUAL(synapses.size(), synapsesLazy.size());
-    BOOST_CHECK_EQUAL(synapses[0].getPresynapticGID(),
-                      synapsesLazy[0].getPresynapticGID());
-    BOOST_CHECK_EQUAL(synapses[0].getPostsynapticDistance(),
-                      synapsesLazy[0].getPostsynapticDistance());
-    BOOST_CHECK_EQUAL(synapses[0].getConductance(),
-                      synapsesLazy[0].getConductance());
-    BOOST_CHECK_EQUAL(synapses[0].getPostsynapticCenterPosition(),
-                      synapsesLazy[0].getPostsynapticCenterPosition());
+
+    for (auto prefetch :
+         {brain::SynapsePrefetch::positions, brain::SynapsePrefetch::none,
+          brain::SynapsePrefetch::attributes})
+    {
+        brain::Synapses synapsesLazy =
+            circuit.getAfferentSynapses(circuit.getGIDs("Layer1"), prefetch);
+        BOOST_CHECK_EQUAL(synapses.size(), synapsesLazy.size());
+        BOOST_CHECK_EQUAL(synapses[0].getPresynapticGID(),
+                          synapsesLazy[0].getPresynapticGID());
+        BOOST_CHECK_EQUAL(synapses[0].getPostsynapticDistance(),
+                          synapsesLazy[0].getPostsynapticDistance());
+        BOOST_CHECK_EQUAL(synapses[0].getConductance(),
+                          synapsesLazy[0].getConductance());
+        BOOST_CHECK_EQUAL(synapses[0].getPostsynapticCenterPosition(),
+                          synapsesLazy[0].getPostsynapticCenterPosition());
+    }
 }
 
 BOOST_AUTO_TEST_CASE(lazy_loading_external_afferent_synapses)
@@ -191,18 +239,24 @@ BOOST_AUTO_TEST_CASE(lazy_loading_efferent)
     const brain::Synapses& synapses =
         circuit.getEfferentSynapses(circuit.getGIDs("Layer1"),
                                     brain::SynapsePrefetch::all);
-    const brain::Synapses& synapsesLazy =
-        circuit.getEfferentSynapses(circuit.getGIDs("Layer1"));
 
-    BOOST_CHECK_EQUAL(synapses.size(), synapsesLazy.size());
-    BOOST_CHECK_EQUAL(synapses[0].getPresynapticGID(),
-                      synapsesLazy[0].getPresynapticGID());
-    BOOST_CHECK_EQUAL(synapses[0].getPostsynapticDistance(),
-                      synapsesLazy[0].getPostsynapticDistance());
-    BOOST_CHECK_EQUAL(synapses[0].getConductance(),
-                      synapsesLazy[0].getConductance());
-    BOOST_CHECK_EQUAL(synapses[0].getPostsynapticCenterPosition(),
-                      synapsesLazy[0].getPostsynapticCenterPosition());
+    for (auto prefetch :
+         {brain::SynapsePrefetch::positions, brain::SynapsePrefetch::none,
+          brain::SynapsePrefetch::attributes})
+    {
+        const brain::Synapses& synapsesLazy =
+            circuit.getEfferentSynapses(circuit.getGIDs("Layer1"), prefetch);
+
+        BOOST_CHECK_EQUAL(synapses.size(), synapsesLazy.size());
+        BOOST_CHECK_EQUAL(synapses[0].getPresynapticGID(),
+                          synapsesLazy[0].getPresynapticGID());
+        BOOST_CHECK_EQUAL(synapses[0].getPostsynapticDistance(),
+                          synapsesLazy[0].getPostsynapticDistance());
+        BOOST_CHECK_EQUAL(synapses[0].getConductance(),
+                          synapsesLazy[0].getConductance());
+        BOOST_CHECK_EQUAL(synapses[0].getPostsynapticCenterPosition(),
+                          synapsesLazy[0].getPostsynapticCenterPosition());
+    }
 }
 
 BOOST_AUTO_TEST_CASE(lazy_loading_pathway)
@@ -212,19 +266,54 @@ BOOST_AUTO_TEST_CASE(lazy_loading_pathway)
         circuit.getProjectedSynapses(circuit.getGIDs("Layer2"),
                                      circuit.getGIDs("Layer4"),
                                      brain::SynapsePrefetch::all);
-    const brain::Synapses& synapsesLazy =
-        circuit.getProjectedSynapses(circuit.getGIDs("Layer2"),
-                                     circuit.getGIDs("Layer4"));
 
-    BOOST_CHECK_EQUAL(synapses.size(), synapsesLazy.size());
-    BOOST_CHECK_EQUAL(synapses[0].getPresynapticGID(),
-                      synapsesLazy[0].getPresynapticGID());
-    BOOST_CHECK_EQUAL(synapses[0].getPostsynapticDistance(),
-                      synapsesLazy[0].getPostsynapticDistance());
-    BOOST_CHECK_EQUAL(synapses[0].getConductance(),
-                      synapsesLazy[0].getConductance());
-    BOOST_CHECK_EQUAL(synapses[0].getPostsynapticCenterPosition(),
-                      synapsesLazy[0].getPostsynapticCenterPosition());
+    for (auto prefetch :
+         {brain::SynapsePrefetch::positions, brain::SynapsePrefetch::none,
+          brain::SynapsePrefetch::attributes})
+    {
+        const brain::Synapses& synapsesLazy =
+            circuit.getProjectedSynapses(circuit.getGIDs("Layer2"),
+                                         circuit.getGIDs("Layer4"), prefetch);
+
+        BOOST_CHECK_EQUAL(synapses.size(), synapsesLazy.size());
+        BOOST_CHECK_EQUAL(synapses[0].getPresynapticGID(),
+                          synapsesLazy[0].getPresynapticGID());
+        BOOST_CHECK_EQUAL(synapses[0].getPostsynapticDistance(),
+                          synapsesLazy[0].getPostsynapticDistance());
+        BOOST_CHECK_EQUAL(synapses[0].getConductance(),
+                          synapsesLazy[0].getConductance());
+        BOOST_CHECK_EQUAL(synapses[0].getPostsynapticCenterPosition(),
+                          synapsesLazy[0].getPostsynapticCenterPosition());
+    }
+}
+
+// Depending on the relative size of each dataset the code paths are different
+BOOST_AUTO_TEST_CASE(lazy_loading_pathway2)
+{
+    const brain::Circuit circuit(brion::URI(BBP_TEST_BLUECONFIG3));
+    const brain::Synapses& synapses =
+        circuit.getProjectedSynapses(circuit.getGIDs("Layer4"),
+                                     circuit.getGIDs("Layer2"),
+                                     brain::SynapsePrefetch::all);
+
+    for (auto prefetch :
+         {brain::SynapsePrefetch::positions, brain::SynapsePrefetch::none,
+          brain::SynapsePrefetch::attributes})
+    {
+        const brain::Synapses& synapsesLazy =
+            circuit.getProjectedSynapses(circuit.getGIDs("Layer4"),
+                                         circuit.getGIDs("Layer2"), prefetch);
+
+        BOOST_CHECK_EQUAL(synapses.size(), synapsesLazy.size());
+        BOOST_CHECK_EQUAL(synapses[0].getPresynapticGID(),
+                          synapsesLazy[0].getPresynapticGID());
+        BOOST_CHECK_EQUAL(synapses[0].getPostsynapticDistance(),
+                          synapsesLazy[0].getPostsynapticDistance());
+        BOOST_CHECK_EQUAL(synapses[0].getConductance(),
+                          synapsesLazy[0].getConductance());
+        BOOST_CHECK_EQUAL(synapses[0].getPostsynapticCenterPosition(),
+                          synapsesLazy[0].getPostsynapticCenterPosition());
+    }
 }
 
 BOOST_AUTO_TEST_CASE(copy)
@@ -278,7 +367,7 @@ BOOST_AUTO_TEST_CASE(check_all_synapse_attributes)
     BOOST_CHECK_EQUAL(synapse.getDepression(), 1057);
     BOOST_CHECK_EQUAL(synapse.getEfficacy(), 0);
     BOOST_CHECK_EQUAL(synapse.getFacilitation(), 29);
-    BOOST_CHECK_THROW(synapse.getGID(), std::runtime_error);
+    BOOST_CHECK(synapse.getGID() == std::make_pair(1u, 0ul));
     BOOST_CHECK_EQUAL(synapse.getPostsynapticCenterPosition(),
                       brion::Vector3f(3.799289703f, 1947.041748047f,
                                       9.237932205f));

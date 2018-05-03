@@ -1,4 +1,4 @@
-/* Copyright (c) 2013-2017, EPFL/Blue Brain Project
+/* Copyright (c) 2013-2018, EPFL/Blue Brain Project
  *                          Juan Hernando <jhernando@fi.upm.es>
  *
  * This file is part of Brion <https://github.com/BlueBrain/Brion>
@@ -30,7 +30,7 @@ namespace
 Vector3f _computeCentroid(const Vector4fs& points)
 {
     Vector3f centroid;
-    for (const Vector4f& point : points)
+    for (const auto& point : points)
         centroid += point.get_sub_vector<3, 0>();
     centroid /= float(points.size());
     return centroid;
@@ -62,12 +62,33 @@ Vector4fs Soma::getProfilePoints() const
 
 float Soma::getMeanRadius() const
 {
-    const Vector4fs points = getProfilePoints();
-    const Vector3f centroid = _computeCentroid(points);
+    const auto points = getProfilePoints();
+    if (points.size() == 1)
+        // Assume a (point, radius) soma
+        return points[0][3];
+
+    const auto centroid = _computeCentroid(points);
     float radius = 0;
-    for (const Vector4f point : points)
+    for (const auto point : points)
         radius += (point.get_sub_vector<3, 0>() - centroid).length();
     return radius /= float(points.size());
+}
+
+float Soma::getMaxRadius() const
+{
+    const auto& points = getProfilePoints();
+    if (points.size() == 1)
+        // Assume a (point, radius) soma
+        return points[0][3];
+
+    const auto& centroid = _computeCentroid(points);
+    float max = 0;
+    for (const auto& point : points)
+    {
+        auto radius = (point.get_sub_vector<3, 0>() - centroid).length();
+        max = std::max(max, radius);
+    }
+    return max;
 }
 
 Vector3f Soma::getCentroid() const

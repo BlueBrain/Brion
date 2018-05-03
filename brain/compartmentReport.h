@@ -80,6 +80,9 @@ public:
     BRAIN_API CompartmentReport(const URI& uri);
     BRAIN_API ~CompartmentReport();
 
+    CompartmentReport(CompartmentReport&&) = default;
+    CompartmentReport& operator=(CompartmentReport&&) = default;
+
 #ifndef DOXYGEN_TO_BREATHE
     /** @return the metadata of the report */
     BRAIN_API const CompartmentReportMetaData& getMetaData() const;
@@ -121,11 +124,8 @@ public:
     BRAIN_API CompartmentReportView createView();
 
 private:
-    CompartmentReport() = delete;
     CompartmentReport(const CompartmentReport&) = delete;
-    CompartmentReport(CompartmentReport&&) = delete;
     CompartmentReport& operator=(const CompartmentReport&) = delete;
-    CompartmentReport& operator=(CompartmentReport&&) = delete;
 
     std::shared_ptr<detail::CompartmentReportReader> _impl;
 };

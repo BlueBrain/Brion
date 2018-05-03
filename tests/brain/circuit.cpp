@@ -1,4 +1,4 @@
-/* Copyright (c) 2013-2017, EPFL/Blue Brain Project
+/* Copyright (c) 2013-2018, EPFL/Blue Brain Project
  *                          Daniel Nachbaur <daniel.nachbaur@epfl.ch>
  *
  * This file is part of Brion <https://github.com/BlueBrain/Brion>
@@ -38,16 +38,18 @@ std::string getValue(const brion::NeuronMatrix& data, const size_t idx,
 
 BOOST_AUTO_TEST_CASE(test_invalid_open)
 {
-    BOOST_CHECK_THROW(brion::Circuit("/bla"), std::runtime_error);
-    BOOST_CHECK_THROW(brion::Circuit("bla"), std::runtime_error);
+    BOOST_CHECK_THROW(brain::Circuit{brain::URI{"/bla"}}, std::runtime_error);
+    BOOST_CHECK_THROW(brain::Circuit{brain::URI{"bla"}}, std::runtime_error);
 
     boost::filesystem::path path(BBP_TESTDATA);
     path /= "local/README";
-    BOOST_CHECK_THROW(brion::Circuit(path.string()), std::runtime_error);
+    BOOST_CHECK_THROW(brain::Circuit{brain::URI{path.string()}},
+                      std::runtime_error);
 
     path = BBP_TESTDATA;
     path /= "local/simulations/may17_2011/Control/voltage.h5";
-    BOOST_CHECK_THROW(brion::Circuit(path.string()), std::runtime_error);
+    BOOST_CHECK_THROW(brain::Circuit{brain::URI{path.string()}},
+                      std::runtime_error);
 }
 
 BOOST_AUTO_TEST_CASE(test_all_attributes)
@@ -139,15 +141,18 @@ BOOST_AUTO_TEST_CASE(test_types)
 
 BOOST_AUTO_TEST_CASE(brain_circuit_constructor)
 {
-    brain::Circuit circuit((brion::URI(bbp::test::getBlueconfig())));
-    brain::Circuit circuit2((brion::BlueConfig(bbp::test::getBlueconfig())));
-    BOOST_CHECK_THROW(brain::Circuit(brion::URI("pluto")), std::runtime_error);
+    const auto path = bbp::test::getBlueconfig();
+    brain::Circuit circuit{brain::URI{path}};
+    BOOST_CHECK_EQUAL(circuit.getSource().getPath(), path);
+    brain::Circuit circuit2((brion::BlueConfig(path)));
+    BOOST_CHECK_EQUAL(circuit2.getSource().getPath(), path);
+    BOOST_CHECK_THROW(brain::Circuit{brain::URI{"pluto"}}, std::runtime_error);
 }
 
 BOOST_AUTO_TEST_CASE(brain_circuit_target)
 {
-    const brain::Circuit circuit((brion::URI(bbp::test::getBlueconfig())));
-    const brion::BlueConfig config(bbp::test::getBlueconfig());
+    const brain::Circuit circuit{brain::URI{bbp::test::getBlueconfig()}};
+    const brion::BlueConfig config{bbp::test::getBlueconfig()};
 
     brion::GIDSet first = circuit.getGIDs();
     brion::GIDSet second = config.parseTarget("Column");
@@ -170,7 +175,7 @@ BOOST_AUTO_TEST_CASE(brain_circuit_target)
 
 BOOST_AUTO_TEST_CASE(brain_circuit_positions)
 {
-    const brain::Circuit circuit((brion::URI(bbp::test::getBlueconfig())));
+    const brain::Circuit circuit{brain::URI{bbp::test::getBlueconfig()}};
 
     brion::GIDSet gids;
     gids.insert(1);
@@ -190,7 +195,7 @@ BOOST_AUTO_TEST_CASE(brain_circuit_positions)
 
 BOOST_AUTO_TEST_CASE(brain_empty_gids_lists)
 {
-    const brain::Circuit mvd2((brion::URI(bbp::test::getBlueconfig())));
+    const brain::Circuit mvd2{brain::URI{bbp::test::getBlueconfig()}};
     brion::GIDSet nil;
     BOOST_CHECK(mvd2.getPositions(nil).empty());
     BOOST_CHECK(mvd2.getTransforms(nil).empty());
@@ -199,7 +204,7 @@ BOOST_AUTO_TEST_CASE(brain_empty_gids_lists)
     BOOST_CHECK(mvd2.getMorphologyTypes(nil).empty());
     BOOST_CHECK(mvd2.getElectrophysiologyTypes(nil).empty());
 
-    const brain::Circuit mvd3(brion::URI(BBP_TEST_BLUECONFIG3));
+    const brain::Circuit mvd3{brain::URI{BBP_TEST_BLUECONFIG3}};
     BOOST_CHECK(mvd3.getPositions(nil).empty());
     BOOST_CHECK(mvd3.getTransforms(nil).empty());
     BOOST_CHECK(mvd3.getRotations(nil).empty());
@@ -213,17 +218,17 @@ namespace
 void _checkMorphology(const brain::neuron::Morphology& morphology,
                       const std::string& other)
 {
-    const brion::Morphology reference(brion::URI(
-        BBP_TESTDATA + ("/local/morphologies/01.07.08/h5/" + other)));
+    const brion::Morphology reference{brain::URI{
+        BBP_TESTDATA + ("/local/morphologies/01.07.08/h5/" + other)}};
     BOOST_CHECK(morphology.getPoints() == reference.getPoints());
 }
 void _checkMorphology(const brain::neuron::Morphology& morphology,
                       const std::string& other,
                       const brain::Matrix4f& transform)
 {
-    const brain::neuron::Morphology reference(
-        brion::URI(BBP_TESTDATA + ("/local/morphologies/01.07.08/h5/" + other)),
-        transform);
+    const brain::neuron::Morphology reference{
+        brain::URI{BBP_TESTDATA + ("/local/morphologies/01.07.08/h5/" + other)},
+        transform};
     const auto& p = morphology.getPoints();
     const auto& q = reference.getPoints();
     BOOST_REQUIRE(reference.getTransformation().equals(transform));
@@ -239,10 +244,10 @@ BOOST_AUTO_TEST_CASE(test_gid_out_of_range)
     typedef boost::shared_ptr<const brain::Circuit> CircuitPtr;
     std::vector<CircuitPtr> circuits;
     circuits.push_back(
-        CircuitPtr(new brain::Circuit(brion::URI(BBP_TEST_BLUECONFIG))));
+        CircuitPtr(new brain::Circuit{brain::URI{BBP_TEST_BLUECONFIG}}));
 #ifdef BRAIN_USE_MVD3
     circuits.push_back(
-        CircuitPtr(new brain::Circuit(brion::URI(BBP_TEST_BLUECONFIG3))));
+        CircuitPtr(new brain::Circuit{brain::URI{BBP_TEST_BLUECONFIG3}}));
 #endif
 
     brion::GIDSet gids;
@@ -263,7 +268,7 @@ BOOST_AUTO_TEST_CASE(test_gid_out_of_range)
 
 BOOST_AUTO_TEST_CASE(load_local_morphologies)
 {
-    const brain::Circuit circuit((brion::URI(bbp::test::getBlueconfig())));
+    const brain::Circuit circuit{brain::URI{bbp::test::getBlueconfig()}};
 
     brion::GIDSet gids;
     for (uint32_t gid = 1; gid < 500; gid += 75)
@@ -291,7 +296,7 @@ BOOST_AUTO_TEST_CASE(load_local_morphologies)
 
 BOOST_AUTO_TEST_CASE(load_global_morphologies)
 {
-    const brain::Circuit circuit((brion::URI(bbp::test::getBlueconfig())));
+    const brain::Circuit circuit{brain::URI{bbp::test::getBlueconfig()}};
 
     brion::GIDSet gids;
     for (uint32_t gid = 1; gid < 500; gid += 75)
@@ -437,7 +442,7 @@ BOOST_AUTO_TEST_CASE(compare_mvd2_mvd3)
 
 BOOST_AUTO_TEST_CASE(brain_circuit_random_gids)
 {
-    const brain::Circuit circuit(brion::URI(BBP_TEST_BLUECONFIG3));
+    const brain::Circuit circuit{brain::URI{BBP_TEST_BLUECONFIG3}};
     const brain::GIDSet& gids = circuit.getRandomGIDs(0.1f);
     BOOST_CHECK_EQUAL(gids.size(), 100);
 

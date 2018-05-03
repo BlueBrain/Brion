@@ -85,7 +85,8 @@ namespace detail
 class BlueConfig
 {
 public:
-    explicit BlueConfig(const std::string& source)
+    explicit BlueConfig(const std::string& source_)
+        : source(source_)
     {
         std::ifstream file(source.c_str());
         if (!file.is_open())
@@ -208,6 +209,7 @@ public:
         return true;
     }
 
+    std::string source;
     Strings names[CONFIGSECTION_ALL];
     ValueTable table[CONFIGSECTION_ALL];
 };
@@ -220,7 +222,11 @@ BlueConfig::BlueConfig(const std::string& source)
 
 BlueConfig::~BlueConfig()
 {
-    delete _impl;
+}
+
+const std::string& BlueConfig::getSource() const
+{
+    return _impl->source;
 }
 
 const Strings& BlueConfig::getSectionNames(
@@ -307,7 +313,7 @@ URI BlueConfig::getReportSource(const std::string& report) const
         get(CONFIGSECTION_REPORT, report, BLUECONFIG_REPORT_FORMAT_KEY);
     if (format.empty())
     {
-        LBWARN << "Invalid or missing report  " << report << std::endl;
+        LBWARN << "Invalid or missing report: " << report << std::endl;
         return URI();
     }
 
@@ -333,6 +339,16 @@ URI BlueConfig::getSpikeSource() const
     URI uri;
     uri.setScheme("file");
     uri.setPath(path);
+    return uri;
+}
+
+URI BlueConfig::getMeshSource() const
+{
+    URI uri(get(CONFIGSECTION_RUN, _impl->getRun(), BLUECONFIG_MESH_PATH_KEY));
+    if (uri.getScheme().empty())
+        uri.setScheme("file");
+    // Meshes are actually under a subdirectory named high/TXT, but the suffic
+    // won't be added in prevision for other mesh formats.
     return uri;
 }
 

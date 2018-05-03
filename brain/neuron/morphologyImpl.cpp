@@ -20,6 +20,7 @@
 
 #include "morphologyImpl.h"
 #include "section.h"
+#include "soma.h"
 
 #include <brion/morphology.h>
 #include <brion/morphologyPlugin.h>
@@ -219,6 +220,32 @@ const uint32_ts& Morphology::Impl::getChildren(const uint32_t sectionID) const
     return _sectionChildren[sectionID];
 }
 
+const AABB& Morphology::Impl::getBoundingBox() const
+{
+    std::call_once(_boundingBoxValid, [this]() {
+        // Dealing with single point soma;
+        const auto points = getSectionSamples(somaSection);
+        if (points.size() == 1)
+        {
+            const auto center = points[0].get_sub_vector<3, 0>();
+            const auto radius = points[0][3];
+            const auto diagonal = Vector3f(radius, radius, radius);
+            _aabb.merge(center + diagonal);
+            _aabb.merge(center - diagonal);
+        }
+        for (const auto& sample : data->getPoints())
+        {
+            // The soma profile points are not excluded, but it
+            // shouldn't matter.
+            const auto point = Vector3f(sample[0], sample[1], sample[2]);
+            auto radius = Vector3f(sample[3], sample[3], sample[3]) * 0.5;
+            _aabb.merge(point + radius);
+            _aabb.merge(point - radius);
+        }
+    });
+    return _aabb;
+}
+
 void Morphology::Impl::_transform(brion::MorphologyPtr morphology)
 {
     auto& points = morphology->getPoints();
@@ -254,8 +281,8 @@ void Morphology::Impl::_extractInformation()
     if (ids.size() != 1)
         LBTHROW(std::runtime_error(
             "Bad input morphology '" +
-            std::to_string(data->getInitData().getURI()) +
-            "': " + std::to_string(ids.size()) + " somas found"));
+            std::to_string(data->getInitData().getURI()) + "': " +
+            std::to_string(ids.size()) + " somas found"));
     somaSection = ids[0];
 }
 

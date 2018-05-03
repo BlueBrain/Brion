@@ -27,7 +27,7 @@
 
 #include <unordered_map>
 
-namespace brain
+namespace brain_python
 {
 template <typename T>
 inline std::vector<T> vectorFromIterable(boost::python::object o,
@@ -58,12 +58,12 @@ inline boost::python::list toPythonList(const std::vector<T>& vector)
     return result;
 }
 
-inline uint32_ts toVector(const GIDSet& gids)
+inline brain::uint32_ts toVector(const brain::GIDSet& gids)
 {
-    return uint32_ts(gids.begin(), gids.end());
+    return brain::uint32_ts(gids.begin(), gids.end());
 }
 
-inline boost::python::object toPythonSet(const GIDSet& ids)
+inline boost::python::object toPythonSet(const brain::GIDSet& ids)
 {
     boost::python::object set(boost::python::handle<>(PySet_New(0)));
     for (uint32_t gid : ids)
@@ -77,7 +77,7 @@ inline boost::python::object toPythonSet(const GIDSet& ids)
 }
 
 /** Copy the contents of a Python iterable or numpy array into a GIDSet. */
-GIDSet gidsFromPython(const boost::python::object& object);
+brain::GIDSet gidsFromPython(const boost::python::object& object);
 
 /** Copy the contents of a Python iterable or numpy array into a GIDSet and
  *  return the correspondance map between elements in the iterable and the set.
@@ -90,7 +90,7 @@ GIDSet gidsFromPython(const boost::python::object& object);
  *         This can be used to shuffle a vector sorted by the GIDSet to match
  *         the iteration order of the Python iterable.
  */
-void gidsFromPython(const boost::python::object& object, GIDSet& result,
-                    uint32_ts& mapping);
+void gidsFromPython(const boost::python::object& object, brain::GIDSet& result,
+                    brain::uint32_ts& mapping);
 }
 #endif

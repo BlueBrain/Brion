@@ -18,7 +18,7 @@
 
 #include <utility>
 
-namespace brain
+namespace brain_python
 {
 
 /** @internal */

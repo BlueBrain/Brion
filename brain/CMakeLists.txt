@@ -9,6 +9,7 @@ set(BRAIN_PUBLIC_HEADERS
   compartmentReport.h
   compartmentReportView.h
   compartmentReportMapping.h
+  simulation.h
   neuron/morphology.h
   neuron/section.h
   neuron/soma.h
@@ -34,6 +35,7 @@ set(BRAIN_SOURCES
   compartmentReport.cpp
   compartmentReportView.cpp
   compartmentReportMapping.cpp
+  simulation.cpp
   neuron/morphology.cpp
   neuron/morphologyImpl.cpp
   neuron/section.cpp

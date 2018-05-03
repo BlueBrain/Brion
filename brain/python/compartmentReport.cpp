@@ -33,6 +33,8 @@ namespace bp = boost::python;
 
 namespace brain
 {
+using namespace brain_python;
+
 typedef boost::shared_ptr<CompartmentReportView> CompartmentReportViewPtr;
 
 // This proxy object is needed because when converting C++ vectors to numpy
@@ -179,10 +181,10 @@ void export_CompartmentReport()
 {
 const auto selfarg = bp::arg("self");
 
-bp::class_<CompartmentReport, boost::noncopyable>(
+bp::class_<CompartmentReport, boost::noncopyable, CompartmentReportPtr>(
     "CompartmentReport", bp::no_init)
     .def("__init__", bp::make_constructor(CompartmentReport_initURI),
-         DOXY_FN(brain::CompartmentReport::CompartmentReport))
+         DOXY_FN(brain::CompartmentReport::CompartmentReport(const URI&)))
     .add_property("metadata", CompartmentReport_getMetaData,
                   DOXY_FN(brain::CompartmentReport::getMetaData))
     .add_property("gids", CompartmentReport_getGids,

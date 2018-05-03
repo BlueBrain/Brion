@@ -81,6 +81,20 @@ Vector4fs Section::getSamples() const
     return _morphology->getSectionSamples(_id);
 }
 
+const Vector4f& Section::operator[](const int index) const
+{
+    const auto range = _morphology->getSectionRange(_id);
+    if (index >= 0)
+        return _morphology->data->getPoints()[range.first + index];
+    return _morphology->data->getPoints()[range.second + index];
+}
+
+size_t Section::getNumSamples() const
+{
+    const auto range = _morphology->getSectionRange(_id);
+    return range.second - range.first;
+}
+
 Vector4fs Section::getSamples(const floats& points) const
 {
     return _morphology->getSectionSamples(_id, points);

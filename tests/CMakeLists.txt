@@ -3,7 +3,7 @@
 #
 # This file is part of Brion <https://github.com/BlueBrain/Brion>
 #
-# Change this number when adding tests to force a CMake run: 1
+# Change this number when adding tests to force a CMake run: 2
 
 if(NOT BBPTESTDATA_FOUND)
   if(COMMON_ENABLE_COVERAGE)

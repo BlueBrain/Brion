@@ -34,6 +34,7 @@
 namespace brain
 {
 void export_Circuit();
+void export_Simulation();
 void export_Spikes();
 void export_SpikeReportReader();
 void export_SpikeReportWriter();
@@ -57,6 +58,16 @@ struct Vector3fToTuple
     }
 };
 
+struct Vector4fToTuple
+{
+    static PyObject* convert(const brain::Vector4f& v)
+    {
+        boost::python::object tuple =
+            boost::python::make_tuple(v.x(), v.y(), v.z(), v.w());
+        return boost::python::incref(tuple.ptr());
+    }
+};
+
 struct URItoString
 {
     static PyObject* convert(const servus::URI& uri)
@@ -76,8 +87,9 @@ BOOST_PYTHON_MODULE(_brain)
 
     boost::python::to_python_converter<servus::URI, URItoString>();
     boost::python::to_python_converter<brain::Vector3f, Vector3fToTuple>();
+    boost::python::to_python_converter<brain::Vector4f, Vector4fToTuple>();
 
-    brain::importArray();
+    brain_python::importArray();
 
     boost::python::enum_<brain::SynapsePrefetch>("SynapsePrefetch",
                                                  DOXY_ENUM(
@@ -92,9 +104,10 @@ BOOST_PYTHON_MODULE(_brain)
     brain::export_test();
 
     brain::export_Circuit();
+    brain::export_CompartmentReport();
+    brain::export_Simulation();
     brain::export_Spikes();
     brain::export_SpikeReportReader();
     brain::export_SpikeReportWriter();
-    brain::export_CompartmentReport();
     brain::export_Synapses();
 }

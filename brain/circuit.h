@@ -58,7 +58,14 @@ public:
      */
     BRAIN_API explicit Circuit(const brion::BlueConfig& blueConfig);
 
+    BRAIN_API Circuit(Circuit&& other);
+
     BRAIN_API ~Circuit();
+
+    /**
+     * @return the URI from which this circuit has been opened.
+     */
+    BRAIN_API const URI& getSource() const;
 
     /**
      * @return The \if pybind array \else set \endif of GIDs for the given
@@ -90,6 +97,12 @@ public:
 
     /** @return The set of URIs to access the morphologies of the given cells */
     BRAIN_API URIs getMorphologyURIs(const GIDSet& gids) const;
+
+    /**
+     * @return The set of morphology names of the given cells.
+     *         Not to be confused with the morphology type names.
+     */
+    BRAIN_API Strings getMorphologyNames(const GIDSet& gids) const;
 
     /**
      * @return The list of morpholgies for the GID set. If local coordinates
@@ -216,7 +229,9 @@ private:
     Circuit& operator=(const Circuit&) = delete;
 
     friend class Synapses;
-    std::unique_ptr<const Impl> _impl;
+    // This pointer is shared with synapse related classes to ensure safe
+    // memory management in the Python wrapping.
+    std::shared_ptr<const Impl> _impl;
 };
 }
 #endif

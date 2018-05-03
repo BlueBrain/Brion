@@ -1,4 +1,4 @@
-/* Copyright (c) 2013-2016, EPFL/Blue Brain Project
+/* Copyright (c) 2013-2018, EPFL/Blue Brain Project
  *                          Juan Hernando <juan.hernando@epfl.ch>
  *
  * This file is part of Brion <https://github.com/BlueBrain/Brion>
@@ -20,53 +20,11 @@
 #ifndef BRAIN_PYTHON_TYPES
 #define BRAIN_PYTHON_TYPES
 
-#include <brain/synapse.h>
-#include <brain/synapses.h>
 #include <brain/types.h>
 
 namespace brain
 {
-typedef boost::shared_ptr<Circuit> CircuitPtr;
-
-/** Synapse container wrapping helper.
-
-   This class is used to keep a valid reference to the circuit together with any
-   Synapse container held by a Python variable.
-*/
-class SynapsesWrapper : public Synapses
-{
-public:
-    SynapsesWrapper(const SynapsesStream& stream, const CircuitPtr& circuit)
-        : Synapses(stream)
-        , _circuit(circuit)
-    {
-    }
-
-    CircuitPtr _circuit;
-
-    // Unprotecting the _impl member because it needs to be accessed by the
-    // wrapping to use it as custodian.
-    using Synapses::_impl;
-};
-
-/** Synapse container wrapping helper.
-
-   This class is used to keep a valid reference to the circuit together with any
-   Synapse container held by a Python variable.
-*/
-class SynapseWrapper : public Synapse
-{
-public:
-    SynapseWrapper(Synapse&& synapse, const Synapses& synapses,
-                   const CircuitPtr& circuit)
-        : Synapse(std::move(synapse))
-        , _synapses(synapses)
-        , _circuit(circuit)
-    {
-    }
-
-    Synapses _synapses;
-    CircuitPtr _circuit;
-};
+using CircuitPtr = boost::shared_ptr<Circuit>;
+using SimulationPtr = boost::shared_ptr<Simulation>;
 }
 #endif

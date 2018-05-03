@@ -3,6 +3,20 @@ Changelog {#Changelog}
 
 # git master
 
+* [225](https://github.com/BlueBrain/Brion/pull/225):
+  Addition of some new methods and classes:
+  - Added the class Simulation for accesing the contents of simulation
+    configurations
+  - Circuit::getSource
+  - Circuit::getMorphologyNames
+  - Made CompartmentReport and SpikeReporReader movable
+  - Soma::getMaxRadius
+  - neuron::Section::getNumSamples
+  - neuron::Section::operator\[\]
+  - Support morphologies with single point somas
+  - Added default Synapses::iterator constructor
+  - Changed Synapses and Synapse memory magement implementation to allow
+    use in Python wrappings of client code.
 * [222](https://github.com/BlueBrain/Brion/pull/222):
   Implemented basic support for reading circuit in SONATA file format
   - The implementation is limited to node, no edges are read

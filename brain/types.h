@@ -1,4 +1,4 @@
-/* Copyright (c) 2013-2017, EPFL/Blue Brain Project
+/* Copyright (c) 2013-2018, EPFL/Blue Brain Project
  *                          Juan Hernando <jhernando@fi.upm.es>
  *
  * This file is part of Brion <https://github.com/BlueBrain/Brion>
@@ -44,6 +44,7 @@ class CompartmentReport;
 class CompartmentReportFrame;
 class CompartmentReportMapping;
 class CompartmentReportView;
+class Simulation;
 class SpikeReportReader;
 class SpikeReportWriter;
 class CompartmentReport;
@@ -74,14 +75,16 @@ using brion::Spike;
 using brion::Spikes;
 using brion::CompartmentCounts;
 
-typedef std::vector<CompartmentReportFrame> CompartmentReportFrames;
-typedef std::vector<Matrix4f> Matrix4fs;
-typedef std::vector<Quaternionf> Quaternionfs;
+using AABB = vmml::AABB<float>;
 
-typedef std::shared_ptr<SpikeReportReader> SpikeReportReaderPtr;
-typedef std::shared_ptr<SpikeReportWriter> SpikeReportWriterPtr;
+using CompartmentReportFrames = std::vector<CompartmentReportFrame>;
+using Matrix4fs = std::vector<Matrix4f>;
+using Quaternionfs = std::vector<Quaternionf>;
 
-typedef std::shared_ptr<CompartmentReport> CompartmentReportPtr;
+using SpikeReportReaderPtr = std::shared_ptr<SpikeReportReader>;
+using SpikeReportWriterPtr = std::shared_ptr<SpikeReportWriter>;
+
+using CompartmentReportPtr = std::shared_ptr<CompartmentReport>;
 
 /**
  * The GID of a synapse is the a tuple of two numbers:
@@ -91,7 +94,7 @@ typedef std::shared_ptr<CompartmentReport> CompartmentReportPtr;
  * GIDs are invariant regardless of how the structural touches are
  * converted into functional synapses during circuit building.
  */
-typedef std::pair<uint32_t, size_t> SynapseGID;
+using SynapseGID = std::pair<uint32_t, size_t>;
 
 namespace detail
 {

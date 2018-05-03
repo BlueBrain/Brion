@@ -25,7 +25,7 @@
 namespace brain
 {
 SynapsesIterator::SynapsesIterator(const Synapses& synapses, const size_t index)
-    : _synapses(synapses)
+    : _synapses(&synapses)
     , _index(index)
 {
 }
@@ -52,6 +52,6 @@ SynapsesIterator& SynapsesIterator::operator++()
 
 Synapse SynapsesIterator::operator*() const
 {
-    return _synapses[_index];
+    return (*_synapses)[_index];
 }
 }
