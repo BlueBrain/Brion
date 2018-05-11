@@ -2168,11 +2168,11 @@ public:
         literal_null,   ///< the `null` literal
         value_string,   ///< a string -- use get_string() for actual value
         value_unsigned, ///< an unsigned integer -- use get_number_unsigned()
-                        ///for actual value
+                        /// for actual value
         value_integer,  ///< a signed integer -- use get_number_integer() for
-                        ///actual value
+                        /// actual value
         value_float, ///< an floating point number -- use get_number_float() for
-                     ///actual value
+                     /// actual value
         begin_array, ///< the character for array begin `[`
         begin_object,    ///< the character for object begin `{`
         end_array,       ///< the character for array end `]`
@@ -2182,7 +2182,7 @@ public:
         parse_error,     ///< indicating a parse error
         end_of_input,    ///< indicating the end of the input buffer
         literal_or_value ///< a literal or the begin of a value (only for
-                         ///diagnostics)
+                         /// diagnostics)
     };
 
     /// return name of values of type token_type (only used for errors)
@@ -18080,4 +18080,9 @@ inline brion_nlohmann::json::json_pointer operator"" _json_pointer(
 #undef NLOHMANN_BASIC_JSON_TPL
 #undef NLOHMANN_JSON_HAS_HELPER
 
+// Shortening namespace for client code while keeping symbol mangling safe
+namespace nlohmann
+{
+using namespace brion_nlohmann;
+}
 #endif

@@ -37,13 +37,14 @@ set(BRION_PUBLIC_HEADERS
 
 set(BRION_HEADERS
   constants.h
-  json.hpp
   detail/mesh.h
   detail/meshBinary.h
+  detail/json.hpp
   detail/lockHDF5.h
   detail/meshHDF5.h
   detail/morphologyHDF5.h
   detail/skipWhiteSpace.h
+  detail/utils.h
   detail/utilsHDF5.h
   )
 
@@ -61,6 +62,7 @@ set(BRION_SOURCES
   nodeGroup.cpp
   circuitConfig.cpp
   csvConfig.cpp
+  detail/utils.cpp
   )
 
 if(MSVC)
