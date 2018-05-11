@@ -21,27 +21,18 @@
 
 #include "detail/utils.h"
 
-#include <boost/filesystem.hpp>
-
+namespace brion
+{
 namespace
 {
-std::string toAbsolute(const std::string& pathStr,
-                       const boost::filesystem::path& basePath)
-{
-    const boost::filesystem::path path(pathStr);
-    if (path.is_absolute())
-        return path.string();
-    return boost::filesystem::absolute(path, basePath).string();
-}
-
-std::map<std::string, std::string> _fillComponents(
-    const nlohmann::json& json, const boost::filesystem::path& basePath)
+std::map<std::string, std::string> _fillComponents(const nlohmann::json& json,
+                                                   const PathResolver& resolver)
 {
     const auto comps = json["components_dir"];
     std::map<std::string, std::string> output;
 
     for (auto it = comps.begin(); it != comps.end(); ++it)
-        output[it.key()] = toAbsolute(it.value(), basePath);
+        output[it.key()] = resolver.toAbsolute(it.value());
 
     return output;
 }
@@ -49,7 +40,7 @@ std::map<std::string, std::string> _fillComponents(
 std::vector<brion::CircuitConfig::SubnetworkFiles> _fillSubnetwork(
     const nlohmann::json& json, const std::string& networkType,
     const std::string& elementName, const std::string& typeName,
-    const boost::filesystem::path& basePath)
+    const PathResolver& resolver)
 {
     std::vector<brion::CircuitConfig::SubnetworkFiles> output;
 
@@ -58,8 +49,8 @@ std::vector<brion::CircuitConfig::SubnetworkFiles> _fillSubnetwork(
     for (const auto& node : nodes)
     {
         brion::CircuitConfig::SubnetworkFiles network;
-        network.elements = toAbsolute(node[elementName], basePath);
-        network.types = toAbsolute(node[typeName], basePath);
+        network.elements = resolver.toAbsolute(node[elementName]);
+        network.types = resolver.toAbsolute(node[typeName]);
         output.push_back(network);
     }
 
@@ -67,27 +58,25 @@ std::vector<brion::CircuitConfig::SubnetworkFiles> _fillSubnetwork(
 }
 }
 
-namespace brion
-{
 struct CircuitConfig::Impl
 {
     Impl(const std::string& uri)
-        : basePath(boost::filesystem::path(uri).parent_path())
+        : resolver(uri)
     {
         const auto json = parseSonataJson(uri);
         targetSimulator = json["target_simulator"];
-        componentDirs = _fillComponents(json, basePath);
+        componentDirs = _fillComponents(json, resolver);
         networkEdges = _fillSubnetwork(json, "edges", "edges_file",
-                                       "edge_types_file", basePath);
+                                       "edge_types_file", resolver);
         networkNodes = _fillSubnetwork(json, "nodes", "nodes_file",
-                                       "node_types_file", basePath);
+                                       "node_types_file", resolver);
     }
 
     std::string targetSimulator;
     std::map<std::string, std::string> componentDirs;
     std::vector<CircuitConfig::SubnetworkFiles> networkNodes;
     std::vector<CircuitConfig::SubnetworkFiles> networkEdges;
-    boost::filesystem::path basePath;
+    PathResolver resolver;
 };
 
 CircuitConfig::CircuitConfig(const URI& uri)

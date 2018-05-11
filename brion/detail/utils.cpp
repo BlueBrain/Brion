@@ -20,6 +20,8 @@
 
 #include "utils.h"
 
+#include <boost/filesystem.hpp>
+
 #include <fstream>
 #include <iostream>
 #include <regex>
@@ -58,7 +60,7 @@ std::map<std::string, std::string> _readVariables(const nlohmann::json& json)
     return variables;
 }
 
-std::map<std::string, std::string> _resolveVariables(
+std::map<std::string, std::string> _replaceVariables(
     std::map<std::string, std::string> variables)
 {
     bool anyChange = true;
@@ -143,7 +145,20 @@ nlohmann::json parseSonataJson(const std::string& uri)
     const auto json = nlohmann::json::parse(file);
 
     // Parsing manifest and expanding all variables
-    const auto vars = _resolveVariables(_readVariables(json));
+    const auto vars = _replaceVariables(_readVariables(json));
     return _expandVariables(json, vars);
+}
+
+PathResolver::PathResolver(const std::string& basePath)
+    : _basePath(boost::filesystem::path(basePath).parent_path())
+{
+}
+
+std::string PathResolver::toAbsolute(const std::string& pathStr) const
+{
+    const boost::filesystem::path path(pathStr);
+    if (path.is_absolute())
+        return path.string();
+    return boost::filesystem::absolute(path, _basePath).string();
 }
 }
