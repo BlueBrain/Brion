@@ -23,6 +23,8 @@
 
 #include "json.hpp"
 
+#include <boost/filesystem/path.hpp>
+
 namespace brion
 {
 /** Open a json file, parse it and expand variables in the manifest section.
@@ -31,5 +33,16 @@ namespace brion
     @throw if file could not be read or parse error
 */
 nlohmann::json parseSonataJson(const std::string& uri);
+
+class PathResolver
+{
+public:
+    PathResolver(const std::string& basePath);
+
+    std::string toAbsolute(const std::string& path) const;
+
+private:
+    const boost::filesystem::path _basePath;
+};
 }
 #endif
