@@ -530,12 +530,22 @@ public:
         const size_t startIdx = *gids.begin();
         const size_t endIdx = *gids.rbegin() + 1;
 
-        const auto rotationAngleX =
-            nodeGroup.getAttribute<float>("rotation_angle_x", startIdx, endIdx);
-        const auto rotationAngleY =
-            nodeGroup.getAttribute<float>("rotation_angle_y", startIdx, endIdx);
-        const auto rotationAngleZ =
-            nodeGroup.getAttribute<float>("rotation_angle_z", startIdx, endIdx);
+        auto getter = [this](const char* attr, size_t start, size_t end) {
+            try
+            {
+                return nodeGroup.getAttribute<float>(attr, start, end);
+            }
+            catch (const HighFive::Exception& e)
+            {
+                return std::vector<float>(0, end - start);
+            }
+        };
+        std::vector<float> rotationAngleX =
+            getter("rotation_angle_x", startIdx, endIdx);
+        std::vector<float> rotationAngleY =
+            getter("rotation_angle_y", startIdx, endIdx);
+        std::vector<float> rotationAngleZ =
+            getter("rotation_angle_z", startIdx, endIdx);
 
         Quaternionfs output;
 
