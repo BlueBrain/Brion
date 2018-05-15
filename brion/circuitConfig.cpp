@@ -28,7 +28,7 @@ namespace
 std::map<std::string, std::string> _fillComponents(const nlohmann::json& json,
                                                    const PathResolver& resolver)
 {
-    const auto comps = json["components_dir"];
+    const auto comps = json.at("components");
     std::map<std::string, std::string> output;
 
     for (auto it = comps.begin(); it != comps.end(); ++it)
@@ -44,7 +44,7 @@ std::vector<brion::CircuitConfig::SubnetworkFiles> _fillSubnetwork(
 {
     std::vector<brion::CircuitConfig::SubnetworkFiles> output;
 
-    const auto nodes = json["networks"][networkType];
+    const auto nodes = json.at("networks").at(networkType);
 
     for (const auto& node : nodes)
     {
@@ -64,7 +64,14 @@ struct CircuitConfig::Impl
         : resolver(uri)
     {
         const auto json = parseSonataJson(uri);
-        targetSimulator = json["target_simulator"];
+        try
+        {
+            targetSimulator = json.at("target_simulator");
+        }
+        catch (nlohmann::detail::exception&)
+        {
+        }
+
         componentDirs = _fillComponents(json, resolver);
         networkEdges = _fillSubnetwork(json, "edges", "edges_file",
                                        "edge_types_file", resolver);

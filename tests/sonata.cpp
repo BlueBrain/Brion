@@ -18,8 +18,6 @@
  * 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
  */
 
-#include <brain/brain.h>
-#include <brion/brion.h>
 #include <tests/paths.h>
 
 #include <brion/circuitConfig.h>
@@ -32,10 +30,6 @@
 #define BOOST_TEST_MODULE Sonata
 #include <boost/test/unit_test.hpp>
 #include <cstdarg>
-
-// typedef for brevity
-typedef brion::Vector4f V4f;
-typedef brion::Vector3f V3f;
 
 const brion::URI TEST_SONATA_SIMPLE_NODES_URI(std::string("file://") +
                                               BRION_TESTDATA +
@@ -268,98 +262,9 @@ BOOST_AUTO_TEST_CASE(csv_config_getProperties)
     BOOST_CHECK_EQUAL(properties[2], "mtype");
     BOOST_CHECK_EQUAL(properties[3], "population");
 }
+
 /////////////////////////////////////////////////////////////////////////////
 
-BOOST_AUTO_TEST_CASE(sonata_SonataConfig_constructors)
+BOOST_AUTO_TEST_CASE(sonata_SimulationConfig_constructors)
 {
-    brain::Circuit circuit(TEST_SONATA_SIMPLE_NETWORK_URI);
-    BOOST_CHECK_THROW(brain::Circuit(brion::URI("file://nonexistentfile.json")),
-                      std::runtime_error);
-}
-
-BOOST_AUTO_TEST_CASE(sonata_SonataConfig_getPositions)
-{
-    brain::Circuit circuit(TEST_SONATA_SIMPLE_NETWORK_URI);
-    brion::GIDSet ids = {0, 2, 3, 7};
-    const auto postitions = circuit.getPositions(ids);
-
-    BOOST_CHECK_EQUAL(postitions[0], vmml::Vector3f(0, 0, 0.5));
-    BOOST_CHECK_EQUAL(postitions[1], vmml::Vector3f(2, 0, 0.5));
-    BOOST_CHECK_EQUAL(postitions[2], vmml::Vector3f(3, 1, 0.5));
-    BOOST_CHECK_EQUAL(postitions[3], vmml::Vector3f(1, 1, -0.5));
-}
-
-BOOST_AUTO_TEST_CASE(sonata_SonataConfig_getRotations)
-{
-    brain::Circuit circuit(TEST_SONATA_SIMPLE_NETWORK_URI);
-    brion::GIDSet ids = {0, 1, 2, 3, 4, 5, 6, 7, 8, 9};
-    const auto rotations = circuit.getRotations(ids);
-
-    const auto x_axis = V3f(1, 0, 0);
-    const auto y_axis = V3f(0, 1, 0);
-    const auto z_axis = V3f(0, 0, 1);
-
-    // Rotate 180 degrees around X
-    const auto rot0 = rotations[0].getRotationMatrix();
-    // Rotate 180 degrees around Y
-    const auto rot1 = rotations[1].getRotationMatrix();
-    // Rotate 180 degrees around Z
-    const auto rot2 = rotations[2].getRotationMatrix();
-
-    // Rotate 90 degrees around X
-    const auto rot3 = rotations[3].getRotationMatrix();
-    // Rotate 90 degrees around Y
-    const auto rot4 = rotations[4].getRotationMatrix();
-    // Rotate 90 degrees around Z
-    const auto rot5 = rotations[5].getRotationMatrix();
-
-    // Rotate 360 degrees around X
-    const auto rot6 = rotations[6].getRotationMatrix();
-    // Rotate 360 degrees around Y
-    const auto rot7 = rotations[7].getRotationMatrix();
-    // Rotate 360 degrees around Z
-    const auto rot8 = rotations[8].getRotationMatrix();
-
-    // Rotate 90 degrees around X,Y and Z
-    const auto rot9 = rotations[9].getRotationMatrix();
-
-    BOOST_CHECK_EQUAL((rot0 * x_axis).x(), 1);
-    BOOST_CHECK_EQUAL((rot1 * y_axis).y(), 1);
-    BOOST_CHECK_EQUAL((rot2 * z_axis).z(), 1);
-
-    BOOST_CHECK_EQUAL((rot0 * y_axis).y(), -1);
-    BOOST_CHECK_EQUAL((rot1 * x_axis).x(), -1);
-    BOOST_CHECK_EQUAL((rot2 * x_axis).x(), -1);
-
-    BOOST_CHECK_CLOSE((rot3 * y_axis).z(), 1, 0.0001);
-    BOOST_CHECK_CLOSE((rot4 * x_axis).z(), -1, 0.0001);
-    BOOST_CHECK_CLOSE((rot5 * x_axis).y(), 1, 0.0001);
-
-    BOOST_CHECK_EQUAL((rot6 * x_axis).x(), 1);
-    BOOST_CHECK_EQUAL((rot7 * y_axis).y(), 1);
-    BOOST_CHECK_EQUAL((rot8 * z_axis).z(), 1);
-
-    BOOST_CHECK_CLOSE((rot9 * x_axis).z(), 1, 0.0001);
-    BOOST_CHECK_CLOSE((rot9 * y_axis).y(), -1, 0.0001);
-    BOOST_CHECK_CLOSE((rot9 * z_axis).x(), 1, 0.0001);
-}
-
-BOOST_AUTO_TEST_CASE(sonata_SonataConfig_numNeurons)
-{
-    brain::Circuit circuit(TEST_SONATA_SIMPLE_NETWORK_URI);
-    BOOST_CHECK_EQUAL(circuit.getNumNeurons(), 10);
-}
-
-BOOST_AUTO_TEST_CASE(sonata_SonataConfig_getMorphologyURIs)
-{
-    brain::Circuit circuit(TEST_SONATA_SIMPLE_NETWORK_URI);
-    brion::GIDSet ids = {0, 4, 9};
-
-    const auto morphologyURIs = circuit.getMorphologyURIs(ids);
-    BOOST_CHECK_EQUAL(morphologyURIs[0].getPath(),
-                      TEST_SONATA_PATH + "/./morphologies/morph_A.h5");
-    BOOST_CHECK_EQUAL(morphologyURIs[1].getPath(),
-                      TEST_SONATA_PATH + "/./morphologies/morph_B.h5");
-    BOOST_CHECK_EQUAL(morphologyURIs[2].getPath(),
-                      TEST_SONATA_PATH + "/./morphologies/morph_C.h5");
 }
