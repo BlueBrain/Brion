@@ -7,7 +7,7 @@
 
     "target_simulator": "none",
 
-    "components_dir": {
+    "components": {
         "morphologies_dir": "$COMPONENT_DIR/morphologies"
     },
 
