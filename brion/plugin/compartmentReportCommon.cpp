@@ -28,9 +28,8 @@ CompartmentReportCommon::CompartmentReportCommon()
 {
 }
 
-void CompartmentReportCommon::_cacheNeuronCompartmentCounts(const GIDSet& gids)
+void CompartmentReportCommon::_cacheNeuronCompartmentCounts()
 {
-    updateMapping(gids);
     const CompartmentCounts& counts = getCompartmentCounts();
     _neuronCompartments.resize(counts.size());
     for (size_t i = 0; i < counts.size(); ++i)
@@ -63,28 +62,6 @@ size_t CompartmentReportCommon::getFrameCount() const
     if (getStartTime() < getEndTime())
         return _getFrameNumber(getEndTime()) + 1;
     return 0;
-}
-
-GIDSet CompartmentReportCommon::_computeIntersection(const GIDSet& all,
-                                                     const GIDSet& subset)
-{
-    GIDSet intersection;
-    std::set_intersection(subset.begin(), subset.end(), all.begin(), all.end(),
-                          std::inserter(intersection, intersection.begin()));
-    if (intersection != subset || intersection.empty())
-    {
-        LBWARN << "Requested " << subset.size() << " GIDs [" << *subset.begin()
-               << ":" << *subset.rbegin() << "] are not a subset of the "
-               << all.size() << " GIDs in the report [" << *all.begin() << ":"
-               << *all.rbegin();
-        if (intersection.empty())
-            LBWARN << " with no GIDs in common" << std::endl;
-        else
-            LBWARN << "], using intersection size " << intersection.size()
-                   << " [" << *intersection.begin() << ":"
-                   << *intersection.rbegin() << "]" << std::endl;
-    }
-    return intersection;
 }
 
 floatsPtr CompartmentReportCommon::loadFrame(const double timestamp) const
@@ -122,6 +99,82 @@ Frames CompartmentReportCommon::loadFrames(double start, double end) const
         return Frames();
 
     return frames;
+}
+
+GIDSet CompartmentReportCommon::_computeIntersection(const GIDSet& all,
+                                                     const GIDSet& subset)
+{
+    GIDSet intersection;
+    std::set_intersection(subset.begin(), subset.end(), all.begin(), all.end(),
+                          std::inserter(intersection, intersection.begin()));
+    if (intersection != subset || intersection.empty())
+    {
+        LBWARN << "Requested " << subset.size() << " GIDs [" << *subset.begin()
+               << ":" << *subset.rbegin() << "] are not a subset of the "
+               << all.size() << " GIDs in the report [" << *all.begin() << ":"
+               << *all.rbegin();
+        if (intersection.empty())
+            LBWARN << " with no GIDs in common" << std::endl;
+        else
+            LBWARN << "], using intersection size " << intersection.size()
+                   << " [" << *intersection.begin() << ":"
+                   << *intersection.rbegin() << "]" << std::endl;
+    }
+    return intersection;
+}
+
+std::vector<uint32_t> CompartmentReportCommon::_computeSubsetIndices(
+    const GIDSet& source, const GIDSet& target)
+{
+    GIDSet::iterator i = source.begin();
+    std::vector<uint32_t> indices;
+    indices.reserve(target.size());
+    uint32_t sourceIndex = 0;
+    for (const auto gid : target)
+    {
+        assert(i != source.end());
+        while (*i != gid)
+        {
+            ++i;
+            ++sourceIndex;
+        }
+        indices.push_back(sourceIndex);
+    }
+    return indices;
+}
+
+size_t CompartmentReportCommon::_reduceMapping(
+    const std::vector<uint32_t>& subsetIndices,
+    const std::vector<uint32_t>& sourceCellSizes,
+    const std::vector<size_t>& sourceCellOffsets,
+    std::vector<size_t>& cellOffsets, const SectionOffsets& sourceOffsets,
+    SectionOffsets& targetOffsets, const CompartmentCounts& sourceCounts,
+    CompartmentCounts& targetCounts)
+{
+    size_t count = subsetIndices.size();
+    targetOffsets.resize(count);
+    targetCounts.resize(count);
+    cellOffsets.reserve(count);
+    cellOffsets.clear();
+
+    size_t targetIndex = 0;
+    size_t frameSize = 0;
+    for (const auto sourceIndex : subsetIndices)
+    {
+        auto& offsets = targetOffsets[targetIndex];
+        offsets = sourceOffsets[sourceIndex];
+        const auto shift = frameSize - sourceCellOffsets[sourceIndex];
+        for (auto& offset : offsets)
+        {
+            if (offset != LB_UNDEFINED_UINT64)
+                offset += shift;
+        }
+        targetCounts[targetIndex] = sourceCounts[sourceIndex];
+        cellOffsets.push_back(frameSize);
+        frameSize += sourceCellSizes[sourceIndex];
+        ++targetIndex;
+    }
+    return frameSize;
 }
 
 bool CompartmentReportCommon::_loadFrames(const size_t startFrame,

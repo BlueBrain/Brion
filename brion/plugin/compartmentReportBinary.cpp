@@ -287,8 +287,7 @@ CompartmentReportBinary::CompartmentReportBinary(
     {
         if (!_parseMapping())
             LBTHROW(std::runtime_error("Parsing mapping failed"));
-
-        _cacheNeuronCompartmentCounts(initData.getGIDs());
+        updateMapping(initData.getGIDs());
     }
     else
         _parseGIDs();
@@ -355,6 +354,11 @@ const CompartmentCounts& CompartmentReportBinary::getCompartmentCounts() const
     return _perSectionCounts[_subtarget];
 }
 
+size_t CompartmentReportBinary::getNumCompartments(const size_t index) const
+{
+    return _perCellCounts[_subtarget ? _subOriginalIndices[index] : index];
+}
+
 size_t CompartmentReportBinary::getFrameSize() const
 {
     return _subtarget ? _subNumCompartments : _header.numCompartments;
@@ -419,10 +423,10 @@ bool CompartmentReportBinary::_loadFrameMemMap(const size_t frameNumber,
     for (size_t i = 0; i < _gids.size(); ++i)
     {
         const uint32_t originalIndex = _subOriginalIndices[i];
-        const uint16_t numCompartments = _perCellCounts[originalIndex];
+        const uint32_t numCompartments = _perCellCounts[originalIndex];
         const uint64_t sourceOffset = sourceOffsets[originalIndex];
         const uint64_t targetOffset = targetOffsets[i];
-        for (uint16_t k = 0; k < numCompartments; ++k)
+        for (uint32_t k = 0; k < numCompartments; ++k)
             buffer[targetOffset + k] = source[sourceOffset + k];
     }
 
@@ -520,7 +524,7 @@ floatsPtr CompartmentReportBinary::loadNeuron(const uint32_t gid) const
         size_t dstOffset = i * nCompartments;
         for (size_t j = 0; j < offsets[index].size(); ++j)
         {
-            const uint16_t numCompartments = compCounts[index][j];
+            const uint32_t numCompartments = compCounts[index][j];
             const uint64_t sourceOffset = offsets[index][j];
 
             if (numCompartments)
@@ -563,8 +567,19 @@ void CompartmentReportBinary::updateMapping(const GIDSet& gids)
     if (_perSectionOffsets[0].empty() && !_parseMapping())
         LBTHROW(std::runtime_error("Parsing mapping failed"));
 
-    _gids = gids.empty() ? _originalGIDs : gids;
-    _subtarget = (_gids != _originalGIDs);
+    if (gids.empty())
+    {
+        // Copy _originalGIDs to _gids only if the target current target
+        // is a subtarget.
+        if (_subtarget || _gids.empty())
+            _gids = _originalGIDs;
+        _subtarget = false;
+    }
+    else
+    {
+        _gids = gids;
+        _subtarget = _gids != _originalGIDs;
+    }
 
     if (!_subtarget)
         return;
@@ -581,34 +596,12 @@ void CompartmentReportBinary::updateMapping(const GIDSet& gids)
         return;
     }
 
-    // build gid to mapping index lookup table
-    std::unordered_map<uint32_t, size_t> gidIndex;
-    size_t c = 0;
-    for (const auto gid : _originalGIDs)
-        gidIndex[gid] = c++;
-
-    _perSectionCounts[1].resize(gids.size());
-    _perSectionOffsets[1].resize(gids.size());
-    _perCellOffsets[1].resize(gids.size());
-    _subOriginalIndices.resize(gids.size());
-
-    _subNumCompartments = 0;
-    size_t index = 0;
-    for (const auto gid : _gids)
-    {
-        const size_t originalIndex = gidIndex[gid];
-        _subOriginalIndices[index] = originalIndex;
-        auto& offsets = _perSectionOffsets[1][index];
-        offsets = _perSectionOffsets[0][originalIndex];
-        const ssize_t offsetShift =
-            _subNumCompartments - _perCellOffsets[0][originalIndex];
-        for (auto& offset : offsets)
-            offset += offsetShift;
-        _perSectionCounts[1][index] = _perSectionCounts[0][originalIndex];
-        _perCellOffsets[1][index] = _subNumCompartments;
-        _subNumCompartments += _perCellCounts[originalIndex];
-        ++index;
-    }
+    _subOriginalIndices = _computeSubsetIndices(_originalGIDs, _gids);
+    _subNumCompartments =
+        _reduceMapping(_subOriginalIndices, _perCellCounts, _perCellOffsets[0],
+                       _perCellOffsets[1], _perSectionOffsets[0],
+                       _perSectionOffsets[1], _perSectionCounts[0],
+                       _perSectionCounts[1]);
 }
 
 void CompartmentReportBinary::writeHeader(const double /*startTime*/,

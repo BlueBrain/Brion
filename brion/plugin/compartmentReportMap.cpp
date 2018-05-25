@@ -95,7 +95,7 @@ CompartmentReportMap::CompartmentReportMap(
     }
 
     if (accessMode & MODE_READ)
-        _cacheNeuronCompartmentCounts(initData.getGIDs());
+        updateMapping(initData.getGIDs());
 }
 
 CompartmentReportMap::~CompartmentReportMap()
@@ -379,6 +379,8 @@ void CompartmentReportMap::updateMapping(const GIDSet& gids)
                                " GIDs out of range"));
     if (!_loadHeader())
         LBTHROW(std::runtime_error("Incomplete data source"));
+
+    _cacheNeuronCompartmentCounts();
 }
 
 bool CompartmentReportMap::_loadFrame(const size_t frameNumber,

@@ -48,7 +48,8 @@ CompartmentReportDummy::CompartmentReportDummy(
     // we use <size> GIDs * ~1KB/GID compartments * 1024 frames
     _defaultGIDs =
         (i == uri.queryEnd()) ? 1024 : boost::lexical_cast<size_t>(i->second);
-    _cacheNeuronCompartmentCounts(_gids);
+    updateMapping(_gids);
+    _cacheNeuronCompartmentCounts();
 }
 
 std::string CompartmentReportDummy::getDescription()

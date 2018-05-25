@@ -25,6 +25,8 @@
 
 namespace HighFive
 {
+class File;
+
 namespace details
 {
 template <size_t M, typename T>
@@ -78,6 +80,11 @@ inline void addStringAttribute(HighFive::AnnotateTraits<T>& object,
                                        HighFive::AtomicType<std::string>());
     attr.write(value);
 }
+
+HighFive::File openFile(const std::string& filepath, const int accessMode,
+                        bool lockH5 = true);
+
+bool isHDF5File(const URI& uri);
 }
 }
 

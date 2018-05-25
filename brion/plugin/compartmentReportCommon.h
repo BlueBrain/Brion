@@ -33,18 +33,30 @@ class CompartmentReportCommon : public CompartmentReportPlugin
 public:
     CompartmentReportCommon();
     ~CompartmentReportCommon() {}
-    size_t getNumCompartments(size_t index) const final;
+    size_t getNumCompartments(size_t index) const override;
 
     floatsPtr loadFrame(double timestamp) const final;
     Frames loadFrames(double start, double end) const final;
     size_t getFrameCount() const final;
 
 protected:
-    void _cacheNeuronCompartmentCounts(const GIDSet& gids);
+    void _cacheNeuronCompartmentCounts();
     /** @return The frame number of a given timestamp clamped to the simulation
         window. */
     size_t _getFrameNumber(double timestamp) const;
     static GIDSet _computeIntersection(const GIDSet& all, const GIDSet& subset);
+
+    static std::vector<uint32_t> _computeSubsetIndices(const GIDSet& source,
+                                                       const GIDSet& target);
+
+    static size_t _reduceMapping(const std::vector<uint32_t>& subsetIndices,
+                                 const std::vector<uint32_t>& sourceCellSizes,
+                                 const std::vector<size_t>& sourceCellOffsets,
+                                 std::vector<size_t>& cellOffsets,
+                                 const SectionOffsets& sourceOffsets,
+                                 SectionOffsets& targetOffsets,
+                                 const CompartmentCounts& sourceCounts,
+                                 CompartmentCounts& targetCounts);
 
     virtual bool _loadFrame(size_t frameNumber, float* buffer) const = 0;
     virtual bool _loadFrames(size_t frameNumber, size_t frameCount,

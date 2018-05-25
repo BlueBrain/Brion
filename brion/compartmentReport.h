@@ -52,7 +52,10 @@ public:
      * @param uri URI to compartment report. The report type is deduced from
      *        here.
      * @param mode the brion::AccessMode bitmask
-     * @param gids the neurons of interest in READ_MODE
+     * @param gids the neurons of interest in READ_MODE. If empty,
+     * updateMapping needs to be called before loading frames or accessing the
+     * mapping metadata.
+     *
      * @throw std::runtime_error if compartment report could be opened for read
      *                           or write, cannot be overwritten or it is not
      *                           valid
@@ -67,16 +70,22 @@ public:
     /** @return the descriptions of all loaded report backends. @version 1.0 */
     BRION_API static std::string getDescriptions();
 
-    /** @name Read API */
+    /** @name Read API
+     * The behaviour of these functions is undefined if the report is not open
+     * in read mode.
+     */
     //@{
     /** Update compartment mapping wrt the given GIDs.
+     *
+     * Must be called at least once before loading any data or accessing the
+     * mapping is no GIDs were not provided at construction time.
      *
      * Allows to change the GIDs in an open report without throwing away the
      * already opened data, i.e., avoiding the overhead of always creating a new
      * compartment report object when the desired GID set changes. An empty gids
      * set loads all data from the report.
      *
-     * @param gids the neurons of interest
+     * @param gids the neurons of interest, may be empty.
      * @version 1.0
      */
     BRION_API void updateMapping(const GIDSet& gids);
@@ -214,7 +223,10 @@ public:
     BRION_API void clearBuffer();
     //@}
 
-    /** @name Write API */
+    /** @name Write API
+     * The behaviour of these functions is undefined if the report is not open
+     * in write mode.
+     */
     //@{
     /** Write the header information of this report.
      *

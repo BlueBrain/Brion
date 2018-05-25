@@ -70,6 +70,7 @@ public:
     const GIDSet& getGIDs() const final;
     const SectionOffsets& getOffsets() const final;
     const CompartmentCounts& getCompartmentCounts() const final;
+    size_t getNumCompartments(const size_t index) const final;
     size_t getFrameSize() const final;
 
     floatsPtr loadNeuron(const uint32_t gid) const final;
@@ -117,7 +118,7 @@ private:
     SectionOffsets _perSectionOffsets[2];
     CompartmentCounts _perSectionCounts[2];
     std::vector<size_t> _perCellOffsets[2];
-    std::vector<uint16_t> _perCellCounts;
+    std::vector<uint32_t> _perCellCounts;
     std::vector<uint32_t> _subOriginalIndices;
 
     size_t _subNumCompartments;
