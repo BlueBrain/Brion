@@ -20,7 +20,7 @@
 
 #include "morphologyHDF5.h"
 
-#include "../detail/lockHDF5.h"
+#include "../detail/hdf5Mutex.h"
 #include "../detail/morphologyHDF5.h"
 #include "../detail/utilsHDF5.h"
 
@@ -28,7 +28,6 @@
 
 #include <lunchbox/debug.h>
 #include <lunchbox/pluginRegisterer.h>
-#include <lunchbox/scopedMutex.h>
 
 #include <highfive/H5DataSet.hpp>
 #include <highfive/H5File.hpp>
@@ -49,7 +48,7 @@ struct Loader
         , _initData(m.getInitData())
         , _stage("repaired")
     {
-        lunchbox::ScopedWrite mutex(detail::hdf5Lock());
+        std::lock_guard<std::mutex> lock(detail::hdf5Mutex());
         const std::string path = _initData.getURI().getPath();
 
         try
@@ -72,7 +71,7 @@ struct Loader
 
     ~Loader()
     {
-        lunchbox::ScopedWrite mutex(detail::hdf5Lock());
+        std::lock_guard<std::mutex> lock(detail::hdf5Mutex());
         _points.reset();
         _sections.reset();
         _file.reset();

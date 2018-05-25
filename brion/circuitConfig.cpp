@@ -68,7 +68,7 @@ struct CircuitConfig::Impl
         {
             targetSimulator = json.at("target_simulator");
         }
-        catch (nlohmann::detail::exception&)
+        catch (nlohmann::detail::out_of_range&)
         {
         }
 

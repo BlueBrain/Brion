@@ -1,4 +1,4 @@
-# Copyright (c) 2013-2017, EPFL/Blue Brain Project
+# Copyright (c) 2013-2018, EPFL/Blue Brain Project
 #                          Daniel Nachbaur <daniel.nachbaur@epfl.ch>
 #
 # This file is part of Brion <https://github.com/BlueBrain/Brion>
@@ -9,6 +9,7 @@ set(BRIONPLUGINS_HEADERS
   compartmentReportCommon.h
   compartmentReportDummy.h
   compartmentReportHDF5.h
+  compartmentReportLegacyHDF5.h
   compartmentReportMap.h
   morphologyHDF5.h
   morphologySWC.h
@@ -24,6 +25,7 @@ set(BRIONPLUGINS_SOURCES
   compartmentReportCommon.cpp
   compartmentReportDummy.cpp
   compartmentReportHDF5.cpp
+  compartmentReportLegacyHDF5.cpp
   compartmentReportMap.cpp
   morphologyHDF5.cpp
   morphologySWC.cpp

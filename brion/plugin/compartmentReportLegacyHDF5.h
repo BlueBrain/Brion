@@ -33,12 +33,12 @@ namespace brion
 {
 namespace plugin
 {
-/** Sonata H5 compartment report parser */
-class CompartmentReportHDF5 : public CompartmentReportCommon
+class CompartmentReportLegacyHDF5 : public CompartmentReportCommon
 {
 public:
-    explicit CompartmentReportHDF5(const CompartmentReportInitData& initData);
-    virtual ~CompartmentReportHDF5();
+    explicit CompartmentReportLegacyHDF5(
+        const CompartmentReportInitData& initData);
+    virtual ~CompartmentReportLegacyHDF5();
 
     static bool handles(const CompartmentReportInitData& initData);
     static std::string getDescription();
@@ -52,7 +52,6 @@ public:
     const GIDSet& getGIDs() const final;
     const SectionOffsets& getOffsets() const final;
     const CompartmentCounts& getCompartmentCounts() const final;
-    size_t getNumCompartments(size_t index) const final;
     size_t getFrameSize() const final;
 
     void updateMapping(const GIDSet& gids) final;
@@ -65,54 +64,38 @@ public:
     bool flush() final;
 
 private:
+    typedef std::unordered_map<uint32_t, HighFive::File> Files;
+    typedef std::unordered_map<uint32_t, HighFive::DataSet> Datasets;
+
     double _startTime;
     double _endTime;
     double _timestep;
     std::string _dunit;
     std::string _tunit;
 
-    std::unique_ptr<HighFive::File> _file;
-    std::unique_ptr<HighFive::DataSet> _data;
-
-    // Read API attributes
-    GIDSet _gids;
-    GIDSet _sourceGIDs;
-    // A map from GID index in the iteration order of the set above to index
-    // in the perCellOffset array
-    std::vector<size_t> _sourceCellOffsets;
-
+    mutable GIDSet _gids;
     SectionOffsets _offsets;
-    SectionOffsets _sourceOffsets;
     CompartmentCounts _counts;
-    CompartmentCounts _sourceCounts;
-    // Indices of the curreng gid subset in the original mapping datasets.
-    std::vector<uint32_t> _subsetIndices;
-    size_t _sourceFrameSize = 0;
-
-    // Write API temporary attributes
-    std::vector<uint32_t> _GIDlist;
-    std::vector<uint32_t> _elementIDs;
-
-    // Read/Write API attribute
-    std::vector<size_t> _cellOffsets;
-    std::vector<uint32_t> _cellSizes;
-    size_t _frameSize = 0; // number of compartments
+    size_t _comps;
+    boost::filesystem::path _path;
+    std::string _reportName;
+    std::unique_ptr<HighFive::File> _file;
+    Datasets _datas;
 
     bool _loadFrame(size_t timestamp, float* buffer) const final;
-    // Overriden for better efficiency in single cell traces.
-    bool _loadFrames(size_t frameNumber, size_t frameCount,
-                     float* buffer) const final;
 
+    HighFive::DataSet _openDataset(const HighFive::File& file,
+                                   const uint32_t cellID);
+
+    HighFive::DataSet _createDataset(const uint32_t gid,
+                                     const size_t compCount);
+    HighFive::DataSet& _getDataset(const uint32_t gid);
+    void _readMetaData(const HighFive::File& file);
+    void _readGIDs() const;
     void _updateMapping(const GIDSet& gids);
-
-    void _readMetaData();
-    /** Parses the GIDs and offsets and derives per cell compartment counts.
-        The data from the H5 file is resorted if needed. */
-    void _parseBasicCellInfo();
-    void _processMapping();
-
-    void _writeMetadataAndMapping();
-    void _allocateDataSet();
+    void _createMetaData();
+    void _createMappingAttributes(HighFive::DataSet& dataset);
+    void _createDataAttributes(HighFive::DataSet& dataset);
 };
 }
 }

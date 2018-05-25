@@ -21,7 +21,7 @@
 
 #include "synapseSummary.h"
 
-#include "detail/lockHDF5.h"
+#include "detail/hdf5Mutex.h"
 
 #include <highfive/H5DataSet.hpp>
 #include <highfive/H5File.hpp>
@@ -31,7 +31,6 @@
 
 #include <lunchbox/debug.h>
 #include <lunchbox/log.h>
-#include <lunchbox/scopedMutex.h>
 
 #include <memory>
 
@@ -46,13 +45,12 @@ class SynapseSummary
 public:
     explicit SynapseSummary(const std::string& source)
     {
-        lunchbox::ScopedWrite mutex(detail::hdf5Lock());
+        std::lock_guard<std::mutex> lock(detail::hdf5Mutex());
 
         try
         {
             HighFive::SilenceHDF5 silence;
-            _file.reset(
-                new HighFive::File(source, H5F_ACC_RDONLY, H5P_DEFAULT));
+            _file.reset(new HighFive::File(source, H5F_ACC_RDONLY));
         }
         catch (...)
         {
@@ -79,7 +77,7 @@ public:
 
     ~SynapseSummary()
     {
-        lunchbox::ScopedWrite mutex(detail::hdf5Lock());
+        std::lock_guard<std::mutex> lock(detail::hdf5Mutex());
 
         if (_file)
             _file.reset();
@@ -87,7 +85,7 @@ public:
 
     SynapseSummaryMatrix read(const uint32_t gid)
     {
-        lunchbox::ScopedWrite mutex(detail::hdf5Lock());
+        std::lock_guard<std::mutex> lock(detail::hdf5Mutex());
 
         if (!_loadDataset(gid))
             return SynapseSummaryMatrix();

@@ -3,6 +3,9 @@ Changelog {#Changelog}
 
 # git master
 
+* [227](https://github.com/BlueBrain/Brion/pull/226):
+  Read/write support for SONATA compartment reports. This file format replaces
+  the old file format when writing reports.
 * [225](https://github.com/BlueBrain/Brion/pull/225):
   Addition of some new methods and classes:
   - Added the class Simulation for accesing the contents of simulation

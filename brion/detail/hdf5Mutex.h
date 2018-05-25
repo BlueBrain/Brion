@@ -17,8 +17,8 @@
  * 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
  */
 
-#ifndef BRION_DETAIL_LOCKHDF5
-#define BRION_DETAIL_LOCKHDF5
+#ifndef BRION_DETAIL_HDF5MUTEX
+#define BRION_DETAIL_HDF5MUTEX
 
 #include <mutex>
 
@@ -29,10 +29,10 @@ namespace detail
 // Every access to hdf5 must be serialized if HDF5 does not take care of it
 // which needs a thread-safe built of the library.
 // http://www.hdfgroup.org/hdf5-quest.html#gconc
-inline std::mutex* hdf5Lock()
+inline std::mutex& hdf5Mutex()
 {
-    static std::mutex _hdf5Lock;
-    return &_hdf5Lock;
+    static std::mutex _hdf5Mutex;
+    return _hdf5Mutex;
 }
 }
 }

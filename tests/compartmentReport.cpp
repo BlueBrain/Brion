@@ -31,6 +31,8 @@
 
 using boost::lexical_cast;
 
+boost::filesystem::path bbpTestData(BBP_TESTDATA);
+
 BOOST_AUTO_TEST_CASE(test_invalid_open)
 {
     BOOST_CHECK_THROW(brion::CompartmentReport(brion::URI("/bla"),
@@ -40,14 +42,12 @@ BOOST_AUTO_TEST_CASE(test_invalid_open)
                                                brion::MODE_READ),
                       std::runtime_error);
 
-    boost::filesystem::path path(BBP_TESTDATA);
-    path /= "local/README";
+    auto path = bbpTestData / "local/README";
     BOOST_CHECK_THROW(brion::CompartmentReport(brion::URI(path.string()),
                                                brion::MODE_READ),
                       std::runtime_error);
 
-    path = BBP_TESTDATA;
-    path /= "local/morphologies/01.07.08/h5/R-C010306G.h5";
+    path = bbpTestData / "local/morphologies/01.07.08/h5/R-C010306G.h5";
     BOOST_CHECK_THROW(brion::CompartmentReport(brion::URI(path.string()),
                                                brion::MODE_READ),
                       std::runtime_error);
@@ -55,24 +55,32 @@ BOOST_AUTO_TEST_CASE(test_invalid_open)
 
 BOOST_AUTO_TEST_CASE(test_open_binary)
 {
-    boost::filesystem::path path(BBP_TESTDATA);
-    path /= "local/simulations/may17_2011/Control/voltage.bbp";
+    const auto path =
+        bbpTestData / "local/simulations/may17_2011/Control/voltage.bbp";
     BOOST_CHECK_NO_THROW(
         brion::CompartmentReport(brion::URI(path.string()), brion::MODE_READ));
 }
 
 BOOST_AUTO_TEST_CASE(test_open_hdf5)
 {
-    boost::filesystem::path path(BBP_TESTDATA);
-    path /= "local/simulations/may17_2011/Control/voltage.h5";
+    const auto path =
+        bbpTestData / "local/simulations/may17_2011/Control/voltage.h5";
+    BOOST_CHECK_NO_THROW(
+        brion::CompartmentReport(brion::URI(path.string()), brion::MODE_READ));
+}
+
+BOOST_AUTO_TEST_CASE(test_open_sonata)
+{
+    const auto path =
+        bbpTestData / "local/simulations/may17_2011/Control/voltage_sonata.h5";
     BOOST_CHECK_NO_THROW(
         brion::CompartmentReport(brion::URI(path.string()), brion::MODE_READ));
 }
 
 BOOST_AUTO_TEST_CASE(test_invalid_mapping)
 {
-    boost::filesystem::path path(BBP_TESTDATA);
-    path /= "local/simulations/may17_2011/Control/voltage.bbp";
+    const auto path =
+        bbpTestData / "local/simulations/may17_2011/Control/voltage.bbp";
     brion::GIDSet gids;
     gids.insert(123456789);
     BOOST_CHECK_THROW(brion::CompartmentReport(brion::URI(path.string()),
@@ -80,24 +88,28 @@ BOOST_AUTO_TEST_CASE(test_invalid_mapping)
                       std::runtime_error);
 }
 
-BOOST_AUTO_TEST_CASE(test_open_binary_no_mapping)
+void testMetadataNoMapping(const char* relativePath)
 {
-    boost::filesystem::path path(BBP_TESTDATA);
-    path /= "local/simulations/may17_2011/Control/voltage.bbp";
+    const auto path = bbpTestData / relativePath;
     brion::CompartmentReport report(brion::URI(path.string()));
-    // Cell metadata is still accessible
     BOOST_CHECK_EQUAL(report.getCellCount(), 600);
     BOOST_CHECK_EQUAL(report.getGIDs().size(), 600);
 }
 
+BOOST_AUTO_TEST_CASE(test_open_binary_no_mapping)
+{
+    testMetadataNoMapping("local/simulations/may17_2011/Control/voltage.bbp");
+}
+
 BOOST_AUTO_TEST_CASE(test_open_hdf5_no_mapping)
 {
-    boost::filesystem::path path(BBP_TESTDATA);
-    path /= "local/simulations/may17_2011/Control/voltage.h5";
-    brion::CompartmentReport report(brion::URI(path.string()));
-    // Cell metadata is still accessible
-    BOOST_CHECK_EQUAL(report.getCellCount(), 600);
-    BOOST_CHECK_EQUAL(report.getGIDs().size(), 600);
+    testMetadataNoMapping("local/simulations/may17_2011/Control/voltage.h5");
+}
+
+BOOST_AUTO_TEST_CASE(test_open_sonata_no_mapping)
+{
+    testMetadataNoMapping(
+        "local/simulations/may17_2011/Control/voltage_sonata.h5");
 }
 
 namespace
@@ -145,8 +157,7 @@ BOOST_AUTO_TEST_CASE(test_create_write_report)
 
 void testBounds(const char* relativePath)
 {
-    boost::filesystem::path path(BBP_TESTDATA);
-    path /= relativePath;
+    const auto path = bbpTestData / relativePath;
 
     brion::GIDSet gids;
     gids.insert(1);
@@ -167,6 +178,11 @@ BOOST_AUTO_TEST_CASE(test_bounds_binary)
 }
 
 BOOST_AUTO_TEST_CASE(test_bounds_hdf5)
+{
+    testBounds("local/simulations/may17_2011/Control/voltage.h5");
+}
+
+BOOST_AUTO_TEST_CASE(test_bounds_sonata)
 {
     testBounds("local/simulations/may17_2011/Control/voltage.h5");
 }
@@ -272,7 +288,8 @@ void test_compare(const brion::URI& uri1, const brion::URI& uri2)
     BOOST_CHECK_EQUAL(*report2.getGIDs().begin(), gid);
 }
 
-/** @return false if no "from" or "to" report plugin was found, true otherwise*/
+/** @return false if no "from" or "to" report plugin was found, true
+/otherwise*/
 bool convert(const brion::URI& fromURI, const brion::URI& toURI)
 {
     try
@@ -377,8 +394,7 @@ void testPerf(const brion::URI& uri)
 
 void testReadSoma(const char* relativePath)
 {
-    boost::filesystem::path path(BBP_TESTDATA);
-    path /= relativePath;
+    const auto path = bbpTestData / relativePath;
 
     brion::GIDSet gids;
     gids.insert(1);
@@ -423,6 +439,11 @@ BOOST_AUTO_TEST_CASE(test_read_soma_hdf5)
     testReadSoma("local/simulations/may17_2011/Control/voltage.h5");
 }
 
+BOOST_AUTO_TEST_CASE(test_read_soma_sonata)
+{
+    testReadSoma("local/simulations/may17_2011/Control/voltage_sonata.h5");
+}
+
 BOOST_AUTO_TEST_CASE(test_write_hdf5)
 {
     struct Fixture
@@ -457,8 +478,7 @@ BOOST_AUTO_TEST_CASE(test_write_hdf5)
 
 void testReadAllCompartments(const char* relativePath)
 {
-    boost::filesystem::path path(BBP_TESTDATA);
-    path /= relativePath;
+    const auto path = bbpTestData / relativePath;
     brion::CompartmentReport report(brion::URI(path.string()),
                                     brion::MODE_READ);
 
@@ -513,10 +533,15 @@ BOOST_AUTO_TEST_CASE(test_read_allcomps_hdf5)
         "local/simulations/may17_2011/Control/allCompartments.h5");
 }
 
+BOOST_AUTO_TEST_CASE(test_read_allcomps_sonata)
+{
+    testReadAllCompartments(
+        "local/simulations/may17_2011/Control/allCompartments_sonata.h5");
+}
+
 void testReadSubtarget(const char* relativePath)
 {
-    boost::filesystem::path path(BBP_TESTDATA);
-    path /= relativePath;
+    const auto path = bbpTestData / relativePath;
 
     brion::GIDSet gids;
     gids.insert(394);
@@ -560,10 +585,15 @@ BOOST_AUTO_TEST_CASE(test_read_subtarget_hdf5)
         "local/simulations/may17_2011/Control/allCompartments.h5");
 }
 
+BOOST_AUTO_TEST_CASE(test_read_subtarget_sonata)
+{
+    testReadSubtarget(
+        "local/simulations/may17_2011/Control/allCompartments_sonata.h5");
+}
+
 void testReadFrames(const char* relativePath)
 {
-    boost::filesystem::path path(BBP_TESTDATA);
-    path /= relativePath;
+    const auto path = bbpTestData / relativePath;
     brion::CompartmentReport report(brion::URI(path.string()),
                                     brion::MODE_READ);
 
@@ -614,25 +644,40 @@ BOOST_AUTO_TEST_CASE(test_read_frames_hdf5)
     testReadFrames("local/simulations/may17_2011/Control/allCompartments.h5");
 }
 
+BOOST_AUTO_TEST_CASE(test_read_frames_sonata)
+{
+    testReadFrames(
+        "local/simulations/may17_2011/Control/allCompartments_sonata.h5");
+}
+
 BOOST_AUTO_TEST_CASE(test_perf_binary)
 {
-    boost::filesystem::path path(BBP_TESTDATA);
-    path /= "local/simulations/may17_2011/Control/allCompartments.bbp";
+    const auto path =
+        bbpTestData /
+        "local/simulations/may17_2011/Control/allCompartments.bbp";
     testPerf(brion::URI(path.string()));
 }
 
 BOOST_AUTO_TEST_CASE(test_perf_hdf5)
 
 {
-    boost::filesystem::path path(BBP_TESTDATA);
-    path /= "local/simulations/may17_2011/Control/allCompartments.h5";
+    const auto path =
+        bbpTestData / "local/simulations/may17_2011/Control/allCompartments.h5";
+    testPerf(brion::URI(path.string()));
+}
+
+BOOST_AUTO_TEST_CASE(test_perf_sonata)
+
+{
+    const auto path =
+        bbpTestData /
+        "local/simulations/may17_2011/Control/allCompartments_sonata.h5";
     testPerf(brion::URI(path.string()));
 }
 
 BOOST_AUTO_TEST_CASE(test_convert_and_compare)
 {
-    boost::filesystem::path path(BBP_TESTDATA);
-    path /= "local/simulations/may17_2011/Control/";
+    const auto path = bbpTestData / "local/simulations/may17_2011/Control/";
     const brion::URI source(path.string() + "allCompartments.bbp");
 
     test_compare(source, brion::URI(path.string() + "allCompartments.h5"));
