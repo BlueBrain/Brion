@@ -115,13 +115,9 @@ private:
     HeaderInfo _header;
     uint64_t _dataOffset = 0;
 
-    SectionOffsets _perSectionOffsets[2];
-    CompartmentCounts _perSectionCounts[2];
-    std::vector<size_t> _perCellOffsets[2];
-    std::vector<uint32_t> _perCellCounts;
-    std::vector<uint32_t> _subOriginalIndices;
-
-    size_t _subNumCompartments;
+    MappingInfo _sourceMapping;
+    MappingInfo _targetMapping;
+    std::vector<uint32_t> _subsetIndices;
 
     GIDSet _originalGIDs;
     bool _subtarget;

@@ -239,7 +239,6 @@ CompartmentReportBinary::CompartmentReportBinary(
     , _endTime(0)
     , _timestep(0)
     , _header()
-    , _subNumCompartments(0)
     , _subtarget(false)
 #ifdef HAS_AIO
     , _ioAPI(IOapi::posix_aio)
@@ -346,22 +345,22 @@ const GIDSet& CompartmentReportBinary::getGIDs() const
 
 const SectionOffsets& CompartmentReportBinary::getOffsets() const
 {
-    return _perSectionOffsets[_subtarget];
+    return (_subtarget ? _targetMapping : _sourceMapping).offsets;
 }
 
 const CompartmentCounts& CompartmentReportBinary::getCompartmentCounts() const
 {
-    return _perSectionCounts[_subtarget];
+    return (_subtarget ? _targetMapping : _sourceMapping).counts;
 }
 
 size_t CompartmentReportBinary::getNumCompartments(const size_t index) const
 {
-    return _perCellCounts[_subtarget ? _subOriginalIndices[index] : index];
+    return (_subtarget ? _targetMapping : _sourceMapping).cellSizes[index];
 }
 
 size_t CompartmentReportBinary::getFrameSize() const
 {
-    return _subtarget ? _subNumCompartments : _header.numCompartments;
+    return (_subtarget ? _targetMapping : _sourceMapping).frameSize;
 }
 
 bool CompartmentReportBinary::_loadFrame(const size_t frameNumber,
@@ -397,43 +396,41 @@ bool CompartmentReportBinary::_loadFrameMemMap(const size_t frameNumber,
         return false;
 
     const size_t frameOffset =
-        _dataOffset + _header.numCompartments * sizeof(float) * frameNumber;
+        _dataOffset + _sourceMapping.frameSize * sizeof(float) * frameNumber;
 
     if (!_subtarget)
     {
         memcpy(buffer, ptr + frameOffset,
-               _header.numCompartments * sizeof(float));
+               _sourceMapping.frameSize * sizeof(float));
 
         if (_header.byteswap)
         {
 #pragma omp parallel for
-            for (int32_t i = 0; i < _header.numCompartments; ++i)
+            for (auto i = 0u; i < _sourceMapping.frameSize; ++i)
                 lunchbox::byteswap(buffer[i]);
         }
         return true;
     }
 
     // Empty frames are detected in CompartmentReportCommon
-    assert(_subNumCompartments != 0);
+    assert(_targetMapping.frameSize != 0);
 
-    const float* const source = (const float*)(ptr + frameOffset);
-    const auto& sourceOffsets = _perCellOffsets[0];
-    const auto& targetOffsets = _perCellOffsets[1];
+    const auto* const source = (const float*)(ptr + frameOffset);
 
     for (size_t i = 0; i < _gids.size(); ++i)
     {
-        const uint32_t originalIndex = _subOriginalIndices[i];
-        const uint32_t numCompartments = _perCellCounts[originalIndex];
-        const uint64_t sourceOffset = sourceOffsets[originalIndex];
-        const uint64_t targetOffset = targetOffsets[i];
-        for (uint32_t k = 0; k < numCompartments; ++k)
+        const auto originalIndex = _subsetIndices[i];
+        const auto numCompartments = _targetMapping.cellSizes[i];
+        const auto sourceOffset = _sourceMapping.cellOffsets[originalIndex];
+        const auto targetOffset = _targetMapping.cellOffsets[i];
+        for (auto k = 0u; k < numCompartments; ++k)
             buffer[targetOffset + k] = source[sourceOffset + k];
     }
 
     if (_header.byteswap)
     {
 #pragma omp parallel for
-        for (ssize_t i = 0; i < ssize_t(_subNumCompartments); ++i)
+        for (ssize_t i = 0; i < ssize_t(_targetMapping.frameSize); ++i)
             lunchbox::byteswap(buffer[i]);
     }
     return true;
@@ -444,7 +441,7 @@ void CompartmentReportBinary::_loadFramesAIO(const size_t frameNumber,
                                              const size_t count,
                                              float* buffer) const
 {
-    const size_t originalFrameSize = _header.numCompartments * sizeof(float);
+    const size_t originalFrameSize = _sourceMapping.frameSize * sizeof(float);
     size_t frameOffset = _dataOffset + originalFrameSize * frameNumber;
     float* targetFrame = buffer;
     std::vector<AIOReadData> readData;
@@ -455,35 +452,35 @@ void CompartmentReportBinary::_loadFramesAIO(const size_t frameNumber,
         if (_subtarget)
         {
             // Empty frames are detected in CompartmentReportCommon
-            assert(_subNumCompartments != 0);
+            assert(_targetMapping.frameSize != 0);
 
-            const auto& sourceOffsets = _perCellOffsets[0];
-            const auto& targetOffsets = _perCellOffsets[1];
+            const auto& sourceOffsets = _sourceMapping.cellOffsets;
+            const auto& targetOffsets = _targetMapping.cellOffsets;
 
             for (size_t i = 0; i < _gids.size(); ++i)
             {
-                const uint32_t originalIndex = _subOriginalIndices[i];
-                const size_t readSize =
-                    _perCellCounts[originalIndex] * sizeof(float);
-                const uint64_t sourceOffset =
+                const auto originalIndex = _subsetIndices[i];
+                const auto readSize =
+                    _targetMapping.cellSizes[i] * sizeof(float);
+                const auto sourceOffset =
                     frameOffset + sourceOffsets[originalIndex] * sizeof(float);
                 void* targetBuffer = targetFrame + targetOffsets[i];
                 readData.push_back(
                     {_fileDescriptor, targetBuffer, readSize, sourceOffset});
             }
-            targetFrame += _subNumCompartments;
+            targetFrame += _targetMapping.frameSize;
         }
         else
         {
             readData.push_back({_fileDescriptor, targetFrame,
-                                _header.numCompartments * sizeof(float),
+                                _sourceMapping.frameSize * sizeof(float),
                                 frameOffset});
-            targetFrame += _header.numCompartments;
+            targetFrame += _sourceMapping.frameSize;
         }
         frameOffset += originalFrameSize;
     }
     const size_t readCount =
-        (_subtarget ? _subNumCompartments : _header.numCompartments) * count;
+        (_subtarget ? _targetMapping : _sourceMapping).frameSize * count;
 
     _readAsync(readData);
 
@@ -505,18 +502,21 @@ floatsPtr CompartmentReportBinary::loadNeuron(const uint32_t gid) const
 {
     const uint8_t* const bytePtr =
         reinterpret_cast<const uint8_t*>(_file.data());
-    if (!bytePtr || _perSectionOffsets[_subtarget].empty())
+    if (!bytePtr ||
+        (_subtarget ? _targetMapping : _sourceMapping).offsets.empty())
+    {
         return floatsPtr();
+    }
 
     const size_t index = getIndex(gid);
 
-    const size_t frameSize = _header.numCompartments;
+    const size_t frameSize = _sourceMapping.frameSize;
     const size_t nFrames = (_endTime - _startTime) / _timestep;
     const size_t nCompartments = getNumCompartments(index);
     const size_t nValues = nFrames * nCompartments;
     floatsPtr buffer(new floats(nValues));
 
-    const SectionOffsets& offsets = _perSectionOffsets[0];
+    const SectionOffsets& offsets = _sourceMapping.offsets;
     const CompartmentCounts& compCounts = getCompartmentCounts();
     for (size_t i = 0; i < nFrames; ++i)
     {
@@ -564,7 +564,7 @@ floatsPtr CompartmentReportBinary::loadNeuron(const uint32_t gid) const
 
 void CompartmentReportBinary::updateMapping(const GIDSet& gids)
 {
-    if (_perSectionOffsets[0].empty() && !_parseMapping())
+    if (_sourceMapping.frameSize == 0 && !_parseMapping())
         LBTHROW(std::runtime_error("Parsing mapping failed"));
 
     if (gids.empty())
@@ -596,12 +596,8 @@ void CompartmentReportBinary::updateMapping(const GIDSet& gids)
         return;
     }
 
-    _subOriginalIndices = _computeSubsetIndices(_originalGIDs, _gids);
-    _subNumCompartments =
-        _reduceMapping(_subOriginalIndices, _perCellCounts, _perCellOffsets[0],
-                       _perCellOffsets[1], _perSectionOffsets[0],
-                       _perSectionOffsets[1], _perSectionCounts[0],
-                       _perSectionCounts[1]);
+    _subsetIndices = _computeSubsetIndices(_originalGIDs, _gids);
+    _targetMapping = _reduceMapping(_sourceMapping, _subsetIndices);
 }
 
 void CompartmentReportBinary::writeHeader(const double /*startTime*/,
@@ -706,6 +702,7 @@ void CompartmentReportBinary::_parseGIDs()
 
 bool CompartmentReportBinary::_parseMapping()
 {
+    _sourceMapping.frameSize = _header.numCompartments;
     const uint8_t* ptr = reinterpret_cast<const uint8_t*>(_file.data());
     size_t offset = _header.headerSize;
     std::unique_ptr<uint8_t[]> buffer(new uint8_t[_dataOffset]);
@@ -749,13 +746,14 @@ bool CompartmentReportBinary::_parseMapping()
     }
 
     std::sort(cells.begin(), cells.end());
-    SectionOffsets& offsetMapping = _perSectionOffsets[0];
-    offsetMapping.resize(cells.size());
-    CompartmentCounts& perSectionCounts = _perSectionCounts[0];
-    perSectionCounts.resize(cells.size());
-    std::vector<size_t>& perCellOffsets = _perCellOffsets[0];
-    perCellOffsets.resize(cells.size());
-    _perCellCounts.resize(cells.size());
+    auto& offsets = _sourceMapping.offsets;
+    offsets.resize(cells.size());
+    auto& counts = _sourceMapping.counts;
+    counts.resize(cells.size());
+    auto& cellOffsets = _sourceMapping.cellOffsets;
+    cellOffsets.resize(cells.size());
+    auto& cellSizes = _sourceMapping.cellSizes;
+    cellSizes.resize(cells.size());
 
 // With 8 threads there's some speed up, but very small. We stick with 6
 // to avoid using more than 1 socket.
@@ -772,8 +770,8 @@ bool CompartmentReportBinary::_parseMapping()
             sectionsMapping;
         sectionsMapping.reserve(info.numCompartments);
 
-        _perCellCounts[idx] = info.numCompartments;
-        perCellOffsets[idx] = info.accumCompartments;
+        cellSizes[idx] = info.numCompartments;
+        cellOffsets[idx] = info.accumCompartments;
 
         for (int32_t j = 0; j < info.numCompartments; ++j)
         {
@@ -807,8 +805,8 @@ bool CompartmentReportBinary::_parseMapping()
         std::sort(sectionsMapping.begin(), sectionsMapping.end());
 
         // now convert the maps into the desired mapping format
-        auto& sectionOffsets = offsetMapping[idx];
-        auto& sectionCompartmentCounts = perSectionCounts[idx];
+        auto& sectionOffsets = offsets[idx];
+        auto& sectionCompartmentCounts = counts[idx];
 
         // get maximum section id
         const uint16_t maxID = sectionsMapping.rbegin()->first;

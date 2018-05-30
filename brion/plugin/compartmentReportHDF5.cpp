@@ -113,7 +113,7 @@ CompartmentReportHDF5::CompartmentReportHDF5(
         else
         {
             _parseBasicCellInfo();
-            _frameSize = _sourceFrameSize;
+            _subset = false;
         }
     }
 }
@@ -148,33 +148,32 @@ std::string CompartmentReportHDF5::getDescription()
 
 size_t CompartmentReportHDF5::getCellCount() const
 {
-    return _frameSize == _sourceFrameSize ? _sourceGIDs.size() : _gids.size();
+    return _subset ? _gids.size() : _sourceGIDs.size();
 }
 
 const GIDSet& CompartmentReportHDF5::getGIDs() const
 {
-    return _frameSize == _sourceFrameSize ? _sourceGIDs : _gids;
+    return _subset ? _gids : _sourceGIDs;
 }
 
 const SectionOffsets& CompartmentReportHDF5::getOffsets() const
 {
-    return _frameSize == _sourceFrameSize ? _sourceOffsets : _offsets;
+    return (_subset ? _targetMapping : _sourceMapping).offsets;
 }
 
 const CompartmentCounts& CompartmentReportHDF5::getCompartmentCounts() const
 {
-    return _frameSize == _sourceFrameSize ? _sourceCounts : _counts;
+    return (_subset ? _targetMapping : _sourceMapping).counts;
 }
 
 size_t CompartmentReportHDF5::getNumCompartments(const size_t index) const
 {
-    return _cellSizes[_frameSize == _sourceFrameSize ? index
-                                                     : _subsetIndices[index]];
+    return (_subset ? _targetMapping : _sourceMapping).cellSizes[index];
 }
 
 size_t CompartmentReportHDF5::getFrameSize() const
 {
-    return _frameSize;
+    return (_subset ? _targetMapping : _sourceMapping).frameSize;
 }
 
 void CompartmentReportHDF5::updateMapping(const GIDSet& gids)
@@ -219,9 +218,10 @@ bool CompartmentReportHDF5::writeCompartments(const uint32_t gid,
             _elementIDs.push_back(sectionID);
         ++sectionID;
     }
-    _cellOffsets.push_back(_frameSize);
-    _cellSizes.push_back(_elementIDs.size() - _frameSize);
-    _frameSize = _elementIDs.size();
+    _targetMapping.cellOffsets.push_back(_targetMapping.frameSize);
+    _targetMapping.cellSizes.push_back(_elementIDs.size() -
+                                       _targetMapping.frameSize);
+    _targetMapping.frameSize = _elementIDs.size();
 
     return true;
 }
@@ -245,8 +245,9 @@ bool CompartmentReportHDF5::writeFrame(const uint32_t gid, const float* values,
         if (i == _GIDlist.end() || *i != gid)
             LBTHROW(std::runtime_error("Invalid GID for writing to report"));
         const size_t index = i - _GIDlist.begin();
-        auto selection = _data->select({frameNumber, _cellOffsets[index]},
-                                       {1, _cellSizes[index]});
+        auto selection =
+            _data->select({frameNumber, _targetMapping.cellOffsets[index]},
+                          {1, _targetMapping.cellSizes[index]});
         // HighFive is not handling const correctly
         selection.write(const_cast<float*>(values));
     }
@@ -272,9 +273,10 @@ bool CompartmentReportHDF5::_loadFrame(const size_t frameNumber,
     std::lock_guard<std::mutex> mutex(detail::hdf5Mutex());
 
     // Considering the case of full frames first
-    if (_frameSize == _sourceFrameSize)
+    if (!_subset)
     {
-        _data->select({frameNumber, 0}, {1, _frameSize}).read(buffer);
+        _data->select({frameNumber, 0}, {1, _sourceMapping.frameSize})
+            .read(buffer);
         return true;
     }
 
@@ -282,8 +284,8 @@ bool CompartmentReportHDF5::_loadFrame(const size_t frameNumber,
     boost::icl::interval_set<size_t> intervals;
     for (const auto index : _subsetIndices)
     {
-        auto start = _sourceCellOffsets[index];
-        auto end = start + _cellSizes[index];
+        auto start = _sourceMapping.cellOffsets[index];
+        auto end = start + _sourceMapping.cellSizes[index];
         auto interval = boost::icl::interval<size_t>::right_open(start, end);
         intervals.insert(interval);
     }
@@ -313,9 +315,9 @@ bool CompartmentReportHDF5::_loadFrames(size_t frameNumber, size_t frameCount,
     }
 
     std::lock_guard<std::mutex> mutex(detail::hdf5Mutex());
-    size_t offset = _sourceCellOffsets[_subsetIndices[0]];
-    const auto& slice =
-        _data->select({frameNumber, offset}, {frameCount, _frameSize});
+    size_t offset = _sourceMapping.cellOffsets[_subsetIndices[0]];
+    const auto& slice = _data->select({frameNumber, offset},
+                                      {frameCount, _targetMapping.frameSize});
     slice.read(buffer);
     return true;
 }
@@ -325,9 +327,11 @@ void CompartmentReportHDF5::_readMetaData()
     try
     {
         if (!_verifyFile(*_file))
-            std::string(
-                "Error opening compartment report: not"
-                " a SONATA compartment report");
+        {
+            LBTHROW(
+                std::runtime_error("Error opening compartment report: not"
+                                   " a SONATA compartment report"));
+        }
 
         _data.reset(new HighFive::DataSet(_file->getDataSet("data")));
         try
@@ -353,7 +357,7 @@ void CompartmentReportHDF5::_readMetaData()
         time.read(timeData);
         if (timeData.size() != 3)
         {
-            throw std::runtime_error(std::string(
+            LBTHROW(std::runtime_error(
                 "Error opening compartment report: Bad time metadata"));
         }
         _startTime = timeData[0];
@@ -365,7 +369,7 @@ void CompartmentReportHDF5::_readMetaData()
         if (dims.size() != 2)
             LBTHROW(
                 std::runtime_error("Bad report: data is not 2-dimensional"));
-        _sourceFrameSize = dims[1];
+        _sourceMapping.frameSize = dims[1];
     }
     catch (std::exception& e)
     {
@@ -394,7 +398,7 @@ void CompartmentReportHDF5::_parseBasicCellInfo()
     catch (...)
     {
     }
-    if (*offsets.rbegin() >= _sourceFrameSize)
+    if (*offsets.rbegin() >= _sourceMapping.frameSize)
         LBTHROW(std::runtime_error("Bad report: inconsistent cell offsets"));
 
     auto cellCount = gids.size();
@@ -404,13 +408,13 @@ void CompartmentReportHDF5::_parseBasicCellInfo()
     cellSizes.reserve(cellCount);
     for (size_t i = 0; i != cellCount - 1; ++i)
         cellSizes.push_back(offsets[i + 1] - offsets[i]);
-    cellSizes.push_back(_sourceFrameSize - offsets[cellCount - 1]);
+    cellSizes.push_back(_sourceMapping.frameSize - offsets[cellCount - 1]);
 
     if (sorted)
     {
         _sourceGIDs = GIDSet(gids.begin(), gids.end());
-        _sourceCellOffsets = std::move(offsets);
-        _cellSizes = std::move(cellSizes);
+        _sourceMapping.cellOffsets = std::move(offsets);
+        _sourceMapping.cellSizes = std::move(cellSizes);
     }
     else
     {
@@ -423,14 +427,14 @@ void CompartmentReportHDF5::_parseBasicCellInfo()
                   });
 
         std::vector<uint32_t> sortedGIDs(cellCount);
-        _sourceCellOffsets.resize(cellCount);
-        _cellSizes.resize(cellCount);
+        _sourceMapping.cellOffsets.resize(cellCount);
+        _sourceMapping.cellSizes.resize(cellCount);
         for (size_t i = 0; i != cellCount; ++i)
         {
             const auto index = indices[i];
             sortedGIDs[i] = gids[index];
-            _sourceCellOffsets[i] = offsets[index];
-            _cellSizes[i] = cellSizes[index];
+            _sourceMapping.cellOffsets[i] = offsets[index];
+            _sourceMapping.cellSizes[i] = cellSizes[index];
         }
         _sourceGIDs = GIDSet(sortedGIDs.begin(), sortedGIDs.end());
     }
@@ -453,8 +457,8 @@ void CompartmentReportHDF5::_processMapping()
     }
 
     const auto cellCount = _sourceGIDs.size();
-    _sourceOffsets.resize(cellCount);
-    _sourceCounts.resize(cellCount);
+    _sourceMapping.offsets.resize(cellCount);
+    _sourceMapping.counts.resize(cellCount);
 
 // With 8 threads there's some speed up, but very small. We stick with 6
 // to avoid using more than 1 socket.
@@ -471,8 +475,8 @@ void CompartmentReportHDF5::_processMapping()
         offsets.reserve(32);
         counts.reserve(32);
 
-        const auto offset = _sourceCellOffsets[idx];
-        for (uint32_t j = 0; j < _cellSizes[idx]; ++j)
+        const auto offset = _sourceMapping.cellOffsets[idx];
+        for (uint32_t j = 0; j < _sourceMapping.cellSizes[idx]; ++j)
         {
             previous = current;
             current = sectionIDs[offset + j];
@@ -498,8 +502,8 @@ void CompartmentReportHDF5::_processMapping()
         }
         counts[current] = count;
 
-        _sourceOffsets[idx] = std::move(offsets);
-        _sourceCounts[idx] = std::move(counts);
+        _sourceMapping.offsets[idx] = std::move(offsets);
+        _sourceMapping.counts[idx] = std::move(counts);
     }
 }
 
@@ -507,14 +511,13 @@ void CompartmentReportHDF5::_updateMapping(const GIDSet& gids)
 {
     if (_sourceGIDs.empty())
         _parseBasicCellInfo();
-    if (_sourceOffsets.empty())
+    if (_sourceMapping.offsets.empty())
         _processMapping();
 
-    if (gids.empty() || gids == _sourceGIDs)
-    {
-        _frameSize = _sourceFrameSize;
+    _subset = !(gids.empty() || gids == _sourceGIDs);
+
+    if (!_subset)
         return;
-    }
 
     const GIDSet intersection = _computeIntersection(_sourceGIDs, gids);
     if (intersection.empty())
@@ -530,9 +533,7 @@ void CompartmentReportHDF5::_updateMapping(const GIDSet& gids)
     _gids = std::move(intersection);
 
     _subsetIndices = _computeSubsetIndices(_sourceGIDs, _gids);
-    _frameSize = _reduceMapping(_subsetIndices, _cellSizes, _sourceCellOffsets,
-                                _cellOffsets, _sourceOffsets, _offsets,
-                                _sourceCounts, _counts);
+    _targetMapping = _reduceMapping(_sourceMapping, _subsetIndices);
 }
 
 void CompartmentReportHDF5::_writeMetadataAndMapping()
@@ -574,7 +575,7 @@ void CompartmentReportHDF5::_writeMetadataAndMapping()
               });
 
     std::vector<uint32_t> gids;
-    std::vector<uint64_t> cellOffsets;
+    std::vector<size_t> cellOffsets;
     std::vector<uint32_t> cellSizes;
     std::vector<uint32_t> sortedMapping;
     gids.reserve(cellCount);
@@ -584,17 +585,17 @@ void CompartmentReportHDF5::_writeMetadataAndMapping()
     for (auto i : indices)
     {
         gids.push_back(_GIDlist[i]);
-        const size_t size = _cellSizes[i];
+        const size_t size = _targetMapping.cellSizes[i];
         cellSizes.push_back(size);
         cellOffsets.push_back(sortedMapping.size());
-        const size_t start = _cellOffsets[i];
+        const size_t start = _targetMapping.cellOffsets[i];
         for (size_t j = start; j != start + size; ++j)
             sortedMapping.push_back(_elementIDs[j]);
     }
     _GIDlist = std::move(gids);
     _elementIDs = std::vector<uint32_t>();
-    _cellSizes = std::move(cellSizes);
-    _cellOffsets = std::move(cellOffsets);
+    _targetMapping.cellSizes = std::move(cellSizes);
+    _targetMapping.cellOffsets = std::move(cellOffsets);
 
     // Writing the mapping datasets
     auto mapping = _file->createGroup("mapping");
@@ -618,11 +619,10 @@ void CompartmentReportHDF5::_writeMetadataAndMapping()
                                             sortedMapping.size()}));
     elementDataSet.write(sortedMapping);
 
-    auto offsetSet =
-        mapping.createDataSet<uint64_t>("index_pointer",
-                                        HighFive::DataSpace(std::vector<size_t>{
-                                            _cellOffsets.size()}));
-    offsetSet.write(_cellOffsets);
+    auto offsetSet = mapping.createDataSet<uint64_t>(
+        "index_pointer", HighFive::DataSpace(std::vector<size_t>{
+                             _targetMapping.cellOffsets.size()}));
+    offsetSet.write(_targetMapping.cellOffsets);
 }
 
 void CompartmentReportHDF5::_allocateDataSet()
@@ -633,10 +633,11 @@ void CompartmentReportHDF5::_allocateDataSet()
     const size_t frames = (getEndTime() - getStartTime() + step * 0.5) / step;
     LBASSERT(frames > 0);
 
-    HighFive::DataSpace dataspace(std::vector<size_t>{frames, _frameSize});
+    HighFive::DataSpace dataspace(
+        std::vector<size_t>{frames, _targetMapping.frameSize});
 
     HighFive::DataSetCreateProps chunking;
-    auto chunkDims = _computeChunkDims(_cellSizes, 5);
+    auto chunkDims = _computeChunkDims(_targetMapping.cellSizes, 5);
     if (chunkDims[0] >= frames)
         // Only apply chunking if the dataset is large enough. Otherwise HDF5
         // gives an error.

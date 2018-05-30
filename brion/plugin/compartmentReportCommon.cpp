@@ -143,38 +143,37 @@ std::vector<uint32_t> CompartmentReportCommon::_computeSubsetIndices(
     return indices;
 }
 
-size_t CompartmentReportCommon::_reduceMapping(
-    const std::vector<uint32_t>& subsetIndices,
-    const std::vector<uint32_t>& sourceCellSizes,
-    const std::vector<size_t>& sourceCellOffsets,
-    std::vector<size_t>& cellOffsets, const SectionOffsets& sourceOffsets,
-    SectionOffsets& targetOffsets, const CompartmentCounts& sourceCounts,
-    CompartmentCounts& targetCounts)
+CompartmentReportCommon::MappingInfo CompartmentReportCommon::_reduceMapping(
+    const MappingInfo& source, const std::vector<uint32_t>& indices)
 {
-    size_t count = subsetIndices.size();
-    targetOffsets.resize(count);
-    targetCounts.resize(count);
-    cellOffsets.reserve(count);
-    cellOffsets.clear();
+    MappingInfo target;
+    const size_t count = indices.size();
+    target.offsets.resize(count);
+    target.counts.resize(count);
+    target.cellOffsets.reserve(count);
+    target.cellSizes.reserve(count);
 
     size_t targetIndex = 0;
     size_t frameSize = 0;
-    for (const auto sourceIndex : subsetIndices)
+    for (const auto sourceIndex : indices)
     {
-        auto& offsets = targetOffsets[targetIndex];
-        offsets = sourceOffsets[sourceIndex];
-        const auto shift = frameSize - sourceCellOffsets[sourceIndex];
+        auto& offsets = target.offsets[targetIndex];
+        offsets = source.offsets[sourceIndex];
+        const auto shift = frameSize - source.cellOffsets[sourceIndex];
         for (auto& offset : offsets)
         {
             if (offset != LB_UNDEFINED_UINT64)
                 offset += shift;
         }
-        targetCounts[targetIndex] = sourceCounts[sourceIndex];
-        cellOffsets.push_back(frameSize);
-        frameSize += sourceCellSizes[sourceIndex];
+        target.counts[targetIndex] = source.counts[sourceIndex];
+        target.cellOffsets.push_back(frameSize);
+        const auto size = source.cellSizes[sourceIndex];
+        target.cellSizes.push_back(size);
+        frameSize += size;
         ++targetIndex;
     }
-    return frameSize;
+    target.frameSize = frameSize;
+    return target;
 }
 
 bool CompartmentReportCommon::_loadFrames(const size_t startFrame,
