@@ -533,11 +533,12 @@ public:
         auto getter = [this](const char* attr, size_t start, size_t end) {
             try
             {
+                HighFive::SilenceHDF5 silence;
                 return nodeGroup.getAttribute<float>(attr, start, end);
             }
             catch (const HighFive::Exception& e)
             {
-                return std::vector<float>(0, end - start);
+                return std::vector<float>(end - start, 0);
             }
         };
         std::vector<float> rotationAngleX =
@@ -554,6 +555,13 @@ public:
             const float rX = rotationAngleX[gid - startIdx];
             const float rY = rotationAngleY[gid - startIdx];
             const float rZ = rotationAngleZ[gid - startIdx];
+
+            // Special case for missing rotation angles.
+            if (rX == 0 && rY == 0 && rZ == 0)
+            {
+                output.push_back(Quaternionf());
+                continue;
+            }
 
             const float cX = std::cos(rX), cY = std::cos(rY), cZ = std::cos(rZ);
             const float sX = std::sin(rX), sY = std::sin(rY), sZ = std::sin(rZ);
