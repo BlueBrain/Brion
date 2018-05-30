@@ -49,14 +49,17 @@ protected:
     static std::vector<uint32_t> _computeSubsetIndices(const GIDSet& source,
                                                        const GIDSet& target);
 
-    static size_t _reduceMapping(const std::vector<uint32_t>& subsetIndices,
-                                 const std::vector<uint32_t>& sourceCellSizes,
-                                 const std::vector<size_t>& sourceCellOffsets,
-                                 std::vector<size_t>& cellOffsets,
-                                 const SectionOffsets& sourceOffsets,
-                                 SectionOffsets& targetOffsets,
-                                 const CompartmentCounts& sourceCounts,
-                                 CompartmentCounts& targetCounts);
+    struct MappingInfo
+    {
+        std::vector<size_t> cellOffsets;
+        std::vector<uint32_t> cellSizes;
+        SectionOffsets offsets;
+        CompartmentCounts counts;
+        size_t frameSize = 0; // number of compartments
+    };
+
+    static MappingInfo _reduceMapping(const MappingInfo& source,
+                                      const std::vector<uint32_t>& indices);
 
     virtual bool _loadFrame(size_t frameNumber, float* buffer) const = 0;
     virtual bool _loadFrames(size_t frameNumber, size_t frameCount,

@@ -77,26 +77,17 @@ private:
     // Read API attributes
     GIDSet _gids;
     GIDSet _sourceGIDs;
-    // A map from GID index in the iteration order of the set above to index
-    // in the perCellOffset array
-    std::vector<size_t> _sourceCellOffsets;
-
-    SectionOffsets _offsets;
-    SectionOffsets _sourceOffsets;
-    CompartmentCounts _counts;
-    CompartmentCounts _sourceCounts;
-    // Indices of the curreng gid subset in the original mapping datasets.
+    bool _subset = false;
     std::vector<uint32_t> _subsetIndices;
-    size_t _sourceFrameSize = 0;
+
+    MappingInfo _sourceMapping;
 
     // Write API temporary attributes
     std::vector<uint32_t> _GIDlist;
     std::vector<uint32_t> _elementIDs;
 
     // Read/Write API attribute
-    std::vector<size_t> _cellOffsets;
-    std::vector<uint32_t> _cellSizes;
-    size_t _frameSize = 0; // number of compartments
+    MappingInfo _targetMapping;
 
     bool _loadFrame(size_t timestamp, float* buffer) const final;
     // Overriden for better efficiency in single cell traces.
