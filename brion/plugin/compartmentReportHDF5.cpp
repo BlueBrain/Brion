@@ -390,7 +390,7 @@ void CompartmentReportHDF5::_parseBasicCellInfo()
     mapping.getDataSet("index_pointer").read(offsets);
     if (gids.size() != offsets.size() || gids.empty())
         LBTHROW(std::runtime_error("Bad report metadata"));
-    bool sorted = false;
+    int8_t sorted = false;
     try
     {
         gidsDataSet.getAttribute("sorted").read(sorted);
@@ -609,9 +609,9 @@ void CompartmentReportHDF5::_writeMetadataAndMapping()
     auto gidsDataSet = mapping.createDataSet<uint32_t>(
         "gids", HighFive::DataSpace(std::vector<size_t>{cellCount}));
     gidsDataSet.write(_GIDlist);
-    auto sorted = gidsDataSet.createAttribute<bool>(
+    auto sorted = gidsDataSet.createAttribute<int8_t>(
         "sorted", HighFive::DataSpace(std::vector<size_t>({1})));
-    sorted.write(true);
+    sorted.write(1);
 
     auto elementDataSet =
         mapping.createDataSet<uint32_t>("element_id",
