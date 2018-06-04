@@ -63,7 +63,6 @@ set(BRION_SOURCES
   circuitConfig.cpp
   csvConfig.cpp
   detail/utils.cpp
-  detail/utilsHDF5.cpp
   )
 
 if(MSVC)

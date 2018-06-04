@@ -80,12 +80,6 @@ inline void addStringAttribute(HighFive::AnnotateTraits<T>& object,
                                        HighFive::AtomicType<std::string>());
     attr.write(value);
 }
-
-HighFive::File openFile(const std::string& filepath, const int accessMode,
-                        bool lockH5 = true);
-
-bool isHDF5File(const URI& uri);
 }
 }
-
 #endif
