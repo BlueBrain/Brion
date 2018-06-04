@@ -18,6 +18,7 @@
  */
 
 #include "compartmentReportHDF5.h"
+#include "utilsHDF5.h"
 
 #include "../detail/hdf5Mutex.h"
 #include "../detail/utilsHDF5.h"
@@ -96,8 +97,8 @@ CompartmentReportHDF5::CompartmentReportHDF5(
     : _startTime(0)
     , _endTime(0)
     , _timestep(0)
-    , _file(new HighFive::File(detail::openFile(initData.getURI().getPath(),
-                                                initData.getAccessMode())))
+    , _file(new HighFive::File(
+          openFile(initData.getURI().getPath(), initData.getAccessMode())))
 {
     HighFive::SilenceHDF5 silence;
     std::lock_guard<std::mutex> mutex(detail::hdf5Mutex());
@@ -127,7 +128,7 @@ CompartmentReportHDF5::~CompartmentReportHDF5()
 bool CompartmentReportHDF5::handles(const CompartmentReportInitData& initData)
 {
     const auto& uri = initData.getURI();
-    if (!detail::isHDF5File(uri))
+    if (!isHDF5File(uri))
         return false;
 
     // Checking if the file is a SONATA report
@@ -136,8 +137,7 @@ bool CompartmentReportHDF5::handles(const CompartmentReportInitData& initData)
 
     std::lock_guard<std::mutex> mutex(detail::hdf5Mutex());
     HighFive::SilenceHDF5 silence;
-    return _verifyFile(
-        detail::openFile(initData.getURI().getPath(), MODE_READ, false));
+    return _verifyFile(openFile(initData.getURI().getPath(), MODE_READ, false));
 }
 
 std::string CompartmentReportHDF5::getDescription()

@@ -17,8 +17,7 @@
  * 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
  */
 
-#include "hdf5Mutex.h"
-
+#include <brion/detail/hdf5Mutex.h>
 #include <brion/types.h>
 
 #include <highfive/H5File.hpp>
@@ -30,10 +29,10 @@
 
 namespace brion
 {
-namespace detail
+namespace plugin
 {
 HighFive::File openFile(const std::string& filepath, const int accessMode,
-                        bool lockH5)
+                        const bool lockH5)
 {
     HighFive::SilenceHDF5 silence;
     std::unique_ptr<std::lock_guard<std::mutex>> lock;

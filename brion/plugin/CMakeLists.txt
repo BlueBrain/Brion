@@ -18,6 +18,7 @@ set(BRIONPLUGINS_HEADERS
   spikeReportBluron.h
   spikeReportHDF5.h
   spikeReportNEST.h
+  utilsHDF5.h
 )
 
 set(BRIONPLUGINS_SOURCES
@@ -34,6 +35,7 @@ set(BRIONPLUGINS_SOURCES
   spikeReportBluron.cpp
   spikeReportHDF5.cpp
   spikeReportNEST.cpp
+  utilsHDF5.cpp
 )
 
 set(BRIONPLUGINS_LINK_LIBRARIES

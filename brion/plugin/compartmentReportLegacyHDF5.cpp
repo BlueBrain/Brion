@@ -18,6 +18,7 @@
  */
 
 #include "compartmentReportLegacyHDF5.h"
+#include "utilsHDF5.h"
 
 #include "../detail/hdf5Mutex.h"
 #include "../detail/utilsHDF5.h"
@@ -112,8 +113,8 @@ CompartmentReportLegacyHDF5::CompartmentReportLegacyHDF5(
     , _comps(0)
     , _path(initData.getURI().getPath())
     , _reportName(boost::filesystem::basename(_path))
-    , _file(new HighFive::File(detail::openFile(initData.getURI().getPath(),
-                                                initData.getAccessMode())))
+    , _file(new HighFive::File(
+          openFile(initData.getURI().getPath(), initData.getAccessMode())))
 {
     const int accessMode = initData.getAccessMode();
 
@@ -138,7 +139,7 @@ bool CompartmentReportLegacyHDF5::handles(
     const CompartmentReportInitData& initData)
 {
     const auto& uri = initData.getURI();
-    if (!detail::isHDF5File(uri))
+    if (!isHDF5File(uri))
         return false;
 
     if (initData.getAccessMode() != MODE_READ)
