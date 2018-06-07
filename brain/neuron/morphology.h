@@ -24,7 +24,6 @@
 #include <brain/neuron/types.h>
 #include <brain/types.h>
 
-#include <boost/noncopyable.hpp>
 #include <servus/serializable.h>
 
 namespace brain
@@ -47,7 +46,7 @@ namespace neuron
  *
  * @version unstable
  */
-class Morphology : public boost::noncopyable
+class Morphology
 {
 public:
     class Impl;                            //!< @internal
@@ -142,6 +141,11 @@ public:
     BRAIN_API void getBoundingBox(Vector3f& min, Vector3f& max) const;
 
 private:
+    Morphology(Morphology&&) = default;
+    Morphology(const Morphology&) = delete;
+    Morphology& operator=(Morphology&&) = default;
+    Morphology& operator=(const Morphology&) = delete;
+
     friend class brain::Circuit;
     friend class brain::MorphologyCache;
 

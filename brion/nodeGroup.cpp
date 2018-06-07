@@ -142,6 +142,8 @@ std::vector<T> NodeGroup::getDynamicParameter(const std::string& name,
     template list_type NodeGroup::getDynamicParameter<scalar_type>( \
         const std::string&, size_t, size_t) const;
 
+CREATE_GET_FUNCTIONS(chars, char)
+CREATE_GET_FUNCTIONS(uchars, unsigned char)
 CREATE_GET_FUNCTIONS(int32_ts, int32_t)
 CREATE_GET_FUNCTIONS(uint16_ts, uint16_t)
 CREATE_GET_FUNCTIONS(uint32_ts, uint32_t)
