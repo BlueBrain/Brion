@@ -3,6 +3,10 @@ Changelog {#Changelog}
 
 # git master
 
+* [229](https://github.com/BlueBrain/Brion/pull/229):
+  - Added a method to brain::Circuit to retrive custom node attributes. This is
+    only supported in C++ for SONATA circuits.
+  - Implemented morphology recentering for SONATA circuits.
 * [227](https://github.com/BlueBrain/Brion/pull/226):
   Read/write support for SONATA compartment reports. This file format replaces
   the old file format when writing reports.

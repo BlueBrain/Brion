@@ -39,8 +39,8 @@
 #include <lunchbox/log.h>
 #include <lunchbox/scopedMutex.h>
 
-#ifdef BRAIN_USE_MVD3
 #include <highfive/H5Utility.hpp>
+#ifdef BRAIN_USE_MVD3
 #include <mvd/mvd3.hpp>
 #include <mvd/mvd_generic.hpp>
 #endif
@@ -51,6 +51,7 @@
 #include <memory>
 #include <random>
 #include <unordered_map>
+#include <unordered_set>
 
 namespace fs = boost::filesystem;
 using boost::lexical_cast;
@@ -251,10 +252,26 @@ public:
     {
         Strings keys;
         keys.reserve(uris.size());
-        for (auto& uri : uris)
+        for (const auto& uri : uris)
         {
             keys.emplace_back(
                 servus::make_uint128(uri.getPath() + "v2").getString());
+        }
+        return keys;
+    }
+
+    Strings createKeys(const URIs& uris,
+                       const std::vector<bool>& recenter) const
+    {
+        Strings keys;
+        keys.reserve(uris.size());
+        const char* const tags[] = {"v2", "v2c"};
+        for (size_t i = 0; i != uris.size(); ++i)
+        {
+            const auto& uri = uris[i];
+            const auto tag = tags[recenter[i]];
+            keys.emplace_back(
+                servus::make_uint128(uri.getPath() + tag).getString());
         }
         return keys;
     }
@@ -368,6 +385,10 @@ public:
     virtual Strings getElectrophysiologyTypeNames() const = 0;
     virtual Quaternionfs getRotations(const GIDSet& gids) const = 0;
     virtual Strings getMorphologyNames(const GIDSet& gids) const = 0;
+    virtual std::vector<bool> getRecenter(const GIDSet&) const
+    {
+        return std::vector<bool>();
+    }
 
     URI getMorphologyURI(const std::string& name) const
     {
@@ -467,6 +488,11 @@ public:
         morphologySource = URI(config.getComponentPath("morphologies_dir"));
         nodeGroup = nodes->openGroup(population, 0);
         nodeTypesFile.reset(new brion::CsvConfig(URI(node.types)));
+
+        for (const auto name : nodeGroup.getAttributeNames())
+            nodeAttributes.insert(name);
+        for (const auto name : nodeTypesFile->getProperties())
+            nodeTypeProperties.insert(name);
     }
     virtual ~SonataCircuit() {}
     size_t getNumNeurons() const final { return numNeurons; }
@@ -588,41 +614,65 @@ public:
     }
     Strings getMorphologyNames(const GIDSet& gids) const final
     {
+        return getAttribute<std::string>("morphology_file", gids);
+    }
+
+    std::vector<bool> getRecenter(const GIDSet& gids) const final
+    {
+        std::vector<bool> result(gids.size(), true);
+
+        if (nodeAttributes.find("recenter") != nodeAttributes.end() ||
+            nodeTypeProperties.find("recenter") != nodeTypeProperties.end())
+        {
+            const auto values = getAttribute<uint8_t>("recenter", gids);
+            std::transform(values.begin(), values.end(), result.begin(),
+                           [](const uint8_t x) { return x != 0; });
+        }
+        return result;
+    }
+
+    template <typename T>
+    std::vector<T> getAttribute(const std::string& name,
+                                const GIDSet& gids) const
+    {
+        std::vector<T> output;
         if (gids.empty())
-            return Strings();
+            return output;
 
         const size_t startIdx = *gids.begin();
         const size_t endIdx = *gids.rbegin() + 1;
 
-        const std::string propertyName = "morphology_file";
-
-        const auto attributeNames = nodeGroup.getAttributeNames();
-        const bool hasMorpholgyFile =
-            std::find(attributeNames.begin(), attributeNames.end(),
-                      propertyName) != attributeNames.end();
-
-        Strings output;
-
-        if (hasMorpholgyFile)
+        if (nodeAttributes.find(name) != nodeAttributes.end())
         {
-            const auto names =
-                nodeGroup.getAttribute<std::string>(propertyName, startIdx,
-                                                    endIdx);
+            // Looking in the node group
+            const auto data = nodeGroup.getAttribute<T>(name, startIdx, endIdx);
             for (const auto gid : gids)
-                output.push_back(names[gid - startIdx]);
+                output.push_back(data[gid - startIdx]);
         }
-        else
+        else if (nodeTypeProperties.find(name) != nodeTypeProperties.end())
         {
+            // Looking in the node types
             const auto nodeTypeIDs = nodes->getNodeTypes(population);
             for (const auto gid : gids)
             {
                 const auto nodeTypeID = nodeTypeIDs[gid - startIdx];
-                const auto filename =
-                    nodeTypesFile->getProperty(nodeTypeID, propertyName);
-                output.push_back(filename);
+                const auto value = nodeTypesFile->getProperty(nodeTypeID, name);
+                try
+                {
+                    output.push_back(boost::lexical_cast<T>(value));
+                }
+                catch (const boost::bad_lexical_cast&)
+                {
+                    throw std::runtime_error("Error converting attribute " +
+                                             name + " for node type ID " +
+                                             std::to_string(nodeTypeID));
+                }
             }
         }
-
+        else
+        {
+            throw std::runtime_error("Invalid node attribute: " + name);
+        }
         return output;
     }
 
@@ -662,6 +712,11 @@ public:
     size_t numNeurons = 0;
     URI morphologySource;
     std::string population;
+
+    // Name caches to speed up looking for attributes in the node group or
+    // the node types CSV
+    std::unordered_set<std::string> nodeAttributes;
+    std::unordered_set<std::string> nodeTypeProperties;
 
     // Unimplemented
     URI synapseSource;

@@ -62,6 +62,8 @@ using vmml::Vector3d;
 using vmml::Vector4d;
 using servus::uint128_t;
 
+typedef std::vector<char> chars;
+typedef std::vector<unsigned char> uchars;
 typedef std::vector<size_t> size_ts;
 typedef std::vector<int32_t> int32_ts;
 typedef std::vector<uint16_t> uint16_ts;

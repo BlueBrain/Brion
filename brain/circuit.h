@@ -152,6 +152,18 @@ public:
      */
     BRAIN_API Quaternionfs getRotations(const GIDSet& gids) const;
 
+    /** Get the value of a custom attribute for a set of gids.
+
+        This only works for circuit file formats that support custom attribute
+        (e.g. SONATA).
+        @throw if the attribute does not exist or it cannot be converted to the
+        requested type.
+        @return A vector with the value of the attribute for the gids requested
+     */
+    template <typename T>
+    BRAIN_API std::vector<T> getAttribute(const std::string& name,
+                                          const GIDSet& gids) const;
+
     /** @return The number of neurons in the circuit. */
     BRAIN_API size_t getNumNeurons() const;
 
