@@ -119,8 +119,8 @@ BOOST_AUTO_TEST_CASE(sonata_nodeGroup_getAttributeNames)
     const auto names = group.getAttributeNames();
     BOOST_CHECK_EQUAL(names.size(), 8);
     BOOST_CHECK_EQUAL(names[1], "morphology_file");
-    BOOST_CHECK_EQUAL(names[2], "rotation_angle_x");
-    BOOST_CHECK_EQUAL(names[3], "rotation_angle_y");
+    BOOST_CHECK_EQUAL(names[2], "rotation_angle_xaxis");
+    BOOST_CHECK_EQUAL(names[3], "rotation_angle_yaxis");
 }
 
 BOOST_AUTO_TEST_CASE(sonata_nodeGroup_getDynamicParameterNames)
@@ -155,21 +155,21 @@ BOOST_AUTO_TEST_CASE(sonata_nodeGroup_getAttribute)
     brion::Nodes nodes(TEST_SONATA_SIMPLE_NODES_URI);
     auto group = nodes.openGroup(POPULATION_NAME, 0);
 
-    const auto rotation_angle_x = group.getAttribute<float>("rotation_angle_x");
-    const auto rotation_angle_y = group.getAttribute<float>("rotation_angle_y");
-    const auto rotation_angle_z = group.getAttribute<float>("rotation_angle_z");
+    const auto rotation_x = group.getAttribute<float>("rotation_angle_xaxis");
+    const auto rotation_y = group.getAttribute<float>("rotation_angle_yaxis");
+    const auto rotation_z = group.getAttribute<float>("rotation_angle_zaxis");
     const auto x = group.getAttribute<float>("x", 2, 12);
     const auto y = group.getAttribute<float>("y", 3, 12);
     const auto z = group.getAttribute<float>("z", 6, 10);
 
-    BOOST_CHECK_EQUAL(rotation_angle_x.size(), 10);
-    BOOST_CHECK_CLOSE(rotation_angle_x[0], 3.14159, 0.0001);
+    BOOST_CHECK_EQUAL(rotation_x.size(), 10);
+    BOOST_CHECK_CLOSE(rotation_x[0], 3.14159, 0.0001);
 
-    BOOST_CHECK_EQUAL(rotation_angle_y.size(), 10);
-    BOOST_CHECK_EQUAL(rotation_angle_y[0], 0);
+    BOOST_CHECK_EQUAL(rotation_y.size(), 10);
+    BOOST_CHECK_EQUAL(rotation_y[0], 0);
 
-    BOOST_CHECK_EQUAL(rotation_angle_z.size(), 10);
-    BOOST_CHECK_EQUAL(rotation_angle_z[0], 0);
+    BOOST_CHECK_EQUAL(rotation_z.size(), 10);
+    BOOST_CHECK_EQUAL(rotation_z[0], 0);
 
     BOOST_CHECK_EQUAL(x.size(), 10);
     BOOST_CHECK_EQUAL(x[0], 2.0f);

@@ -94,8 +94,7 @@ public:
             size_t numRecentered = 0;
             size_t numOriginal = 0;
         };
-        using Loading = std::unordered_map<std::string, MorphologyUse>;
-        Loading loading;
+        std::unordered_map<std::string, MorphologyUse> loading;
 
         // Starting to load all those morphologies that weren't in cache
         for (size_t i = 0; i < uris.size(); ++i)
@@ -242,9 +241,26 @@ private:
         else
         {
             // No cache available, just use the uris as the keys.
+            // A 'c' is appending to the end when some morphologies need
+            // recentering and other don't
             keys.reserve(uris.size());
-            for (const auto& uri : uris)
-                keys.push_back(uri.getPath());
+            if (!_recenterAll && !_recenter.empty())
+            {
+                size_t i = 0;
+                for (const auto& uri : uris)
+                {
+                    auto key = uri.getPath();
+                    if (_recenter[i])
+                        key += "c";
+                    keys.emplace_back(std::move(key));
+                    ++i;
+                }
+            }
+            else
+            {
+                for (const auto& uri : uris)
+                    keys.emplace_back(uri.getPath());
+            }
         }
         return keys;
     }
@@ -449,7 +465,7 @@ template std::vector<unsigned char> Circuit::getAttribute<unsigned char>(
 
 template std::vector<uint32_t> Circuit::getAttribute<uint32_t>(
     const std::string& name, const GIDSet& gids) const;
-template std::vector<uint64_t> Circuit::getAttribute<size_t>(
+template std::vector<uint64_t> Circuit::getAttribute<uint64_t>(
     const std::string& name, const GIDSet& gids) const;
 template std::vector<float> Circuit::getAttribute<float>(
     const std::string& name, const GIDSet& gids) const;

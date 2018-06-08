@@ -84,7 +84,21 @@ size_t Nodes::getNumberOfNodes(const std::string population) const
 
 uint32_ts Nodes::getNodeIDs(const std::string population) const
 {
-    return _readIntVector(*impl->file, population, "node_id");
+    try
+    {
+        // This attribute is optional
+        return _readIntVector(*impl->file, population, "node_id");
+    }
+    catch (HighFive::DataSetException&)
+    {
+    }
+    // Creating ids from 0 to #nodes - 1
+    const size_t numNodes = getNumberOfNodes(population);
+    uint32_ts ids;
+    ids.reserve(numNodes);
+    for (size_t i = 0; i != numNodes; ++i)
+        ids.push_back(i);
+    return ids;
 }
 
 uint32_ts Nodes::getNodeGroupIDs(const std::string population) const
