@@ -116,9 +116,47 @@ BOOST_AUTO_TEST_CASE(getMorphologyURIs)
 
     const auto morphologyURIs = circuit.getMorphologyURIs(ids);
     BOOST_CHECK_EQUAL(morphologyURIs[0].getPath(),
-                      TEST_SONATA_PATH + "/./morphologies/morph_A.h5");
+                      TEST_SONATA_PATH + "/./morphologies/morph_A.swc");
     BOOST_CHECK_EQUAL(morphologyURIs[1].getPath(),
                       TEST_SONATA_PATH + "/./morphologies/morph_B.h5");
     BOOST_CHECK_EQUAL(morphologyURIs[2].getPath(),
                       TEST_SONATA_PATH + "/./morphologies/morph_C.h5");
+}
+
+BOOST_AUTO_TEST_CASE(recentering)
+{
+    brain::Circuit circuit(TEST_SONATA_SIMPLE_NETWORK_URI);
+
+    const auto zero = brion::Vector3f(0, 0, 0);
+    const auto ten = brion::Vector3f(10, 10, 10);
+
+    auto morphologies =
+        circuit.loadMorphologies({0, 2}, brain::Circuit::Coordinates::local);
+    BOOST_CHECK_EQUAL(morphologies[0]->getSoma().getCentroid(), ten);
+    BOOST_CHECK_EQUAL(morphologies[1]->getSoma().getCentroid(), zero);
+    morphologies =
+        circuit.loadMorphologies({2, 7}, brain::Circuit::Coordinates::local);
+    BOOST_CHECK_EQUAL(morphologies[0]->getSoma().getCentroid(), zero);
+    BOOST_CHECK_EQUAL(morphologies[1]->getSoma().getCentroid(), ten);
+
+    const auto transform = [](const brain::Matrix4f& m,
+                              const brain::Vector3f& v) {
+        const auto t = m * brion::Vector4f(v[0], v[1], v[2], 1);
+        return t.get_sub_vector<3, 0>();
+    };
+    auto transforms = circuit.getTransforms({0, 2});
+    morphologies =
+        circuit.loadMorphologies({0, 2}, brain::Circuit::Coordinates::global);
+    BOOST_CHECK_EQUAL(morphologies[0]->getSoma().getCentroid(),
+                      transform(transforms[0], ten));
+    BOOST_CHECK_EQUAL(morphologies[1]->getSoma().getCentroid(),
+                      transform(transforms[1], zero));
+
+    transforms = circuit.getTransforms({2, 7});
+    morphologies =
+        circuit.loadMorphologies({2, 7}, brain::Circuit::Coordinates::global);
+    BOOST_CHECK_EQUAL(morphologies[0]->getSoma().getCentroid(),
+                      transform(transforms[0], zero));
+    BOOST_CHECK_EQUAL(morphologies[1]->getSoma().getCentroid(),
+                      transform(transforms[1], ten));
 }

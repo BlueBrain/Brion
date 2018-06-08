@@ -69,12 +69,12 @@ const std::string extraFilename("/nrn_extra.h5");
 namespace
 {
 #ifdef BRAIN_USE_MVD3
-bool isSequence(const GIDSet& gids)
+bool _isSequence(const GIDSet& gids)
 {
     return (*gids.rbegin() - *gids.begin() + 1) == gids.size();
 }
 
-::MVD3::Range getRange(const GIDSet& gids)
+::MVD3::Range _getRange(const GIDSet& gids)
 {
     const size_t offset = (*gids.begin());
     const size_t count = *gids.rbegin() - offset + 1;
@@ -82,10 +82,10 @@ bool isSequence(const GIDSet& gids)
 }
 
 template <typename SrcArray, typename DstArray, typename AssignOp>
-void assign(const ::MVD3::Range& range, const GIDSet& gids, SrcArray& src,
-            DstArray& dst, const AssignOp& assignOp)
+void _assign(const ::MVD3::Range& range, const GIDSet& gids, SrcArray& src,
+             DstArray& dst, const AssignOp& assignOp)
 {
-    if (isSequence(gids)) // OPT: no holes, no translation needed
+    if (_isSequence(gids)) // OPT: no holes, no translation needed
     {
         std::transform(src.begin(), src.end(), dst.begin(), assignOp);
         return;
@@ -96,30 +96,44 @@ void assign(const ::MVD3::Range& range, const GIDSet& gids, SrcArray& src,
         *j++ = assignOp(src[gid - range.offset - 1]);
 }
 
-Vector3f toVector3f(const ::MVD3::Positions::const_subarray<1>::type& subarray)
+Vector3f _toVector3f(const ::MVD3::Positions::const_subarray<1>::type& subarray)
 {
     return Vector3f(subarray[0], subarray[1], subarray[2]);
 }
 
-Quaternionf toQuaternion(
+Quaternionf _toQuaternion(
     const ::MVD3::Rotations::const_subarray<1>::type& subarray)
 {
     return Quaternionf(subarray[0], subarray[1], subarray[2], subarray[3]);
 }
 
-size_t nop(const size_t& in)
+template <typename T>
+const T& _nop(const T& x)
 {
-    return in;
+    return x;
 }
 #endif
 
-std::string toString(const std::string& in)
+template <typename T>
+std::vector<T> _getAttribute(const brion::NodeGroup& nodeGroup,
+                             const std::string& name, const size_t start,
+                             const size_t end)
 {
-    return in;
+    return nodeGroup.getAttribute<T>(name, start, end);
 }
-size_t toSize_t(const std::string& in)
+
+// bool is not a proper H5 type, so we need a special function for this type
+// of node attributes
+template <>
+std::vector<bool> _getAttribute<bool>(const brion::NodeGroup& nodeGroup,
+                                      const std::string& name,
+                                      const size_t start, const size_t end)
 {
-    return std::stoul(in);
+    const auto values = nodeGroup.getAttribute<uint8_t>(name, start, end);
+    std::vector<bool> result;
+    std::transform(values.begin(), values.end(), result.begin(),
+                   [](const uint8_t x) { return x != 0; });
+    return result;
 }
 
 template <typename T>
@@ -451,12 +465,12 @@ public:
         const auto nodeGroupIDs = nodes->getNodeGroupIDs(population);
         const auto nodeIDs = nodes->getNodeIDs(population);
         const auto nodeGroupIndices = nodes->getNodeGroupIndices(population);
+        const auto originalNodeTypeIDs = nodes->getNodeTypes(population);
         const size_t numNodes = nodeIDs.size();
 
         for (size_t i = 0; i < numNodes; i++)
         {
-            const auto groupID = nodeGroupIDs[i];
-            if (groupID != 0)
+            if (nodeGroupIDs[i] != 0)
             {
                 LBWARN << "More than one group ID found, ignoring extra ones."
                        << std::endl;
@@ -480,8 +494,8 @@ public:
                                        std::to_string(expectedIdx) + "' got '" +
                                        std::to_string(nodeGroupIndex) + "'"));
             }
-
             expectedIdx++;
+            nodeTypeIDs.push_back(originalNodeTypeIDs[i]);
         }
 
         numNeurons = expectedIdx;
@@ -568,11 +582,11 @@ public:
             }
         };
         std::vector<float> rotationAngleX =
-            getter("rotation_angle_x", startIdx, endIdx);
+            getter("rotation_angle_xaxis", startIdx, endIdx);
         std::vector<float> rotationAngleY =
-            getter("rotation_angle_y", startIdx, endIdx);
+            getter("rotation_angle_yaxis", startIdx, endIdx);
         std::vector<float> rotationAngleZ =
-            getter("rotation_angle_z", startIdx, endIdx);
+            getter("rotation_angle_zaxis", startIdx, endIdx);
 
         Quaternionfs output;
 
@@ -619,16 +633,12 @@ public:
 
     std::vector<bool> getRecenter(const GIDSet& gids) const final
     {
-        std::vector<bool> result(gids.size(), true);
-
         if (nodeAttributes.find("recenter") != nodeAttributes.end() ||
             nodeTypeProperties.find("recenter") != nodeTypeProperties.end())
         {
-            const auto values = getAttribute<uint8_t>("recenter", gids);
-            std::transform(values.begin(), values.end(), result.begin(),
-                           [](const uint8_t x) { return x != 0; });
+            return getAttribute<bool>("recenter", gids);
         }
-        return result;
+        return std::vector<bool>(gids.size(), true);
     }
 
     template <typename T>
@@ -645,21 +655,21 @@ public:
         if (nodeAttributes.find(name) != nodeAttributes.end())
         {
             // Looking in the node group
-            const auto data = nodeGroup.getAttribute<T>(name, startIdx, endIdx);
+            const auto data =
+                _getAttribute<T>(nodeGroup, name, startIdx, endIdx);
             for (const auto gid : gids)
                 output.push_back(data[gid - startIdx]);
         }
         else if (nodeTypeProperties.find(name) != nodeTypeProperties.end())
         {
             // Looking in the node types
-            const auto nodeTypeIDs = nodes->getNodeTypes(population);
             for (const auto gid : gids)
             {
-                const auto nodeTypeID = nodeTypeIDs[gid - startIdx];
+                const auto nodeTypeID = nodeTypeIDs[gid];
                 const auto value = nodeTypesFile->getProperty(nodeTypeID, name);
                 try
                 {
-                    output.push_back(boost::lexical_cast<T>(value));
+                    output.push_back(lexical_cast<T>(value));
                 }
                 catch (const boost::bad_lexical_cast&)
                 {
@@ -717,6 +727,8 @@ public:
     // the node types CSV
     std::unordered_set<std::string> nodeAttributes;
     std::unordered_set<std::string> nodeTypeProperties;
+
+    uint32_ts nodeTypeIDs; // GID to node type ID mapping
 
     // Unimplemented
     URI synapseSource;
@@ -918,7 +930,8 @@ public:
 
         brion::NeuronMatrix::const_array_view<1>::type view =
             matrix[boost::indices[brion::NeuronMatrix::index_range()][0]];
-        std::transform(view.begin(), view.end(), result.begin(), toSize_t);
+        std::transform(view.begin(), view.end(), result.begin(),
+                       [](const std::string& x) { return std::stoul(x); });
         return result;
     }
 
@@ -938,7 +951,8 @@ public:
 
         brion::NeuronMatrix::const_array_view<1>::type view =
             matrix[boost::indices[brion::NeuronMatrix::index_range()][0]];
-        std::transform(view.begin(), view.end(), result.begin(), toSize_t);
+        std::transform(view.begin(), view.end(), result.begin(),
+                       [](const std::string& x) { return std::stoul(x); });
         return result;
     }
 
@@ -984,11 +998,13 @@ public:
 
         const brion::NeuronMatrix& matrix =
             _circuit.get(gids, brion::NEURON_MORPHOLOGY_NAME);
-        Strings result(matrix.shape()[0]);
+        Strings result;
+        result.reserve(matrix.shape()[0]);
 
         brion::NeuronMatrix::const_array_view<1>::type view =
             matrix[boost::indices[brion::NeuronMatrix::index_range()][0]];
-        std::transform(view.begin(), view.end(), result.begin(), toString);
+        for (const auto& name : view)
+            result.push_back(name);
         return result;
     }
 
@@ -1012,13 +1028,13 @@ struct MVD3 : public BBPCircuit
             return Vector3fs();
 
         Vector3fs results(gids.size());
-        const ::MVD3::Range& range = getRange(gids);
+        const ::MVD3::Range& range = _getRange(gids);
         try
         {
             HighFive::SilenceHDF5 silence;
             std::lock_guard<std::mutex> lock(brion::detail::hdf5Mutex());
             const ::MVD3::Positions& positions = _circuit.getPositions(range);
-            assign(range, gids, positions, results, toVector3f);
+            _assign(range, gids, positions, results, _toVector3f);
             return results;
         }
         catch (const HighFive::Exception& e)
@@ -1034,13 +1050,13 @@ struct MVD3 : public BBPCircuit
             return size_ts();
 
         size_ts results(gids.size());
-        const ::MVD3::Range& range = getRange(gids);
+        const ::MVD3::Range& range = _getRange(gids);
         try
         {
             HighFive::SilenceHDF5 silence;
             std::lock_guard<std::mutex> lock(brion::detail::hdf5Mutex());
             const size_ts& mtypes = _circuit.getIndexMtypes(range);
-            assign(range, gids, mtypes, results, nop);
+            _assign(range, gids, mtypes, results, _nop<size_t>);
             return results;
         }
         catch (const HighFive::Exception& e)
@@ -1061,13 +1077,13 @@ struct MVD3 : public BBPCircuit
             return size_ts();
 
         size_ts results(gids.size());
-        const ::MVD3::Range& range = getRange(gids);
+        const ::MVD3::Range& range = _getRange(gids);
         try
         {
             HighFive::SilenceHDF5 silence;
             std::lock_guard<std::mutex> lock(brion::detail::hdf5Mutex());
             const size_ts& etypes = _circuit.getIndexEtypes(range);
-            assign(range, gids, etypes, results, nop);
+            _assign(range, gids, etypes, results, _nop<size_t>);
             return results;
         }
         catch (const HighFive::Exception& e)
@@ -1088,13 +1104,13 @@ struct MVD3 : public BBPCircuit
             return Quaternionfs();
 
         Quaternionfs results(gids.size());
-        const ::MVD3::Range& range = getRange(gids);
+        const ::MVD3::Range& range = _getRange(gids);
         try
         {
             HighFive::SilenceHDF5 silence;
             std::lock_guard<std::mutex> lock(brion::detail::hdf5Mutex());
             const ::MVD3::Rotations& rotations = _circuit.getRotations(range);
-            assign(range, gids, rotations, results, toQuaternion);
+            _assign(range, gids, rotations, results, _toQuaternion);
             return results;
         }
         catch (const HighFive::Exception& e)
@@ -1110,13 +1126,13 @@ struct MVD3 : public BBPCircuit
             return Strings();
 
         Strings results(gids.size());
-        const ::MVD3::Range& range = getRange(gids);
+        const ::MVD3::Range& range = _getRange(gids);
         try
         {
             HighFive::SilenceHDF5 silence;
             std::lock_guard<std::mutex> lock(brion::detail::hdf5Mutex());
             const Strings& morphos = _circuit.getMorphologies(range);
-            assign(range, gids, morphos, results, toString);
+            _assign(range, gids, morphos, results, _nop<std::string>);
             return results;
         }
         catch (const HighFive::Exception& e)

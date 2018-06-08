@@ -58,16 +58,16 @@ rotation_angle_x = numpy.array([pi,0 ,0 ,ph,0 ,0 ,p2, 0,0 ,ph], dtype="float")
 rotation_angle_y = numpy.array([0 ,pi,0 ,0 ,ph,0 ,0 ,p2,0 ,ph], dtype="float")
 rotation_angle_z = numpy.array([0 ,0 ,pi,0 ,0 ,ph,0 ,0 ,p2,ph], dtype="float")
 dt = h5py.special_dtype(vlen=str) # PY3
-morphology_file = numpy.array(["morph_A", "morph_B", "morph_C", "morph_A",
-                               "morph_B", "morph_C", "morph_D", "morph_B",
-                               "morph_A", "morph_C"], dtype=dt)
+morphology_file = numpy.array(["morph_A", "morph_B", "morph_A", "morph_C",
+                               "morph_B", "morph_C", "morph_D", "morph_A",
+                               "morph_B", "morph_C"], dtype=dt)
 
 group.create_dataset("x", data=x)
 group.create_dataset("y", data=y)
 group.create_dataset("z", data=z)
-group.create_dataset("rotation_angle_x", data=rotation_angle_x)
-group.create_dataset("rotation_angle_y", data=rotation_angle_y)
-group.create_dataset("rotation_angle_z", data=rotation_angle_z)
+group.create_dataset("rotation_angle_xaxis", data=rotation_angle_x)
+group.create_dataset("rotation_angle_yaxis", data=rotation_angle_y)
+group.create_dataset("rotation_angle_zaxis", data=rotation_angle_z)
 group.create_dataset("morphology_file", data=morphology_file)
 # Not used yet
 # morph_translate =
@@ -89,6 +89,7 @@ columns = {
     "node_type_id": [0, 1, 2],
     "population": ["simple"] * 3,
     "model_type": ["biophysical", "virtual", "biophysical"],
+    "recenter": [0, 1, 1],
     # These are extra user custom column"
     "mtype": ["pyramidal", "none", "interneuron"],
     "etype": ["fast", "slow", "fast"]}
