@@ -1031,8 +1031,8 @@ struct MVD3 : public BBPCircuit
         const ::MVD3::Range& range = _getRange(gids);
         try
         {
-            HighFive::SilenceHDF5 silence;
             std::lock_guard<std::mutex> lock(brion::detail::hdf5Mutex());
+            HighFive::SilenceHDF5 silence;
             const ::MVD3::Positions& positions = _circuit.getPositions(range);
             _assign(range, gids, positions, results, _toVector3f);
             return results;
@@ -1053,8 +1053,8 @@ struct MVD3 : public BBPCircuit
         const ::MVD3::Range& range = _getRange(gids);
         try
         {
-            HighFive::SilenceHDF5 silence;
             std::lock_guard<std::mutex> lock(brion::detail::hdf5Mutex());
+            HighFive::SilenceHDF5 silence;
             const size_ts& mtypes = _circuit.getIndexMtypes(range);
             _assign(range, gids, mtypes, results, _nop<size_t>);
             return results;
@@ -1068,6 +1068,7 @@ struct MVD3 : public BBPCircuit
 
     Strings getMorphologyTypeNames() const final
     {
+        std::lock_guard<std::mutex> lock(brion::detail::hdf5Mutex());
         return _circuit.listAllMtypes();
     }
 
@@ -1080,8 +1081,8 @@ struct MVD3 : public BBPCircuit
         const ::MVD3::Range& range = _getRange(gids);
         try
         {
-            HighFive::SilenceHDF5 silence;
             std::lock_guard<std::mutex> lock(brion::detail::hdf5Mutex());
+            HighFive::SilenceHDF5 silence;
             const size_ts& etypes = _circuit.getIndexEtypes(range);
             _assign(range, gids, etypes, results, _nop<size_t>);
             return results;
@@ -1095,6 +1096,7 @@ struct MVD3 : public BBPCircuit
 
     Strings getElectrophysiologyTypeNames() const final
     {
+        std::lock_guard<std::mutex> lock(brion::detail::hdf5Mutex());
         return _circuit.listAllEtypes();
     }
 
@@ -1107,8 +1109,8 @@ struct MVD3 : public BBPCircuit
         const ::MVD3::Range& range = _getRange(gids);
         try
         {
-            HighFive::SilenceHDF5 silence;
             std::lock_guard<std::mutex> lock(brion::detail::hdf5Mutex());
+            HighFive::SilenceHDF5 silence;
             const ::MVD3::Rotations& rotations = _circuit.getRotations(range);
             _assign(range, gids, rotations, results, _toQuaternion);
             return results;
@@ -1129,8 +1131,8 @@ struct MVD3 : public BBPCircuit
         const ::MVD3::Range& range = _getRange(gids);
         try
         {
-            HighFive::SilenceHDF5 silence;
             std::lock_guard<std::mutex> lock(brion::detail::hdf5Mutex());
+            HighFive::SilenceHDF5 silence;
             const Strings& morphos = _circuit.getMorphologies(range);
             _assign(range, gids, morphos, results, _nop<std::string>);
             return results;
