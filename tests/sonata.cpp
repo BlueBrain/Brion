@@ -118,7 +118,7 @@ BOOST_AUTO_TEST_CASE(sonata_nodeGroup_getAttributeNames)
     auto group = nodes.openGroup(POPULATION_NAME, 0);
     const auto names = group.getAttributeNames();
     BOOST_CHECK_EQUAL(names.size(), 8);
-    BOOST_CHECK_EQUAL(names[1], "morphology_file");
+    BOOST_CHECK_EQUAL(names[1], "morphology");
     BOOST_CHECK_EQUAL(names[2], "rotation_angle_xaxis");
     BOOST_CHECK_EQUAL(names[3], "rotation_angle_yaxis");
 }
