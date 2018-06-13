@@ -628,7 +628,7 @@ public:
     }
     Strings getMorphologyNames(const GIDSet& gids) const final
     {
-        return getAttribute<std::string>("morphology_file", gids);
+        return getAttribute<std::string>("morphology", gids);
     }
 
     std::vector<bool> getRecenter(const GIDSet& gids) const final
