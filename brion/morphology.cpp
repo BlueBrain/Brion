@@ -25,6 +25,8 @@
 #include <lunchbox/pluginFactory.h>
 #include <lunchbox/threadPool.h>
 
+#include <mutex>
+
 namespace brion
 {
 namespace
@@ -104,16 +106,18 @@ public:
 
     void finishLoad() const
     {
-        std::lock_guard<std::mutex> lock(futureMutex);
-        if (!loadFuture.valid())
-            return;
+        std::call_once(loadFlag, [this]() {
+            if (!loadFuture.valid())
+                return;
 
-        loadFuture.get();
+            loadFuture.get();
+        });
     }
 
     std::unique_ptr<MorphologyPlugin> plugin;
-    mutable std::future<void> loadFuture; // fulfilled by worker thread pool
-    mutable std::mutex futureMutex;
+    mutable std::once_flag loadFlag;
+    mutable std::future<void> loadFuture; // fulfilled by worker
+                                          // thread pool
 };
 
 Morphology::Morphology(const URI& source)
