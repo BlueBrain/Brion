@@ -21,6 +21,7 @@ include(PythonDocstrings)
 
 set(BRAINPYTHONHELPERS_PUBLIC_HEADERS
   arrayHelpers.h
+  arrayHelpers.inc
   helpers.h
   )
 
