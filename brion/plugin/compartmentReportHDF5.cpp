@@ -511,7 +511,8 @@ void CompartmentReportHDF5::_parseBasicCellInfo()
     const auto& gidsDataSet = mapping.getDataSet("gids");
     gidsDataSet.read(gids);
     mapping.getDataSet("index_pointer").read(offsets);
-    if (gids.size() != offsets.size() || gids.empty())
+    if ((gids.size() != offsets.size() && gids.size() + 1 != offsets.size()) ||
+        gids.empty())
         LBTHROW(std::runtime_error("Bad report metadata"));
     int8_t sorted = false;
     try

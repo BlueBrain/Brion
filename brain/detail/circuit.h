@@ -390,16 +390,7 @@ public:
 
     virtual ~Impl() {}
     virtual size_t getNumNeurons() const = 0;
-
-    GIDSet getGIDs() const
-    {
-        brain::GIDSet gids;
-        brain::GIDSet::const_iterator hint = gids.begin();
-        for (uint32_t i = 0; i < getNumNeurons(); ++i)
-            hint = gids.insert(hint, i + 1);
-        return gids;
-    }
-
+    virtual GIDSet getGIDs() const = 0;
     virtual GIDSet getGIDs(const std::string& target) const = 0;
 
     GIDSet getRandomGIDs(const float fraction, const std::string& target,
@@ -535,6 +526,16 @@ public:
     }
     virtual ~SonataCircuit() {}
     size_t getNumNeurons() const final { return numNeurons; }
+    GIDSet getGIDs() const
+    {
+        brain::GIDSet gids;
+        brain::GIDSet::const_iterator hint = gids.begin();
+        for (uint32_t i = 0; i < getNumNeurons(); ++i)
+            // Note that GIDs start at 0 in this case
+            hint = gids.insert(hint, i);
+        return gids;
+    }
+
     GIDSet getGIDs(const std::string& /*target*/) const final
     {
         LBTHROW(std::runtime_error("Unimplemented"));
@@ -772,6 +773,15 @@ public:
             _afferentProjectionSources[projection] =
                 config.getProjectionSource(projection);
         }
+    }
+
+    GIDSet getGIDs() const
+    {
+        brain::GIDSet gids;
+        brain::GIDSet::const_iterator hint = gids.begin();
+        for (uint32_t i = 0; i < getNumNeurons(); ++i)
+            hint = gids.insert(hint, i + 1);
+        return gids;
     }
 
     GIDSet getGIDs(const std::string& target) const final

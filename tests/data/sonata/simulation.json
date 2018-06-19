@@ -1,0 +1,34 @@
+{
+    "manifest": {
+        "$BASE_DIR": ".",
+        "$NETWORK_DIR": "$BASE_DIR",
+        "$COMPONENT_DIR": "$BASE_DIR"
+    },
+    "network": "$NETWORK_DIR/simple_network.json",
+    "output": {
+        "output_dir": "$BASE_DIR",
+        "spikes_file": "the_spikes.h5"
+    },
+    "node_sets_file": "$COMPONENT_DIR/node_sets.json",
+    "reports": {
+        "soma": {
+            "cells":  "all_cells",
+            "variable_name": "v",
+            "module": "membrane_report",
+            "sections": "soma"
+        },
+        "all_compartments": {
+            "cells":  "all_cells",
+            "variable_name": "v",
+            "module": "membrane_report",
+            "sections": "all",
+            "file_name": "report.h5"
+        },
+        "voltage_clamp": {
+            "cells":  "biophysical",
+            "variable_name": "i",
+            "module": "SEClamp",
+            "sections": "soma"
+        }
+    }
+}

@@ -65,11 +65,11 @@ public:
     BRAIN_API CompartmentReport
         openCompartmentReport(const std::string& name) const;
 
+    struct Impl; //!< @internal
 private:
     Simulation(const Simulation&) = delete;
     Simulation& operator=(const Simulation&) = delete;
 
-    struct Impl;
     std::unique_ptr<const Impl> _impl;
 };
 }
