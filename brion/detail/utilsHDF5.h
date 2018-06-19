@@ -20,6 +20,8 @@
 #ifndef BRION_DETAIL_UTILSHDF5
 #define BRION_DETAIL_UTILSHDF5
 
+#include <brion/types.h>
+
 #include <highfive/H5Attribute.hpp>
 #include <highfive/H5DataType.hpp>
 

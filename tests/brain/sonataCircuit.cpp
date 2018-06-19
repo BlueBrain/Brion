@@ -107,6 +107,9 @@ BOOST_AUTO_TEST_CASE(numNeurons)
 {
     brain::Circuit circuit(TEST_SONATA_SIMPLE_NETWORK_URI);
     BOOST_CHECK_EQUAL(circuit.getNumNeurons(), 10);
+
+    brion::GIDSet gids{0, 1, 2, 3, 4, 5, 6, 7, 8, 9};
+    BOOST_CHECK(circuit.getGIDs() == gids);
 }
 
 BOOST_AUTO_TEST_CASE(getMorphologyURIs)
@@ -116,11 +119,11 @@ BOOST_AUTO_TEST_CASE(getMorphologyURIs)
 
     const auto morphologyURIs = circuit.getMorphologyURIs(ids);
     BOOST_CHECK_EQUAL(morphologyURIs[0].getPath(),
-                      TEST_SONATA_PATH + "/./morphologies/morph_A.swc");
+                      TEST_SONATA_PATH + "/morphologies/morph_A.swc");
     BOOST_CHECK_EQUAL(morphologyURIs[1].getPath(),
-                      TEST_SONATA_PATH + "/./morphologies/morph_B.h5");
+                      TEST_SONATA_PATH + "/morphologies/morph_B.h5");
     BOOST_CHECK_EQUAL(morphologyURIs[2].getPath(),
-                      TEST_SONATA_PATH + "/./morphologies/morph_C.h5");
+                      TEST_SONATA_PATH + "/morphologies/morph_C.h5");
 }
 
 BOOST_AUTO_TEST_CASE(recentering)

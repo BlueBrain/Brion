@@ -21,6 +21,7 @@
 #include "utils.h"
 
 #include <boost/filesystem.hpp>
+#include <boost/version.hpp>
 
 #include <fstream>
 #include <iostream>
@@ -159,6 +160,20 @@ std::string PathResolver::toAbsolute(const std::string& pathStr) const
     const boost::filesystem::path path(pathStr);
     if (path.is_absolute())
         return path.string();
-    return boost::filesystem::absolute(path, _basePath).string();
+    const auto absolute = boost::filesystem::absolute(path, _basePath);
+#if BOOST_VERSION / 100 >= 1060
+    return absolute.lexically_normal().string();
+#else
+    try
+    {
+        // Try to remove the annoying extra dots. This could use
+        // lexically_normal starting from boost 1.60
+        return boost::filesystem::canonical(absolute).string();
+    }
+    catch (const boost::filesystem::filesystem_error&)
+    {
+        return absolute.string();
+    }
+#endif
 }
 }

@@ -23,6 +23,7 @@ set(BRION_PUBLIC_HEADERS
   morphologyPlugin.h
   morphologyPlugin.ipp
   pluginInitData.h
+  simulationConfig.h
   spikeReport.h
   spikeReportPlugin.h
   synapseSummary.h
@@ -54,6 +55,7 @@ set(BRION_SOURCES
   compartmentReport.cpp
   mesh.cpp
   morphology.cpp
+  simulationConfig.cpp
   spikeReport.cpp
   synapseSummary.cpp
   synapse.cpp

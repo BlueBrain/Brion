@@ -18,48 +18,26 @@
  */
 #include "simulation.h"
 
-#include "circuit.h"
+#include "detail/simulation.h"
+
 #include "compartmentReport.h"
-#include "detail/targets.h"
 #include "spikeReportReader.h"
-
-#include <brion/blueConfig.h>
-
-#include <lunchbox/debug.h>
 
 namespace brain
 {
 namespace
 {
-char const* const _defaultSpikeFile = "/out.dat";
+Simulation::Impl* newImpl(const URI& source)
+{
+    if (boost::algorithm::ends_with(source.getPath(), ".json"))
+        return new SonataConfig{source};
+    else
+        return new BlueConfig{source};
+}
 }
 
-struct Simulation::Impl
-{
-    Impl(const URI& source)
-        : _config(source.getPath())
-        , _targets(_config)
-    {
-        const brion::Strings& runs =
-            _config.getSectionNames(brion::CONFIGSECTION_RUN);
-        if (runs.size() != 1)
-            LBTHROW(
-                std::runtime_error("Not exactly one Run section found "
-                                   "in BlueConfig"));
-        _label = runs[0];
-
-        _outputPath =
-            _config.get(brion::CONFIGSECTION_RUN, _label, "OutputRoot");
-    }
-
-    brion::BlueConfig _config;
-    Targets _targets;
-    std::string _label;
-    std::string _outputPath;
-};
-
 Simulation::Simulation(const URI& source)
-    : _impl{new Impl{source}}
+    : _impl{newImpl(source)}
 {
 }
 
@@ -69,50 +47,40 @@ Simulation::~Simulation()
 
 Circuit Simulation::openCircuit() const
 {
-    return Circuit{_impl->_config};
+    return Circuit{_impl->getCircuitSource()};
 }
 
 SpikeReportReader Simulation::openSpikeReport() const
 {
-    const auto& source = _impl->_config.get(brion::CONFIGSECTION_RUN,
-                                            _impl->_label, "SpikesPath");
-    return SpikeReportReader(brion::URI(
-        source.empty() ? _impl->_outputPath + _defaultSpikeFile : source));
+    return SpikeReportReader{_impl->getSpikeReportSource()};
 }
 
 CompartmentReport Simulation::openCompartmentReport(
     const std::string& name) const
 {
-    const auto path = _impl->_config.getReportSource(name);
+    const auto path = _impl->getCompartmentReportSource(name);
     if (path == brain::URI{})
         throw std::runtime_error("Invalid or missing report: " + name);
-    return CompartmentReport(path);
+    return CompartmentReport{path};
 }
 
 Strings Simulation::getCompartmentReportNames() const
 {
-    return _impl->_config.getSectionNames(brion::CONFIGSECTION_REPORT);
+    return _impl->getCompartmentReportNames();
 }
 
 GIDSet Simulation::getGIDs() const
 {
-    const auto target = _impl->_config.get(brion::CONFIGSECTION_RUN,
-                                           _impl->_label, "CircuitTarget");
-    if (target.empty())
-    {
-        const auto circuit = Circuit{_impl->_config};
-        return circuit.getGIDs();
-    }
-    return getGIDs(target);
+    return _impl->getGIDs();
 }
 
 GIDSet Simulation::getGIDs(const std::string& name) const
 {
-    return _impl->_targets.getGIDs(name);
+    return _impl->getGIDs(name);
 }
 
 Strings Simulation::getTargetNames() const
 {
-    return _impl->_targets.getTargetNames();
+    return _impl->getTargetNames();
 }
 }
