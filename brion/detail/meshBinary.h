@@ -40,6 +40,19 @@ T get(const uint8_t* buffer, size_t& pos)
     return *val;
 }
 
+template <typename T>
+std::shared_ptr<std::vector<T>> readBuffer(const uint8_t* const ptr,
+                                           const size_t numElements)
+{
+    auto vec = std::make_shared<std::vector<T>>();
+    if (ptr == nullptr)
+        return vec;
+
+    vec->reserve(numElements);
+    vec->insert(vec->end(), ptr, ptr + sizeof(T) * numElements);
+    return vec;
+}
+
 class MeshBinary : public Mesh
 {
 public:
@@ -102,55 +115,23 @@ public:
     virtual size_t getNumVertices() const { return _vertices; }
     virtual Vector3fsPtr readVertices() const
     {
-        Vector3fsPtr buffer(new Vector3fs);
-        if (!_ptr)
-            return buffer;
-
-        buffer->resize(_vertices);
-
-        memcpy(buffer->data(), _ptr + _vertexSeek,
-               _vertices * 3 * sizeof(float));
-        return buffer;
+        return readBuffer<Vector3f>(_ptr + _vertexSeek, _vertices);
     }
 
     virtual uint16_tsPtr readVertexSections() const
     {
-        uint16_tsPtr buffer(new uint16_ts);
-        if (!_ptr)
-            return buffer;
-
-        buffer->resize(_vertices);
-
-        memcpy(buffer->data(), _ptr + _vSectionSeek,
-               _vertices * sizeof(uint16_t));
-        return buffer;
+        return readBuffer<uint16_t>(_ptr + _vSectionSeek, _vertices);
     }
 
     virtual floatsPtr readVertexDistances() const
     {
-        floatsPtr buffer(new floats);
-        if (!_ptr)
-            return buffer;
-
-        buffer->resize(_vertices);
-
-        memcpy(buffer->data(), _ptr + _vDistanceSeek,
-               _vertices * sizeof(float));
-        return buffer;
+        return readBuffer<float>(_ptr + _vDistanceSeek, _vertices);
     }
 
     virtual size_t getNumTriangles() const { return _triangles; }
     virtual uint32_tsPtr readTriangles() const
     {
-        uint32_tsPtr buffer(new uint32_ts);
-        if (!_ptr)
-            return buffer;
-
-        buffer->resize(_triangles * 3);
-
-        memcpy(buffer->data(), _ptr + _triangleSeek,
-               _triangles * 3 * sizeof(uint32_t));
-        return buffer;
+        return readBuffer<uint32_t>(_ptr + _triangleSeek, _triangles * 3);
     }
 
     virtual uint16_tsPtr readTriangleSections() const
@@ -166,15 +147,7 @@ public:
     virtual size_t getTriStripLength() const { return _tristrip; }
     virtual uint32_tsPtr readTriStrip() const
     {
-        uint32_tsPtr buffer(new uint32_ts);
-        if (!_ptr)
-            return buffer;
-
-        buffer->resize(_tristrip);
-
-        memcpy(buffer->data(), _ptr + _tristripSeek,
-               _tristrip * sizeof(uint32_t));
-        return buffer;
+        return readBuffer<uint32_t>(_ptr + _tristripSeek, _tristrip);
     }
 
     virtual size_t getNumNormals() const { return 0u; }
@@ -327,6 +300,7 @@ public:
     }
 
     virtual void flush() { _file.flush(); }
+
 private:
     lunchbox::MemoryMap _mmap;
     const uint8_t* const _ptr;
@@ -342,7 +316,7 @@ private:
     size_t _triangleSeek;
     size_t _tristripSeek;
 };
-}
-}
+} // namespace detail
+} // namespace brion
 
 #endif
