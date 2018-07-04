@@ -160,7 +160,7 @@ void _shuffle(T& container)
 using CachedMorphologies =
     std::unordered_map<std::string, neuron::MorphologyPtr>;
 using CachedSynapses = std::unordered_map<std::string, brion::SynapseMatrix>;
-}
+} // namespace
 
 class SynapseCache
 {
@@ -221,10 +221,10 @@ public:
                                       ? int(brion::SYNAPSE_POSITION_ALL)
                                       : int(brion::SYNAPSE_OLD_POSITION_ALL);
 
-        _cache->takeValues(keys, [this, &futures,
-                                  numColumns](const std::string& key,
-                                              char* data, const size_t size) {
-            futures.push_back(std::async([this, key, data, size, numColumns] {
+        _cache->takeValues(keys, [&futures, numColumns](const std::string& key,
+                                                        char* data,
+                                                        const size_t size) {
+            futures.push_back(std::async([key, data, size, numColumns] {
                 // there is no constructor in multi_array which just accepts the
                 // size in bytes (although there's a getter for it used in
                 // saveSynapsePositionsToCache()), so we reconstruct the row and
@@ -1148,4 +1148,4 @@ private:
     ::MVD3::MVD3File _circuit;
 };
 #endif
-}
+} // namespace brain
