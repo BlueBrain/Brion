@@ -41,15 +41,16 @@ T get(const uint8_t* buffer, size_t& pos)
 }
 
 template <typename T>
-std::shared_ptr<std::vector<T>> readBuffer(const uint8_t* const ptr,
+std::shared_ptr<std::vector<T>> readBuffer(const uint8_t* const ptrInput,
                                            const size_t numElements)
 {
+    auto ptr = reinterpret_cast<const T*>(ptrInput);
     auto vec = std::make_shared<std::vector<T>>();
     if (ptr == nullptr)
         return vec;
 
     vec->reserve(numElements);
-    vec->insert(vec->end(), ptr, ptr + sizeof(T) * numElements);
+    vec->insert(vec->end(), ptr, ptr + numElements);
     return vec;
 }
 
@@ -300,7 +301,6 @@ public:
     }
 
     virtual void flush() { _file.flush(); }
-
 private:
     lunchbox::MemoryMap _mmap;
     const uint8_t* const _ptr;
