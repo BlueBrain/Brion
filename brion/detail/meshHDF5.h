@@ -51,7 +51,7 @@ inline std::string lexical_cast(const brion::MeshStructure& f)
         throw bad_lexical_cast();
     }
 }
-}
+} // namespace boost
 
 namespace brion
 {
@@ -69,7 +69,7 @@ public:
             HighFive::SilenceHDF5 silence;
             _file.getDataSet("/membrane/mesh/vertices");
         }
-        catch (HighFive::DataSetException)
+        catch (HighFive::DataSetException&)
         {
             LBTHROW(std::runtime_error(source + " not a valid mesh file"));
         }
@@ -298,6 +298,7 @@ public:
     }
 
     virtual void flush() { LBUNIMPLEMENTED; }
+
 private:
     hsize_t _numElements(const HighFive::DataSet& dataset) const
     {
@@ -319,7 +320,7 @@ private:
 
     HighFive::File _file;
 };
-}
-}
+} // namespace detail
+} // namespace brion
 
 #endif
