@@ -3,8 +3,8 @@ notifications:
     on_success: never
 language: cpp
 sudo: false
-os:
-  - osx
+os: osx
+osx_image: xcode9
 env:
   global:
     - NINJA_STATUS="[%p %u/%t@%o %r]"
