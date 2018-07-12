@@ -160,7 +160,7 @@ struct Synapses::Impl : public Synapses::BaseImpl
                 ? _circuit->getSynapseAttributes(_afferent)
                 : _circuit->getAfferentProjectionAttributes(_externalSource);
         const brion::Synapse* synapseExtra =
-            _externalSource.empty() ? _circuit->getSynapseExtra() : 0;
+            _externalSource.empty() ? _circuit->getSynapseExtra() : nullptr;
 
         // For external afferent projections we haven't had the chance to
         // get the connectivity.
@@ -191,6 +191,9 @@ struct Synapses::Impl : public Synapses::BaseImpl
                     _preGID.get()[i] = preGid;
                     _postGID.get()[i] = gid;
                 }
+                assert(_preGID.get()[i] == preGid);
+                assert(_postGID.get()[i] == gid);
+                assert(i < _size);
 
                 if (haveExtra)
                     _index.get()[i] = extra[j][0];
@@ -263,7 +266,16 @@ struct Synapses::Impl : public Synapses::BaseImpl
             const auto readFromFile = [&] {
                 if (!positions)
                 {
-                    positions = &_circuit->getSynapsePositions(_afferent);
+                    try
+                    {
+                        positions = &_circuit->getSynapsePositions(_afferent);
+                    }
+                    catch (...)
+                    {
+                        // Leave arrays unmodified for exception safety
+                        _clearPositions();
+                        throw;
+                    }
                 }
 
                 if (positions->getNumAttributes() ==
@@ -367,6 +379,22 @@ struct Synapses::Impl : public Synapses::BaseImpl
         _allocate(_postCenterPositionX, size);
         _allocate(_postCenterPositionY, size);
         _allocate(_postCenterPositionZ, size);
+    }
+
+    void _clearPositions() const
+    {
+        _preSurfacePositionX.reset();
+        _preSurfacePositionY.reset();
+        _preSurfacePositionZ.reset();
+        _preCenterPositionX.reset();
+        _preCenterPositionY.reset();
+        _preCenterPositionZ.reset();
+        _postSurfacePositionX.reset();
+        _postSurfacePositionY.reset();
+        _postSurfacePositionZ.reset();
+        _postCenterPositionX.reset();
+        _postCenterPositionY.reset();
+        _postCenterPositionZ.reset();
     }
 
     void _ensureGIDs() const
