@@ -537,8 +537,7 @@ public:
     size_t getNumNeurons() const final { return numNeurons; }
     GIDSet getGIDs(const std::string& /*target*/) const final
     {
-        LBUNIMPLEMENTED;
-        return GIDSet();
+        LBTHROW(std::runtime_error("Unimplemented"));
     }
 
     Vector3fs getPositions(const GIDSet& gids) const final
@@ -569,23 +568,19 @@ public:
     }
     size_ts getMTypes(const GIDSet& /*gids*/) const final
     {
-        LBUNIMPLEMENTED;
-        return size_ts();
+        LBTHROW(std::runtime_error("Unimplemented"));
     }
     Strings getMorphologyTypeNames() const final
     {
-        LBUNIMPLEMENTED;
-        return Strings();
+        LBTHROW(std::runtime_error("Unimplemented"));
     }
     size_ts getETypes(const GIDSet& /*gids*/) const final
     {
-        LBUNIMPLEMENTED;
-        return size_ts();
+        LBTHROW(std::runtime_error("Unimplemented"));
     }
     Strings getElectrophysiologyTypeNames() const final
     {
-        LBUNIMPLEMENTED;
-        return Strings();
+        LBTHROW(std::runtime_error("Unimplemented"));
     }
     Quaternionfs getRotations(const GIDSet& gids) const final
     {
@@ -714,29 +709,24 @@ public:
     URI getMorphologySource() const final { return morphologySource; }
     const brion::SynapseSummary& getSynapseSummary() const final
     {
-        LBUNIMPLEMENTED;
-        return *synapseSummary;
+        LBTHROW(std::runtime_error("Unimplemented"));
     }
     const brion::Synapse& getSynapseAttributes(const bool) const final
     {
-        LBUNIMPLEMENTED;
-        return *synapse;
+        LBTHROW(std::runtime_error("Unimplemented"));
     }
     const brion::Synapse& getAfferentProjectionAttributes(
         const std::string&) const final
     {
-        LBUNIMPLEMENTED;
-        return *synapse;
+        LBTHROW(std::runtime_error("Unimplemented"));
     }
     const brion::Synapse* getSynapseExtra() const final
     {
-        LBUNIMPLEMENTED;
-        return synapse.get();
+        LBTHROW(std::runtime_error("Unimplemented"));
     }
     const brion::Synapse& getSynapsePositions(const bool) const final
     {
-        LBUNIMPLEMENTED;
-        return *synapse;
+        LBTHROW(std::runtime_error("Unimplemented"));
     }
 
     brion::CircuitConfig config;
