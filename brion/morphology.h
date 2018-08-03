@@ -29,8 +29,9 @@ namespace brion
 {
 /** Read access a Morphology file.
  *
- * Following RAII, this class is ready to use after the creation and will ensure
- * release of resources upon destruction.
+ * Data loading may be finished upon the first call to any data access function.
+ * That first call may throw an exception due to IO or parse errors. Subsequent
+ * calls will return empty or undefined data.
  */
 class Morphology
 {
