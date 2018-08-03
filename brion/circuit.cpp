@@ -51,10 +51,8 @@ public:
         fs::path path = source;
         const std::string ext = fs::extension(path);
         if (ext != ".mvd" && ext != ".mvd2")
-            LBTHROW(
-                std::runtime_error("Expecting mvd file format for "
-                                   " circuit file " +
-                                   source));
+            throw std::runtime_error(
+                "Expecting mvd file format for circuit file " + source);
 
         typedef std::unordered_map<std::string, Section> LookUp;
         LookUp sections;
@@ -72,7 +70,7 @@ public:
 
         _file.open(source.c_str());
         if (!_file.is_open())
-            LBTHROW(std::runtime_error("Could not open MVD2 file " + source));
+            throw std::runtime_error("Could not open MVD2 file " + source);
 
         _file >> std::ws;
         Section current = SECTION_UNKNOWN;
