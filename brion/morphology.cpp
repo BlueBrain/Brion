@@ -106,6 +106,14 @@ public:
 
     void finishLoad() const
     {
+        // This call outside call_once is intended to work around the gcc
+        // problem of deadlocking on call_once when calling it again after a
+        // first call has thrown. This is not bullet-proof if multiple threads
+        // try to access the morphology, but at least works for the case of
+        // a single thread calling the destuctor after an accessor failed.
+        if (!loadFuture.valid())
+            return;
+
         std::call_once(loadFlag, [this]() {
             if (!loadFuture.valid())
                 return;
