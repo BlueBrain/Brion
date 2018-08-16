@@ -58,8 +58,8 @@ struct Loader
         }
         catch (const HighFive::FileException& exc)
         {
-            LBTHROW(std::runtime_error("Could not open morphology file " +
-                                       path + ": " + exc.what()));
+            throw std::runtime_error("Could not open morphology file " + path +
+                                     ": " + exc.what());
         }
         _checkVersion(path);
         _selectRepairStage();
@@ -107,10 +107,10 @@ private:
         }
         catch (...)
         {
-            LBTHROW(
-                std::runtime_error("Unknown morphology file format for "
-                                   "file " +
-                                   source));
+            throw std::runtime_error(
+                "Unknown morphology file format for "
+                "file " +
+                source);
         }
     }
 
@@ -146,10 +146,10 @@ private:
 
         if (_pointsDims.size() != 2 || _pointsDims[1] != _pointColumns)
         {
-            LBTHROW(std::runtime_error("Opening morphology file '" +
-                                       _file->getName() +
-                                       "': bad number of dimensions in"
-                                       " 'points' dataspace"));
+            throw std::runtime_error("Opening morphology file '" +
+                                     _file->getName() +
+                                     "': bad number of dimensions in"
+                                     " 'points' dataspace");
         }
 
         _sections.reset(new HighFive::DataSet(_file->getDataSet(_d_structure)));
@@ -158,10 +158,10 @@ private:
         if (_sectionsDims.size() != 2 ||
             _sectionsDims[1] != _structureV1Columns)
         {
-            LBTHROW(std::runtime_error("Opening morphology file '" +
-                                       _file->getName() +
-                                       "': bad number of dimensions in"
-                                       " 'structure' dataspace"));
+            throw std::runtime_error("Opening morphology file '" +
+                                     _file->getName() +
+                                     "': bad number of dimensions in"
+                                     " 'structure' dataspace");
         }
     }
 
@@ -194,8 +194,8 @@ private:
             // All other exceptions are not expected because if the metadata
             // group exits it must contain at least the version, and for
             // version 1.1 it must contain the family.
-            LBTHROW(std::runtime_error(
-                std::string("Error reading morphology metadata: ") + e.what()));
+            throw std::runtime_error(
+                std::string("Error reading morphology metadata: ") + e.what());
         }
 
         _resolveV1();
@@ -258,18 +258,18 @@ private:
                 }
                 catch (HighFive::DataSetException&)
                 {
-                    LBTHROW(std::runtime_error(
+                    throw std::runtime_error(
                         "Could not open points dataset for morphology file " +
-                        _file->getName() + " repair stage " + _stage));
+                        _file->getName() + " repair stage " + _stage);
                 }
             }();
 
             const auto dims = dataset.getSpace().getDimensions();
             if (dims.size() != 2 || dims[1] != _pointColumns)
             {
-                LBTHROW(std::runtime_error(
+                throw std::runtime_error(
                     "Reading morphology file '" + _file->getName() +
-                    "': bad number of dimensions in 'points' dataspace"));
+                    "': bad number of dimensions in 'points' dataspace");
             }
             points.resize(dims[0]);
             dataset.read(points);
@@ -295,18 +295,18 @@ private:
                 }
                 catch (HighFive::DataSetException&)
                 {
-                    LBTHROW(std::runtime_error(
+                    throw std::runtime_error(
                         "Could not open sections dataset for morphology file " +
-                        _file->getName() + " repair stage " + _stage));
+                        _file->getName() + " repair stage " + _stage);
                 }
             }();
 
             const auto dims = dataset.getSpace().getDimensions();
             if (dims.size() != 2 || dims[1] != _structureV2Columns)
             {
-                LBTHROW(std::runtime_error(
+                throw std::runtime_error(
                     "Reading morphology file '" + _file->getName() +
-                    "': bad number of dimensions in 'structure' dataspace"));
+                    "': bad number of dimensions in 'structure' dataspace");
             }
 
             sections.resize(dims[0]);
@@ -334,19 +334,19 @@ private:
                 }
                 catch (HighFive::DataSetException&)
                 {
-                    LBTHROW(
-                        std::runtime_error("Could not open section type "
-                                           "dataset for morphology file " +
-                                           _file->getName()));
+                    throw std::runtime_error(
+                        "Could not open section type "
+                        "dataset for morphology file " +
+                        _file->getName());
                 }
             }();
 
             const auto dims = dataset.getSpace().getDimensions();
             if (dims.size() != 2 || dims[1] != 1)
             {
-                LBTHROW(std::runtime_error(
+                throw std::runtime_error(
                     "Reading morphology file '" + _file->getName() +
-                    "': bad number of dimensions in 'sectiontype' dataspace"));
+                    "': bad number of dimensions in 'sectiontype' dataspace");
             }
 
             types.resize(dims[0]);
@@ -372,10 +372,10 @@ private:
             auto dims = dataset.getSpace().getDimensions();
             if (dims.size() != 1)
             {
-                LBTHROW(std::runtime_error("Reading morphology file '" +
-                                           _file->getName() +
-                                           "': bad number of dimensions in"
-                                           " 'perimeters' dataspace"));
+                throw std::runtime_error("Reading morphology file '" +
+                                         _file->getName() +
+                                         "': bad number of dimensions in"
+                                         " 'perimeters' dataspace");
             }
 
             auto& perimeters = _morphology.getPerimeters();
@@ -385,9 +385,9 @@ private:
         catch (...)
         {
             if (_initData.family == FAMILY_GLIA)
-                LBTHROW(
-                    std::runtime_error("No empty perimeters allowed for glia "
-                                       "morphology"));
+                throw std::runtime_error(
+                    "No empty perimeters allowed for glia "
+                    "morphology");
         }
     }
 };
