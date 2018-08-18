@@ -12,7 +12,6 @@
 #include <lunchbox/log.h>
 #include <lunchbox/term.h>
 
-#include <H5Cpp.h>
 #include <boost/foreach.hpp>
 #include <boost/program_options.hpp>
 
