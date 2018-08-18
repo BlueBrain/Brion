@@ -20,6 +20,8 @@
 #ifndef BRION_PLUGIN_UTILSHDF5
 #define BRION_PLUGIN_UTILSHDF5
 
+#include <highfive/H5File.hpp>
+
 namespace brion
 {
 namespace plugin

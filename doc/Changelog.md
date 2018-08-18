@@ -3,6 +3,9 @@ Changelog {#Changelog}
 
 # git master
 
+* [238](https://github.com/BlueBrain/Brion/pull/238):
+  - Added two query options to configure chunking and chunk cache size when
+    opening/creating SONATA compartment reports.
 * [229](https://github.com/BlueBrain/Brion/pull/229):
   - Added a method to brain::Circuit to retrive custom node attributes. This is
     only supported in C++ for SONATA circuits.
