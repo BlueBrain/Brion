@@ -51,6 +51,11 @@ std::vector<hsize_t> _computeChunkDims(const std::vector<uint32_t>& cellSizes,
                                        float cellsToFramesRatio,
                                        size_t blockSize = _blockSize)
 {
+    if (cellsToFramesRatio == 0)
+        return {blockSize / 4, 1};
+    else if (std::isinf(cellsToFramesRatio))
+        return {1, blockSize / 4};
+
     std::vector<uint32_t> counts(cellSizes.begin(), cellSizes.end());
     std::nth_element(counts.begin(), counts.begin() + counts.size() / 2,
                      counts.end());
@@ -59,11 +64,15 @@ std::vector<hsize_t> _computeChunkDims(const std::vector<uint32_t>& cellSizes,
     size_t frameSize = 0;
     for (const auto size : cellSizes)
         frameSize += size;
-    const auto valuesPerBlock = std::min(frameSize, blockSize / 4);
+    const auto valuesPerBlock = blockSize / sizeof(float);
 
-    const auto evenSplit = std::sqrt(valuesPerBlock / median);
-    const auto frames =
-        hsize_t(std::max(1., std::floor(evenSplit / cellsToFramesRatio)));
+    auto frames = hsize_t(
+        std::floor(std::sqrt(valuesPerBlock / median / cellsToFramesRatio)));
+    // Exceptionally, if the number of frames choosen doesn't fill properly
+    // a block for the total number of compartments, we increase the number
+    // of frames to the maximum possible
+    if ((frames * frameSize) < valuesPerBlock)
+        return {hsize_t(std::floor(valuesPerBlock / frameSize)), frameSize};
     return {frames, valuesPerBlock / frames};
 }
 
@@ -89,6 +98,38 @@ bool _verifyFile(const HighFive::File& file)
     return true;
 }
 
+size_t _parseCacheSizeOption(const URI& uri)
+{
+    const auto i = uri.findQuery("cache_size");
+    if (i == uri.queryEnd())
+        return 0;
+
+    const auto& value = i->second;
+    if (value == "auto")
+        return std::numeric_limits<size_t>::max();
+
+    std::size_t pos;
+    size_t size = std::stoll(value, &pos);
+    if (pos == value.size() - 1)
+    {
+        if (value[pos] == 'K')
+            size *= 1024;
+        else if (value[pos] == 'M')
+            size *= 1024 * 1024;
+        else
+            size = 0;
+    }
+    if (size == 0 and pos != value.size())
+    {
+        std::cerr << "Warning: invalid value for cache_size H5 parameter. "
+                     "Accepted values are auto or a positive number optionally "
+                     "followed"
+                     " by the letters M or K"
+                  << std::endl;
+    }
+    return size;
+}
+
 lunchbox::PluginRegisterer<CompartmentReportHDF5> registerer;
 }
 
@@ -107,6 +148,7 @@ CompartmentReportHDF5::CompartmentReportHDF5(
     if (accessMode == MODE_READ)
     {
         _readMetaData();
+        _reopenDataSet(_parseCacheSizeOption(initData.getURI()));
         if (initData.initMapping)
         {
             _updateMapping(initData.getGIDs());
@@ -116,7 +158,9 @@ CompartmentReportHDF5::CompartmentReportHDF5(
             _parseBasicCellInfo();
             _subset = false;
         }
+        return;
     }
+    _parseWriteOptions(initData.getURI());
 }
 
 CompartmentReportHDF5::~CompartmentReportHDF5()
@@ -143,7 +187,10 @@ bool CompartmentReportHDF5::handles(const CompartmentReportInitData& initData)
 std::string CompartmentReportHDF5::getDescription()
 {
     return "SONATA HDF5 compartment reports:"
-           "  [file://]/path/to/report.(h5|hdf5)";
+           "  "
+           "[file://]/path/to/"
+           "report.(h5|hdf5)[?[cache_size=(auto|num_bytes):][cell_to_frames="
+           "ratio]]";
 }
 
 size_t CompartmentReportHDF5::getCellCount() const
@@ -333,6 +380,8 @@ void CompartmentReportHDF5::_readMetaData()
                                    " a SONATA compartment report"));
         }
 
+        // Opening the dataset temporarily, it will be reopen later with
+        // proper chunk cache configuration.
         _data.reset(new HighFive::DataSet(_file->getDataSet("data")));
         try
         {
@@ -637,16 +686,123 @@ void CompartmentReportHDF5::_allocateDataSet()
         std::vector<size_t>{frames, _targetMapping.frameSize});
 
     HighFive::DataSetCreateProps chunking;
-    auto chunkDims = _computeChunkDims(_targetMapping.cellSizes, 5);
+    auto chunkDims =
+        _computeChunkDims(_targetMapping.cellSizes, _cellsToFramesRatio);
     if (chunkDims[0] >= frames)
-        // Only apply chunking if the dataset is large enough. Otherwise HDF5
-        // gives an error.
-        chunking.add(HighFive::Chunking(chunkDims));
+        chunkDims[0] = frames;
+    if (chunkDims[1] > _targetMapping.frameSize)
+        chunkDims[1] = _targetMapping.frameSize;
+    chunking.add(HighFive::Chunking(chunkDims));
+
+    HighFive::DataSetAccessProps caching;
+    size_t blocksPerFrame =
+        (_targetMapping.frameSize + chunkDims[1] - 1) / chunkDims[1];
+    caching.add(
+        HighFive::Caching(blocksPerFrame * _blockSize, blocksPerFrame + 1));
 
     _data.reset(new HighFive::DataSet(
-        _file->createDataSet<float>("data", dataspace, chunking)));
+        _file->createDataSet<float>("data", dataspace, chunking, caching)));
 
     detail::addStringAttribute(*_data, "dunit", _dunit);
+}
+
+void CompartmentReportHDF5::_parseWriteOptions(const URI& uri)
+{
+    for (auto i = uri.queryBegin(); i != uri.queryEnd(); ++i)
+    {
+        const auto& key = i->first;
+        const auto& value = i->second;
+        if (key == "cells_to_frames")
+        {
+            if (value == "inf")
+            {
+                _cellsToFramesRatio = std::numeric_limits<float>::infinity();
+            }
+            else
+            {
+                std::string::size_type idx;
+                const float ratio = std::stof(value, &idx);
+                if (idx != value.size())
+                {
+                    std::cerr << "Warning: invalid value for "
+                                 "cell_to_frames H5 report parameter"
+                              << std::endl;
+                }
+                else
+                {
+                    _cellsToFramesRatio = ratio;
+                }
+            }
+        }
+    }
+}
+
+void CompartmentReportHDF5::_reopenDataSet(size_t cacheSizeHint)
+{
+    // Getting the chunk dims
+    auto properties = H5Dget_create_plist(_data->getId());
+    hsize_t chunkDims[2];
+    H5Pget_chunk(properties, 2, chunkDims);
+    H5Pclose(properties);
+    // And the frame count
+    const size_t frameCount = _data->getSpace().getDimensions()[0];
+
+    if (chunkDims[0] == 0)
+        return; // Nothing to configure for this case.
+
+    // Need to close the dataset first. Otherwise internal H5 reference
+    // couning prevents the caching parameters from taking effect.
+    _data.reset();
+
+    if (cacheSizeHint == 0)
+    {
+        // The default cache configuration from HDF5 gives very bad performance
+        // because it can only hold 3 blocks and it causes block eviction and
+        // re-reads all the time. The preferred behaviour if not hint is given
+        // is to disable the cache.
+        HighFive::DataSetAccessProps accessProps;
+        accessProps.add(HighFive::Caching(0, 0));
+        _data.reset(
+            new HighFive::DataSet(_file->getDataSet("data", accessProps)));
+        return;
+    }
+
+    // We pick the number of slots so it can at least hold a full trace or
+    // a full frame. Note that the maximum cache size allowed by this number
+    // and the actual maximum cache size are independent.
+    // To avoid collisions reading traces we also need a number of slots s,
+    // such as blocks[1] ∤ s. At the same time we want blocks[0] ∤ s.
+    size_t blocks[2] = {(frameCount + chunkDims[0] - 1) / chunkDims[0],
+                        (_sourceMapping.frameSize + chunkDims[1] - 1) /
+                            chunkDims[1]};
+    if (blocks[1] > blocks[0])
+        std::swap(blocks[0], blocks[1]);
+
+    if (cacheSizeHint == std::numeric_limits<size_t>::max())
+    {
+        // Auto adjusting cache size to fit the largest of a frame or trace
+        // Ideally we should use the _targetMapping.frameSize to compute the
+        // number of blocks needed by a frame, but with the current design,
+        // sharing the dataset cache between different CompartmentReportViews
+        // would become impossible. If needed, the user can always adjust the
+        // cache manually.
+        cacheSizeHint = blocks[0] * _blockSize;
+    }
+
+    size_t numSlots = blocks[0];
+    if (blocks[0] != 1 && blocks[1] != 1)
+    {
+        // Making numSlots % blocks[0] == 1. Since numSlots == blocks[0], we
+        // only have to add 1
+        ++numSlots;
+        // Now making numSlots not divisible by blocks[1]
+        if (numSlots % blocks[1])
+            ++numSlots;
+    }
+
+    HighFive::DataSetAccessProps accessProps;
+    accessProps.add(HighFive::Caching(cacheSizeHint, numSlots));
+    _data.reset(new HighFive::DataSet(_file->getDataSet("data", accessProps)));
 }
 }
 }

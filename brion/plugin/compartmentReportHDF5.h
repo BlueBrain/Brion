@@ -85,6 +85,7 @@ private:
     // Write API temporary attributes
     std::vector<uint32_t> _GIDlist;
     std::vector<uint32_t> _elementIDs;
+    float _cellsToFramesRatio = 0.125;
 
     // Read/Write API attribute
     MappingInfo _targetMapping;
@@ -97,6 +98,7 @@ private:
     void _updateMapping(const GIDSet& gids);
 
     void _readMetaData();
+    void _reopenDataSet(size_t cacheSizeHint);
     /** Parses the GIDs and offsets and derives per cell compartment counts.
         The data from the H5 file is resorted if needed. */
     void _parseBasicCellInfo();
@@ -104,6 +106,8 @@ private:
 
     void _writeMetadataAndMapping();
     void _allocateDataSet();
+
+    void _parseWriteOptions(const URI& uri);
 };
 }
 }
