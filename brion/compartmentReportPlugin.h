@@ -181,6 +181,11 @@ public:
      * values, size_t size, double timestamp) */
     virtual bool writeFrame(uint32_t gid, const float* values, size_t size,
                             double timestamp) = 0;
+
+    /** @copydoc brion::CompartmentReport::writeFrame(const GIDSet& gid, const
+     * float* values, const size_t& sizes, double timestamp) */
+    virtual bool writeFrame(const GIDSet& gid, const float* values,
+                            const size_ts& sizes, double timestamp) = 0;
     // clang-format on
 
     /** @copydoc brion::CompartmentReport::flush */

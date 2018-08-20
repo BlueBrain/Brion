@@ -307,6 +307,48 @@ bool CompartmentReportHDF5::writeFrame(const uint32_t gid, const float* values,
     return true;
 }
 
+bool CompartmentReportHDF5::writeFrame(const GIDSet& gids, const float* values,
+                                       const size_ts& sizes,
+                                       const double timestamp)
+{
+    if (gids.empty())
+        return true;
+
+    // If the frame is complete we can write it directly to the output,
+    // otherwise we call the base class method that goes cell by cell.
+    size_t index = 0;
+    for (const auto gid : gids)
+    {
+        if (gid != _GIDlist[index])
+            return CompartmentReportCommon::writeFrame(gids, values, sizes,
+                                                       timestamp);
+        ++index;
+    }
+
+    std::lock_guard<std::mutex> mutex(detail::hdf5Mutex());
+
+    if (!_data)
+    {
+        _writeMetadataAndMapping();
+        _allocateDataSet();
+    }
+    try
+    {
+        const size_t frameNumber = _getFrameNumber(timestamp);
+        auto selection =
+            _data->select({frameNumber, 0}, {1, _targetMapping.frameSize});
+        // HighFive is not handling const correctly
+        selection.write(const_cast<float*>(values));
+    }
+    catch (const HighFive::Exception& e)
+    {
+        LBERROR << "CompartmentReportHDF5: error writing frame: " << e.what()
+                << std::endl;
+        return false;
+    }
+    return true;
+}
+
 bool CompartmentReportHDF5::flush()
 {
     std::lock_guard<std::mutex> mutex(detail::hdf5Mutex());
@@ -355,14 +397,17 @@ bool CompartmentReportHDF5::_loadFrame(const size_t frameNumber,
 bool CompartmentReportHDF5::_loadFrames(size_t frameNumber, size_t frameCount,
                                         float* buffer) const
 {
-    if (_gids.size() != 1)
+    if (_subset && _gids.size() != 1)
     {
         return CompartmentReportCommon::_loadFrames(frameNumber, frameCount,
                                                     buffer);
     }
 
     std::lock_guard<std::mutex> mutex(detail::hdf5Mutex());
-    size_t offset = _sourceMapping.cellOffsets[_subsetIndices[0]];
+
+    const size_t offset = _gids.size() == 1 ?
+        _sourceMapping.cellOffsets[_subsetIndices[0]] : 0;
+
     const auto& slice = _data->select({frameNumber, offset},
                                       {frameCount, _targetMapping.frameSize});
     slice.read(buffer);

@@ -101,6 +101,23 @@ Frames CompartmentReportCommon::loadFrames(double start, double end) const
     return frames;
 }
 
+bool CompartmentReportCommon::writeFrame(const GIDSet& gids,
+                                         const float* values,
+                                         const size_ts& sizes,
+                                         const double timestamp)
+{
+    size_t offset = 0;
+    size_t index = 0;
+    for (const auto gid : gids)
+    {
+        if (!writeFrame(gid, values + offset, sizes[index], timestamp))
+            return false;
+        offset += sizes[index];
+        ++index;
+    }
+    return true;
+}
+
 GIDSet CompartmentReportCommon::_computeIntersection(const GIDSet& all,
                                                      const GIDSet& subset)
 {
