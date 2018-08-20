@@ -404,6 +404,12 @@ GIDSet Circuit::getRandomGIDs(const float fraction,
     return _impl->getRandomGIDs(fraction, target);
 }
 
+GIDSet Circuit::getRandomGIDs(const float fraction, const std::string& target,
+                              size_t seed) const
+{
+    return _impl->getRandomGIDs(fraction, target, &seed);
+}
+
 URIs Circuit::getMorphologyURIs(const GIDSet& gids) const
 {
     return _getMorphologyURIs(*_impl, gids);

@@ -80,6 +80,16 @@ public:
     BRAIN_API GIDSet getGIDs() const;
 
     /**
+     * @return A random fraction of GIDs from the given target name using a
+     * specific seed.
+     *
+     * @throw std::runtime_error if the fraction is not in the range [0,1].
+     * @throw std::runtime_error if the target cannot be found.
+     */
+    BRAIN_API GIDSet getRandomGIDs(float fraction, const std::string& target,
+                                   size_t seed) const;
+
+    /**
      * @return A random fraction of GIDs from the given target name.
      * @env BRAIN_CIRCUIT_SEED set the seed for deterministic randomness
      * @throw std::runtime_error if the fraction is not in the range [0,1].
