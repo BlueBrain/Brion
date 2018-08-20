@@ -62,6 +62,8 @@ public:
     bool writeCompartments(uint32_t gid, const uint16_ts& counts) final;
     bool writeFrame(uint32_t gid, const float* values, size_t size,
                     double timestamp) final;
+    bool writeFrame(const GIDSet& gids, const float* values,
+                    const size_ts& sizes, double timestamp) final;
     bool flush() final;
 
 private:

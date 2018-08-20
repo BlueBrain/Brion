@@ -260,7 +260,7 @@ public:
      * Values must be ordered by section and compartment.
      *
      * @param gid the GID of the cell
-     * @param values the values per compartment to save
+     * @param values the values per compartment to save, sorted by section ID.
      * @param timestamp the timestamp in ms where for this values
      * @return false if saving was not successful, true otherwise
      * @version 1.0
@@ -276,6 +276,19 @@ public:
     BRION_API bool writeFrame(uint32_t gid, const float* values, size_t size,
                               double timestamp);
     // clang-format on
+
+    /** Write the values for multiple cells at a point in time.
+     *
+     * When writing all cells, the implementation may use a faster path.
+     * @param gids the set of GIDs to write
+     * @param values all the values to write, sorted by GID
+     * @param sizes the number of values per cell, sorted by GID
+     * @param timestamp the timestamp in ms where for this values
+     * @return false is saving was not successful, true otherwise
+     * @version 3.0
+     */
+    bool writeFrame(const GIDSet& gids, const float* values,
+                    const size_ts& sizes, double timestamp);
 
     /** Flush data to output. @return true on success. @version 1.0 */
     BRION_API bool flush();

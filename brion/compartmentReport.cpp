@@ -207,9 +207,15 @@ bool CompartmentReport::writeCompartments(const uint32_t gid,
 }
 
 bool CompartmentReport::writeFrame(uint32_t gid, const float* values,
-                                   const size_t size, double timestamp)
+                                   const size_t size, const double timestamp)
 {
     return _impl->plugin->writeFrame(gid, values, size, timestamp);
+}
+
+bool CompartmentReport::writeFrame(const GIDSet& gids, const float* values,
+                                   const size_ts& sizes, const double timestamp)
+{
+    return _impl->plugin->writeFrame(gids, values, sizes, timestamp);
 }
 
 bool CompartmentReport::flush()

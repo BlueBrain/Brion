@@ -205,8 +205,9 @@ int main(const int argc, char** argv)
 
     const double maxEnd = start + maxFrames * step;
     end = std::min(end, maxEnd);
-    const brion::CompartmentCounts& counts = in.getCompartmentCounts();
-    const brion::GIDSet& gids = in.getGIDs();
+    const auto& inOffsets = in.getOffsets();
+    const auto& counts = in.getCompartmentCounts();
+    const auto& gids = in.getGIDs();
 
     lunchbox::URI outURI(vm["output"].as<std::string>());
     if (outURI.getPath().empty())
@@ -233,66 +234,86 @@ int main(const int argc, char** argv)
                 return EXIT_FAILURE;
     }
 
-    float writeTime = clock.getTimef();
+    std::vector<size_t> sizes;
+    for (size_t i = 0; i != gids.size(); ++i)
+        sizes.push_back(in.getNumCompartments(i));
 
+    // Deciding whether the input buffer can be written to the output without
+    // sorting cells or sections.
+    bool isFrameSorted = true;
+    size_t lastOffset = 0;
+    for (size_t i = 0; i != gids.size() && isFrameSorted; ++i)
+    {
+        const auto& cellOffsets = inOffsets[i];
+        for (size_t j = 0; j < cellOffsets.size() && isFrameSorted; ++j)
+        {
+            if (counts[i][j] == 0)
+                continue;
+            isFrameSorted = cellOffsets[j] >= lastOffset;
+            lastOffset = cellOffsets[j];
+        }
+    }
+
+    float writeTime = clock.getTimef();
     // Adding step / 2 to the window to avoid off by 1 errors during truncation
     const size_t nFrames = (end - start + step * 0.5) / step;
-
     boost::progress_display progress(nFrames);
 
     for (size_t frameIndex = 0; frameIndex < nFrames; ++frameIndex)
     {
         // Making the timestamp fall in the middle of the frame
-        const double t = start + frameIndex * step + step * 0.5;
+        const double timestamp = start + frameIndex * step + step * 0.5;
 
         clock.reset();
 
         brion::floatsPtr data;
         try
         {
-            data = in.loadFrame(t).get();
+            data = in.loadFrame(timestamp).get();
         }
         catch (...)
         {
             LBERROR << std::endl
-                    << "Can't load frame at " << t << " ms" << std::endl;
+                    << "Can't load frame at " << timestamp << " ms"
+                    << std::endl;
             ::exit(EXIT_FAILURE);
         }
         loadTime += clock.getTimef();
         if (!data)
         {
             LBERROR << std::endl
-                    << "Can't load frame at " << t << " ms" << std::endl;
+                    << "Can't load frame at " << timestamp << " ms"
+                    << std::endl;
             ::exit(EXIT_FAILURE);
         }
 
         const brion::floats& values = *data.get();
-        const auto& offsets = in.getOffsets();
 
-        size_t index = 0;
         clock.reset();
-        for (const uint32_t gid : gids)
+        if (isFrameSorted)
         {
-            const size_t size =
-                std::accumulate(counts[index].begin(), counts[index].end(), 0);
-
-            // Sections IDs must appear sorted for writing as the API doesn't
-            // allow to write an out of order mapping. This is a requirement
-            // from the h5 file format in particular.
-            std::unique_ptr<float[]> cellValues(
-                new float[in.getNumCompartments(index)]);
-            float* out = cellValues.get();
-            for (size_t j = 0; j < offsets[index].size(); ++j)
-            {
-                const size_t compartments = counts[index][j];
-                const size_t offset = offsets[index][j];
-                memcpy(out, &values[offset], sizeof(float) * compartments);
-                out += compartments;
-            }
-            if (!to.writeFrame(gid, cellValues.get(), size, t))
+            if (!to.writeFrame(gids, values.data(), sizes, timestamp))
                 return EXIT_FAILURE;
-            ++index;
-            continue;
+        }
+        else
+        {
+            std::unique_ptr<float[]> cellValues(new float[values.size()]);
+            float* out = cellValues.get();
+            // Copying the input frame to a buffer sorted by GID and section ID
+            for (size_t i = 0; i != gids.size(); ++i)
+            {
+                const auto& cellOffsets = inOffsets[i];
+                const auto& cellCounts = counts[i];
+                for (size_t j = 0; j < cellOffsets.size(); ++j)
+                {
+                    const auto count = cellCounts[j];
+                    const auto offset = cellOffsets[j];
+                    memcpy(out, &values[offset], sizeof(float) * count);
+                    out += count;
+                }
+            }
+            if (!to.writeFrame(gids, cellValues.get(), sizes, timestamp))
+                return EXIT_FAILURE;
         }
         writeTime += clock.getTimef();
         ++progress;

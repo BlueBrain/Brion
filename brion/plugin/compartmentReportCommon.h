@@ -39,6 +39,11 @@ public:
     Frames loadFrames(double start, double end) const final;
     size_t getFrameCount() const final;
 
+    using CompartmentReportPlugin::writeFrame;
+
+    bool writeFrame(const GIDSet& gid, const float* values,
+                    const size_ts& sizes, double timestamp) override;
+
 protected:
     void _cacheNeuronCompartmentCounts();
     /** @return The frame number of a given timestamp clamped to the simulation
