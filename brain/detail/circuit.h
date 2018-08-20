@@ -141,12 +141,16 @@ std::vector<bool> _getAttribute<bool>(const brion::NodeGroup& nodeGroup,
 }
 
 template <typename T>
-void _shuffle(T& container)
+void _shuffle(T& container, const std::pair<bool, size_t>& seed)
 {
     std::random_device randomDevice;
     std::mt19937_64 randomEngine(randomDevice());
     const char* seedEnv = getenv("BRAIN_CIRCUIT_SEED");
-    if (seedEnv)
+    if (seed.first)
+    {
+        randomEngine.seed(seed.second);
+    }
+    else if (seedEnv)
     {
         try
         {
@@ -398,7 +402,8 @@ public:
 
     virtual GIDSet getGIDs(const std::string& target) const = 0;
 
-    GIDSet getRandomGIDs(const float fraction, const std::string& target) const
+    GIDSet getRandomGIDs(const float fraction, const std::string& target,
+                         const std::pair<bool, size_t> seed = {false, 0}) const
     {
         if (fraction < 0.f || fraction > 1.f)
             LBTHROW(
@@ -407,7 +412,7 @@ public:
 
         const GIDSet& gids = target.empty() ? getGIDs() : getGIDs(target);
         uint32_ts randomGids(gids.begin(), gids.end());
-        _shuffle(randomGids);
+        _shuffle(randomGids, seed);
         randomGids.resize(size_t(std::ceil(randomGids.size() * fraction)));
         return GIDSet(randomGids.begin(), randomGids.end());
     }
