@@ -397,21 +397,47 @@ bool CompartmentReportHDF5::_loadFrame(const size_t frameNumber,
 bool CompartmentReportHDF5::_loadFrames(size_t frameNumber, size_t frameCount,
                                         float* buffer) const
 {
-    if (_subset && _gids.size() != 1)
-    {
-        return CompartmentReportCommon::_loadFrames(frameNumber, frameCount,
-                                                    buffer);
-    }
-
     std::lock_guard<std::mutex> mutex(detail::hdf5Mutex());
 
-    const size_t offset = _gids.size() == 1 ?
-        _sourceMapping.cellOffsets[_subsetIndices[0]] : 0;
+    // Considering first the cases where the read operation is on a single
+    // slice of the input file full frames or single cell traces first
+    if (!_subset || _gids.size() == 1)
+    {
+        const size_t offset =
+            _gids.size() == 1 ? _sourceMapping.cellOffsets[_subsetIndices[0]]
+                              : 0;
 
-    const auto& slice = _data->select({frameNumber, offset},
-                                      {frameCount, _targetMapping.frameSize});
-    slice.read(buffer);
-    return true;
+        const auto& slice =
+            _data->select({frameNumber, offset},
+                          {frameCount, _targetMapping.frameSize});
+        slice.read(buffer);
+        return true;
+    }
+
+    // Cheking if the target GIDs are a single slice in the source file.
+    // Cells do not overlap, so the verification is just comparing the
+    // difference of the range extrema to the total size to read.
+    size_t totalSize = 0;
+    size_t start = std::numeric_limits<size_t>::max();
+    size_t end = 0;
+    for (const auto i : _subsetIndices)
+    {
+        const auto offset = _sourceMapping.cellOffsets[i];
+        const auto size = _sourceMapping.cellSizes[i];
+        start = std::min(start, offset);
+        end = std::max(end, offset + size);
+        totalSize += size;
+    }
+    if (totalSize == end - start)
+    {
+        const auto& slice =
+            _data->select({frameNumber, start},{frameCount, totalSize});
+        slice.read(buffer);
+        return true;
+    }
+
+    return CompartmentReportCommon::_loadFrames(frameNumber, frameCount,
+                                                buffer);
 }
 
 void CompartmentReportHDF5::_readMetaData()
