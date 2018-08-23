@@ -7,7 +7,7 @@ Changelog {#Changelog}
   - Added two query options to configure chunking and chunk cache size when
     opening/creating SONATA compartment reports.
   - Added a new overload of brion::CompartmentReport::write to allow
-    optimizations for full frames writes.
+    optimizations for full frame writes.
 * [229](https://github.com/BlueBrain/Brion/pull/229):
   - Added a method to brain::Circuit to retrive custom node attributes. This is
     only supported in C++ for SONATA circuits.

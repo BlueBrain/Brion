@@ -82,6 +82,7 @@ public:
     bool writeCompartments(uint32_t gid, const uint16_ts& counts) final;
     bool writeFrame(uint32_t gid, const float* values, size_t size,
                     double timestamp) final;
+    using CompartmentReportCommon::writeFrame;
     bool flush() final;
 
 private:
