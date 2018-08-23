@@ -67,6 +67,12 @@ public:
     {
         return true;
     }
+    bool writeFrame(const GIDSet&, const float*, const size_ts&, double) final
+    {
+        return true;
+    }
+
+    using CompartmentReportCommon::writeFrame;
     bool flush() final { return true; }
 private:
     brion::GIDSet _gids;

@@ -41,7 +41,7 @@ public:
 
     using CompartmentReportPlugin::writeFrame;
 
-    bool writeFrame(const GIDSet& gid, const float* values,
+    bool writeFrame(const GIDSet& gids, const float* values,
                     const size_ts& sizes, double timestamp) override;
 
 protected:

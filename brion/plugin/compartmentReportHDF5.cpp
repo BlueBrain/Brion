@@ -42,16 +42,17 @@ namespace plugin
 {
 namespace
 {
-const uint32_t _sonataMagic = 0x0A7A;
-const uint32_t _currentVersion[] = {0, 1};
+constexpr uint32_t _sonataMagic = 0x0A7A;
+constexpr uint32_t _currentVersion[] = {0, 1};
 
-const size_t _blockSize = 1024 * 1024;
+constexpr size_t _blockSize = 1024 * 1024;
+constexpr size_t _autoCacheSize = std::numeric_limits<size_t>::max();
 
 std::vector<hsize_t> _computeChunkDims(const std::vector<uint32_t>& cellSizes,
-                                       float cellsToFramesRatio,
-                                       size_t blockSize = _blockSize)
+                                       const float cellsToFramesRatio,
+                                       const size_t blockSize = _blockSize)
 {
-    if (cellsToFramesRatio == 0)
+    if (cellsToFramesRatio == 0.f)
         return {blockSize / 4, 1};
     else if (std::isinf(cellsToFramesRatio))
         return {1, blockSize / 4};
@@ -100,13 +101,13 @@ bool _verifyFile(const HighFive::File& file)
 
 size_t _parseCacheSizeOption(const URI& uri)
 {
-    const auto i = uri.findQuery("cache_size");
-    if (i == uri.queryEnd())
+    const auto keyValueIter = uri.findQuery("cache_size");
+    if (keyValueIter == uri.queryEnd())
         return 0;
 
-    const auto& value = i->second;
+    const auto& value = keyValueIter->second;
     if (value == "auto")
-        return std::numeric_limits<size_t>::max();
+        return _autoCacheSize;
 
     std::size_t pos;
     size_t size = std::stoll(value, &pos);
@@ -186,11 +187,11 @@ bool CompartmentReportHDF5::handles(const CompartmentReportInitData& initData)
 
 std::string CompartmentReportHDF5::getDescription()
 {
-    return "SONATA HDF5 compartment reports:"
-           "  "
-           "[file://]/path/to/"
-           "report.(h5|hdf5)[?[cache_size=(auto|num_bytes):][cell_to_frames="
-           "ratio]]";
+    return "SONATA HDF5 compartment reports:  "
+           "[file://]/path/to/report.(h5|hdf5)"
+           "[?[cache_size=(auto|num_bytes):][cells_to_frames=(inf|ratio)]]\n"
+           "    default cache size is 3MB, auto will reserve space for a whole "
+           "frame or trace. The actual size depends on the chunk dimensions";
 }
 
 size_t CompartmentReportHDF5::getCellCount() const
@@ -406,18 +407,15 @@ bool CompartmentReportHDF5::_loadFrames(size_t frameNumber, size_t frameCount,
         const size_t offset =
             _gids.size() == 1 ? _sourceMapping.cellOffsets[_subsetIndices[0]]
                               : 0;
-
         const auto& slice =
-            _data->select({frameNumber, offset},
-                          {frameCount, _targetMapping.frameSize});
+            _data->select({frameNumber, offset}, {frameCount, getFrameSize()});
         slice.read(buffer);
         return true;
     }
 
-    // Cheking if the target GIDs are a single slice in the source file.
+    // Checking if the target GIDs are a single slice in the source file.
     // Cells do not overlap, so the verification is just comparing the
     // difference of the range extrema to the total size to read.
-    size_t totalSize = 0;
     size_t start = std::numeric_limits<size_t>::max();
     size_t end = 0;
     for (const auto i : _subsetIndices)
@@ -426,12 +424,12 @@ bool CompartmentReportHDF5::_loadFrames(size_t frameNumber, size_t frameCount,
         const auto size = _sourceMapping.cellSizes[i];
         start = std::min(start, offset);
         end = std::max(end, offset + size);
-        totalSize += size;
     }
-    if (totalSize == end - start)
+    if (_targetMapping.frameSize == end - start)
     {
         const auto& slice =
-            _data->select({frameNumber, start},{frameCount, totalSize});
+            _data->select({frameNumber, start},
+                          {frameCount, _targetMapping.frameSize});
         slice.read(buffer);
         return true;
     }
@@ -793,7 +791,7 @@ void CompartmentReportHDF5::_parseWriteOptions(const URI& uri)
             {
                 std::string::size_type idx;
                 const float ratio = std::stof(value, &idx);
-                if (idx != value.size())
+                if (idx != value.size() || ratio < 0)
                 {
                     std::cerr << "Warning: invalid value for "
                                  "cell_to_frames H5 report parameter"
@@ -849,7 +847,7 @@ void CompartmentReportHDF5::_reopenDataSet(size_t cacheSizeHint)
     if (blocks[1] > blocks[0])
         std::swap(blocks[0], blocks[1]);
 
-    if (cacheSizeHint == std::numeric_limits<size_t>::max())
+    if (cacheSizeHint == _autoCacheSize)
     {
         // Auto adjusting cache size to fit the largest of a frame or trace
         // Ideally we should use the _targetMapping.frameSize to compute the
