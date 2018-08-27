@@ -81,6 +81,7 @@ private:
     GIDSet _sourceGIDs;
     bool _subset = false;
     std::vector<uint32_t> _subsetIndices;
+    hsize_t _chunkDims[2] = {0, 0};
 
     MappingInfo _sourceMapping;
 
@@ -88,6 +89,7 @@ private:
     std::vector<uint32_t> _GIDlist;
     std::vector<uint32_t> _elementIDs;
     float _cellsToFramesRatio = 0.125;
+    size_t _chunkSize = 1024 * 1024; // 1 MiB
 
     // Read/Write API attribute
     MappingInfo _targetMapping;
