@@ -190,8 +190,9 @@ std::string CompartmentReportHDF5::getDescription()
     return "SONATA HDF5 compartment reports:  "
            "[file://]/path/to/report.(h5|hdf5)"
            "[?[cache_size=(auto|num_bytes):][cells_to_frames=(inf|ratio)]]\n"
-           "    default cache size is 3MB, auto will reserve space for a whole "
-           "frame or trace. The actual size depends on the chunk dimensions";
+           "    The cache is disabled by default, auto will reserve space for"
+           "a whole frame or trace, whatever is bigger. The actual size depends"
+           " on the chunk dimensions.";
 }
 
 size_t CompartmentReportHDF5::getCellCount() const
@@ -722,7 +723,7 @@ void CompartmentReportHDF5::_writeMetadataAndMapping()
         mapping.createDataSet<double>("time", HighFive::DataSpace(
                                                   std::vector<size_t>{3}));
     time.write(std::vector<double>{_startTime, _endTime, _timestep});
-    detail::addStringAttribute(time, "tunit", _tunit);
+    detail::addStringAttribute(time, "units", _tunit);
 
     auto gidsDataSet = mapping.createDataSet<uint32_t>(
         "gids", HighFive::DataSpace(std::vector<size_t>{cellCount}));
@@ -772,7 +773,7 @@ void CompartmentReportHDF5::_allocateDataSet()
     _data.reset(new HighFive::DataSet(
         _file->createDataSet<float>("data", dataspace, chunking, caching)));
 
-    detail::addStringAttribute(*_data, "dunit", _dunit);
+    detail::addStringAttribute(*_data, "units", _dunit);
 }
 
 void CompartmentReportHDF5::_parseWriteOptions(const URI& uri)
@@ -870,7 +871,7 @@ void CompartmentReportHDF5::_reopenDataSet(size_t cacheSizeHint)
     }
 
     HighFive::DataSetAccessProps accessProps;
-    accessProps.add(HighFive::Caching(cacheSizeHint, numSlots));
+    accessProps.add(HighFive::Caching(numSlots, cacheSizeHint));
     _data.reset(new HighFive::DataSet(_file->getDataSet("data", accessProps)));
 }
 }
