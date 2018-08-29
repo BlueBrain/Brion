@@ -74,7 +74,7 @@ Strings Nodes::getPopulationNames() const
     return populationNames;
 }
 
-size_t Nodes::getNumberOfNodes(const std::string population) const
+size_t Nodes::getNumberOfNodes(const std::string& population) const
 {
     return impl->file->getGroup("/nodes/" + population)
         .getDataSet("node_type_id")
@@ -82,7 +82,7 @@ size_t Nodes::getNumberOfNodes(const std::string population) const
         .getDimensions()[0];
 }
 
-uint32_ts Nodes::getNodeIDs(const std::string population) const
+uint32_ts Nodes::getNodeIDs(const std::string& population) const
 {
     try
     {
@@ -101,22 +101,23 @@ uint32_ts Nodes::getNodeIDs(const std::string population) const
     return ids;
 }
 
-uint32_ts Nodes::getNodeGroupIDs(const std::string population) const
+uint32_ts Nodes::getNodeGroupIDs(const std::string& population) const
 {
     return _readIntVector(*impl->file, population, "node_group_id");
 }
 
-uint32_ts Nodes::getNodeGroupIndices(const std::string population) const
+uint32_ts Nodes::getNodeGroupIndices(const std::string& population) const
 {
     return _readIntVector(*impl->file, population, "node_group_index");
 }
 
-uint32_ts Nodes::getNodeTypes(const std::string population) const
+uint32_ts Nodes::getNodeTypes(const std::string& population) const
 {
     return _readIntVector(*impl->file, population, "node_type_id");
 }
 
-NodeGroup Nodes::openGroup(const std::string& population, uint32_t groupId)
+NodeGroup Nodes::openGroup(const std::string& population,
+                           const uint32_t groupId)
 {
     const HighFive::Group group = impl->file->getGroup("/nodes/" + population)
                                       .getGroup(std::to_string(groupId));
