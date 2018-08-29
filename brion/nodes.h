@@ -45,27 +45,27 @@ public:
     Strings getPopulationNames() const;
 
     /** Return the total number of nodes of a population */
-    size_t getNumberOfNodes(const std::string population) const;
+    size_t getNumberOfNodes(const std::string& population) const;
 
     /** Read and return the values in the node_id dataset of the requested
         population.
         May be empty if the dataset is not present */
-    uint32_ts getNodeIDs(const std::string population) const;
+    uint32_ts getNodeIDs(const std::string& population) const;
 
     /** Read and return the values in the node_group_id dataset of the requested
         population.
         @throw runtime_error if the dataset does not exist. */
-    uint32_ts getNodeGroupIDs(const std::string population) const;
+    uint32_ts getNodeGroupIDs(const std::string& population) const;
 
     /** Read and return the values in the node_group_ind dataset of the
         requested population.
         @throw runtime_error if the dataset does not exist. */
-    uint32_ts getNodeGroupIndices(const std::string population) const;
+    uint32_ts getNodeGroupIndices(const std::string& population) const;
 
     /** Read and return the values in the node_type_id dataset of the
         requested population.
         @throw runtime_error if the dataset does not exist. */
-    uint32_ts getNodeTypes(const std::string population) const;
+    uint32_ts getNodeTypes(const std::string& population) const;
 
     /** Returns a handle to a group
      *
