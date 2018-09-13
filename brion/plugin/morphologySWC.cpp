@@ -22,11 +22,13 @@
 
 #include "../detail/skipWhiteSpace.h"
 
-#include <fstream>
-#include <list>
 #include <lunchbox/debug.h>
 #include <lunchbox/log.h>
 #include <lunchbox/pluginRegisterer.h>
+
+#include <fstream>
+#include <list>
+#include <queue>
 
 namespace brion
 {
@@ -55,16 +57,10 @@ struct Sample
         : valid(false)
         , type(SWC_SECTION_UNDEFINED)
         , parent(-1)
-        , nextID(-1)
-        , siblingID(-1)
-        , parentSection(-1)
     {
     }
 
     explicit Sample(const char* line)
-        : nextID(-1)
-        , siblingID(-1)
-        , parentSection(-1)
     {
         float radius;
         valid =
@@ -80,15 +76,24 @@ struct Sample
     bool valid;
     Vector4f point; // x, y, z and diameter
     SWCSectionType type;
-    int parent;
-    int nextID;
-    int siblingID;
-    int parentSection; // Only meaningful for the first sample of each
-                       // section
+    int parent = -1;        // sample index
+    int nextID = -1;        // sample index
+    int siblingID = -1;     // sample index
+    int sectionID = -1;     // Only necessary for the last sample of a section
+    int parentSection = -1; // Only meaningful for the first sample of a section
 };
-typedef std::vector<Sample> Samples;
+using Samples = std::vector<Sample>;
+auto _comparator = [](const Sample* a, const Sample* b) {
+    // We want undefined sections to go last but we need to respect the
+    // numerical values from the swc "specification".
+    // The conversion of -1 to size_t takes care of this
+    return (uint32_t(a->type - 1) > uint32_t(b->type - 1) ||
+            (a->type == b->type && a > b));
+};
+using SampleQueue =
+    std::priority_queue<Sample*, std::vector<Sample*>, decltype(_comparator)>;
 
-lunchbox::PluginRegisterer<MorphologySWC> registerer;
+lunchbox::PluginRegisterer<MorphologySWC> _registerer;
 
 void _correctSampleType(Sample& sample, const Samples& samples)
 {
@@ -125,6 +130,7 @@ struct MorphologySWC::RawSWCInfo
 {
     RawSWCInfo()
         : totalValidSamples(0)
+        , roots(_comparator)
         , numSections(0)
     {
     }
@@ -136,11 +142,9 @@ struct MorphologySWC::RawSWCInfo
     Samples samples;
     size_t totalValidSamples;
 
-    // Depending on the input file there might be one or more samples with
-    // no parent. This structure is used to be able to do a depth first
-    // traversal from the soma. The first root is the soma and only one
-    // root sample is allowed to be of type soma.
-    std::vector<size_t> roots;
+    // The first root is the soma and only one root sample is allowed to be of
+    // type soma.
+    SampleQueue roots;
 
     size_t numSections;
 };
@@ -275,7 +279,7 @@ void MorphologySWC::_buildSampleTree(RawSWCInfo& info)
 
         _correctSampleType(sample, samples);
 
-        // Moving to the parent if not visited yet, otherwise searching
+        // Moving to the parent sample if not visited yet, otherwise searching
         // for the next end point.
         const bool root = sample.parent == SWC_UNDEFINED_PARENT;
 
@@ -316,7 +320,7 @@ void MorphologySWC::_buildSampleTree(RawSWCInfo& info)
                 }
                 else
                 {
-                    info.roots.push_back(currentSample);
+                    info.roots.push(&samples[currentSample]);
                     // Sections whose parent is the soma need their parent
                     // section to be assigned at this point.
                     sample.parentSection = 0;
@@ -351,18 +355,16 @@ void MorphologySWC::_buildSampleTree(RawSWCInfo& info)
                 // Only one soma section is permitted. If a previous
                 // one is detected, then throw.
                 if (info.roots.size() &&
-                    samples[info.roots[0]].type == SWC_SECTION_SOMA)
+                    info.roots.top()->type == SWC_SECTION_SOMA)
                 {
                     LBTHROW(std::runtime_error("Reading swc morphology file: " +
                                                info.filename +
                                                ", found two soma sections"));
                 }
-                info.roots.insert(info.roots.begin(), currentSample);
                 hasSoma = true;
             }
             else
             {
-                info.roots.push_back(currentSample);
                 // Non soma root sections get their parent section
                 // assigned to the soma at this point.
                 sample.parentSection = 0;
@@ -375,6 +377,7 @@ void MorphologySWC::_buildSampleTree(RawSWCInfo& info)
                     sample.type = SWC_SECTION_UNDEFINED;
                 }
             }
+            info.roots.push(&sample);
         }
 
         if (samplesLeft)
@@ -402,7 +405,7 @@ void MorphologySWC::_buildSampleTree(RawSWCInfo& info)
 
 void MorphologySWC::_buildStructure(RawSWCInfo& info)
 {
-    std::list<size_t> sectionQueue(info.roots.begin(), info.roots.end());
+    SampleQueue sampleQueue(info.roots);
 
     int section = 0;
     // All sections except the soma section and the first order sections
@@ -417,8 +420,9 @@ void MorphologySWC::_buildStructure(RawSWCInfo& info)
     _sectionTypes.reserve(info.numSections);
     Samples& samples = info.samples;
 
-    Sample* sample = &samples[sectionQueue.front()];
-    sectionQueue.pop_front();
+    Sample* sample = sampleQueue.top();
+    sampleQueue.pop();
+
     while (sample)
     {
         _sections.push_back(
@@ -450,7 +454,8 @@ void MorphologySWC::_buildStructure(RawSWCInfo& info)
                sample->type == SWCSectionType(_sectionTypes.back()))
         {
             _points.push_back(sample->point);
-            sample = sample->nextID == -1 ? 0 : &samples[sample->nextID];
+            sample->sectionID = section;
+            sample = sample->nextID == -1 ? nullptr : &samples[sample->nextID];
         }
 
         // Finished iterating a section
@@ -465,29 +470,30 @@ void MorphologySWC::_buildStructure(RawSWCInfo& info)
             // Assigning the parent section to the current sample, this
             // will be stored in the section array at the beginning of
             // the next iteration.
-            sample->parentSection = section;
+            assert(sample->parent != SWC_UNDEFINED_PARENT);
+            sample->parentSection = samples[sample->parent].sectionID;
 
             // Pushing all siblings into the queue and unlinking them
             int siblingID = sample->siblingID;
             sample->siblingID = -1;
+            sampleQueue.push(sample);
             while (siblingID != -1)
             {
-                // We do push_front to continue on the same subtree and
-                // do a depth-first traversal.
-                sectionQueue.push_front(siblingID);
                 Sample* sibling = &samples[siblingID];
+                sampleQueue.push(sibling);
                 // Assigning the parent section to the sibling
                 sibling->parentSection = section;
                 siblingID = sibling->siblingID;
                 sibling->siblingID = -1;
             }
         }
-        else if (!sectionQueue.empty())
+
+        if (!sampleQueue.empty())
         {
             // Reached an end point. Starting the next section from
-            // the sectionQueue if not empty
-            sample = &samples[sectionQueue.front()];
-            sectionQueue.pop_front();
+            // the sampleQueue if not empty
+            sample = sampleQueue.top();
+            sampleQueue.pop();
         }
         ++section;
     }
