@@ -83,15 +83,21 @@ struct Sample
     int parentSection = -1; // Only meaningful for the first sample of a section
 };
 using Samples = std::vector<Sample>;
-auto _comparator = [](const Sample* a, const Sample* b) {
+
+bool _isSampleBigger(const Sample* a, const Sample* b)
+{
     // We want undefined sections to go last but we need to respect the
     // numerical values from the swc "specification".
-    // The conversion of -1 to size_t takes care of this
+    // The conversion of -1 to uint32_t takes care of this
     return (uint32_t(a->type - 1) > uint32_t(b->type - 1) ||
+            // The sample pointer address reflects which sample was parsed
+            // first from the file. With this comparison we ensure that older
+            // samples get popped first from the priority queue.
             (a->type == b->type && a > b));
-};
-using SampleQueue =
-    std::priority_queue<Sample*, std::vector<Sample*>, decltype(_comparator)>;
+}
+
+using SampleQueue = std::priority_queue<Sample*, std::vector<Sample*>,
+                                        decltype(&_isSampleBigger)>;
 
 lunchbox::PluginRegisterer<MorphologySWC> _registerer;
 
@@ -130,7 +136,7 @@ struct MorphologySWC::RawSWCInfo
 {
     RawSWCInfo()
         : totalValidSamples(0)
-        , roots(_comparator)
+        , roots(&_isSampleBigger)
         , numSections(0)
     {
     }

@@ -522,15 +522,8 @@ void CompartmentReportHDF5::_parseBasicCellInfo()
     catch (...)
     {
     }
-    if ((offsets.size() == gids.size() &&
-         *offsets.rbegin() >= _sourceMapping.frameSize) ||
-        // Allowing offsets to be have one more position to swallow
-        // some non-conforming files.
-        (offsets.size() == gids.size() + 1 &&
-         *offsets.rbegin() != _sourceMapping.frameSize))
-    {
+    if (*offsets.rbegin() >= _sourceMapping.frameSize)
         LBTHROW(std::runtime_error("Bad report: inconsistent cell offsets"));
-    }
 
     auto cellCount = gids.size();
 
