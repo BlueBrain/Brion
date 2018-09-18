@@ -5,12 +5,12 @@
 3 1 0 0 3 0.0 2
 4 1 0 0 4 0.0 3
 5 1 0 0 5 0.0 4
-# first neurite branch, from point 2
-6 2 1 1 6 0.5 2
-7 2 1 2 7 0.5 6
-# second neurite branch, from point  4
-8 3 2 1 8 0.5 3
-9 3 2 2 9 0.5 8
-# third neurite branch, from point 6
+# first neurite branch, from point 2, section ID 2 after parsed
+6 3 1 1 6 0.5 2
+7 3 1 2 7 0.5 6
+# second neurite branch, from point 4, section ID 1 after parsed
+8 2 2 1 8 0.5 3
+9 2 2 2 9 0.5 8
+# third neurite branch, from point 6, section ID 3 after parsed
 10 4 3 1 10 0.5 4
 11 4 3 2 11 0.5 10

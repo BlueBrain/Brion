@@ -416,12 +416,10 @@ BOOST_AUTO_TEST_CASE(swc_first_order_sections)
 
     checkEqualArrays(source.getSections(), 4, V2i(0, -1), V2i(1, 0), V2i(2, 0),
                      V2i(3, 0));
-    // The tree construction algorithm reverses the order of the sections
-    // compared to how they appear in the file
-    checkEqualArrays(source.getPoints(), 4, V4f(0, 0, 0, 20), V4f(0, 0, 3, 4),
-                     V4f(0, 0, 2, 4), V4f(0, 0, 1, 4));
-    checkEqualArrays(source.getSectionTypes(), 4, SOMA, APICAL_DENDRITE,
-                     DENDRITE, AXON);
+    checkEqualArrays(source.getPoints(), 4, V4f(0, 0, 0, 20), V4f(0, 0, 2, 4),
+                     V4f(0, 0, 1, 4), V4f(0, 0, 3, 4));
+    checkEqualArrays(source.getSectionTypes(), 4, SOMA, AXON, DENDRITE,
+                     APICAL_DENDRITE);
 }
 
 BOOST_AUTO_TEST_CASE(swc_first_order_sections_from_arbitrary_points)
@@ -437,11 +435,11 @@ BOOST_AUTO_TEST_CASE(swc_first_order_sections_from_arbitrary_points)
     // compared to how they appear in the file
     checkEqualArrays(source.getPoints(), 14, V4f(0, 0, 1, 0), V4f(0, 0, 2, 0),
                      V4f(0, 0, 3, 0), V4f(0, 0, 4, 0), V4f(0, 0, 5, 0),
-                     V4f(0, 0, 4, 0), V4f(3, 1, 10, 1), V4f(3, 2, 11, 1),
                      V4f(0, 0, 3, 0), V4f(2, 1, 8, 1), V4f(2, 2, 9, 1),
-                     V4f(0, 0, 2, 0), V4f(1, 1, 6, 1), V4f(1, 2, 7, 1));
-    checkEqualArrays(source.getSectionTypes(), 4, SOMA, APICAL_DENDRITE,
-                     DENDRITE, AXON);
+                     V4f(0, 0, 2, 0), V4f(1, 1, 6, 1), V4f(1, 2, 7, 1),
+                     V4f(0, 0, 4, 0), V4f(3, 1, 10, 1), V4f(3, 2, 11, 1));
+    checkEqualArrays(source.getSectionTypes(), 4, SOMA, AXON, DENDRITE,
+                     APICAL_DENDRITE);
 }
 
 BOOST_AUTO_TEST_CASE(swc_bifurcation)
@@ -468,11 +466,11 @@ BOOST_AUTO_TEST_CASE(swc_end_points)
 
     const brion::Morphology source{brion::URI(path.string())};
 
-    checkEqualArrays(source.getSections(), 6, V2i(0, -1), V2i(1, 0), V2i(2, 0),
-                     V2i(3, 0), V2i(4, 3), V2i(6, 3));
+    checkEqualArrays(source.getSections(), 6, V2i(0, -1), V2i(1, 0), V2i(2, 1),
+                     V2i(4, 1), V2i(7, 0), V2i(8, 0));
 
-    checkEqualArrays(source.getSectionTypes(), 6, SOMA, UNDEFINED, UNDEFINED,
-                     AXON, AXON, AXON);
+    checkEqualArrays(source.getSectionTypes(), 6, SOMA, AXON, AXON, AXON,
+                     UNDEFINED, UNDEFINED);
 }
 
 BOOST_AUTO_TEST_CASE(swc_fork_points)
@@ -482,11 +480,27 @@ BOOST_AUTO_TEST_CASE(swc_fork_points)
 
     const brion::Morphology source{brion::URI(path.string())};
 
-    checkEqualArrays(source.getSections(), 6, V2i(0, -1), V2i(1, 0), V2i(2, 0),
-                     V2i(3, 0), V2i(4, 3), V2i(6, 3));
+    checkEqualArrays(source.getSections(), 6, V2i(0, -1), V2i(1, 0), V2i(2, 1),
+                     V2i(4, 1), V2i(7, 0), V2i(8, 0));
 
-    checkEqualArrays(source.getSectionTypes(), 6, SOMA, UNDEFINED, UNDEFINED,
-                     AXON, AXON, AXON);
+    checkEqualArrays(source.getSectionTypes(), 6, SOMA, AXON, AXON, AXON,
+                     UNDEFINED, UNDEFINED);
+}
+
+BOOST_AUTO_TEST_CASE(swc_section_order)
+{
+    boost::filesystem::path path(BRION_TESTDATA);
+    path /= "swc/section_order.swc";
+
+    const brion::Morphology source{brion::URI(path.string())};
+
+    checkEqualArrays(source.getSections(), 12, V2i(0, -1), V2i(1, 0), V2i(3, 1),
+                     V2i(5, 1), V2i(7, 2), V2i(10, 2), V2i(12, 0), V2i(14, 6),
+                     V2i(16, 7), V2i(19, 7), V2i(21, 6), V2i(23, 0));
+
+    checkEqualArrays(source.getSectionTypes(), 12, SOMA, AXON, AXON, AXON, AXON,
+                     AXON, DENDRITE, DENDRITE, DENDRITE, DENDRITE, DENDRITE,
+                     APICAL_DENDRITE);
 }
 
 BOOST_AUTO_TEST_CASE(swc_neuron)
