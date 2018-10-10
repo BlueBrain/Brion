@@ -58,7 +58,7 @@ void _allocate(T& data, const size_t size)
     // cppcheck-suppress memleak
 }
 
-#ifdef BRAIN_USE_KEYV
+#ifdef BRION_USE_KEYV
 bool _hasSurfacePositions(const Circuit::Impl& circuit)
 {
     const auto& synapse = circuit.getSynapsePositions(true);
@@ -238,7 +238,7 @@ struct Synapses::Impl : public Synapses::BaseImpl
         Strings keys;
         CachedSynapses loaded;
 
-#if BRAIN_USE_KEYV
+#if BRION_USE_KEYV
         auto cache = _circuit->getSynapseCache();
         if (cache)
         {
@@ -288,7 +288,7 @@ struct Synapses::Impl : public Synapses::BaseImpl
             const brion::SynapseMatrix pos =
                 cached ? it->second : readFromFile();
 
-#ifdef BRAIN_USE_KEYV
+#ifdef BRION_USE_KEYV
             if (cache)
             {
                 if (!cached)

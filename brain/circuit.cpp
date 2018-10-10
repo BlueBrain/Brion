@@ -88,7 +88,7 @@ public:
         // needs recentering or not. This is only the case for local
         // morphologies.
         const Strings keys = _getKeys(gids, uris, coords);
-#ifdef BRAIN_USE_KEYV
+#ifdef BRION_USE_KEYV
         CachedMorphologies cached = _loadFromCache(keys);
 #else
         CachedMorphologies cached;
@@ -190,7 +190,7 @@ public:
                 morphology.reset(new neuron::Morphology(raw));
             }
 
-#ifdef BRAIN_USE_KEYV
+#ifdef BRION_USE_KEYV
             // Saving to the cache.
             if (_cache)
                 _cache->save(uri.getPath(), key, morphology);
@@ -230,7 +230,7 @@ private:
         Strings keys;
         if (_cache)
         {
-#ifdef BRAIN_USE_KEYV
+#ifdef BRION_USE_KEYV
             // In the case of recentering of morphologies is needed, the keys
             // already encode that.
             if (coords == Circuit::Coordinates::global)
@@ -277,7 +277,7 @@ private:
         return keys;
     }
 
-#ifdef BRAIN_USE_KEYV
+#ifdef BRION_USE_KEYV
     /** Loads keys from cache and recenters morphologies when needed.
         The output morphologies are final. */
     CachedMorphologies _loadFromCache(const Strings& keys)
