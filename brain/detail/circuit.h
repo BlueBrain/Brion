@@ -39,7 +39,7 @@
 #include <lunchbox/log.h>
 #include <lunchbox/scopedMutex.h>
 
-#ifdef BRAIN_USE_KEYV
+#ifdef BRION_USE_KEYV
 #include <keyv/Map.h>
 #endif
 
@@ -170,7 +170,7 @@ using CachedMorphologies =
 using CachedSynapses = std::unordered_map<std::string, brion::SynapseMatrix>;
 } // namespace
 
-#ifdef BRAIN_USE_KEYV
+#ifdef BRION_USE_KEYV
 class SynapseCache
 {
 public:
@@ -268,7 +268,7 @@ public:
 };
 #endif
 
-#ifdef BRAIN_USE_KEYV
+#ifdef BRION_USE_KEYV
 class MorphologyCache
 {
 public:
@@ -761,7 +761,7 @@ public:
         : _morphologySource(config.getMorphologySource())
         , _synapseSource(config.getSynapseSource())
         , _targets(config)
-#ifdef BRAIN_USE_KEYV
+#ifdef BRION_USE_KEYV
         , _cache(keyv::Map::createCache())
         , _morphologyCache(_cache, config.getCircuitSource())
         , _synapseCache(_cache, _synapseSource)
@@ -889,7 +889,7 @@ public:
     const brion::URI _synapseSource;
     std::unordered_map<std::string, brion::URI> _afferentProjectionSources;
     Targets _targets;
-#ifdef BRAIN_USE_KEYV
+#ifdef BRION_USE_KEYV
     keyv::MapPtr _cache;
 #endif
     mutable MorphologyCache _morphologyCache;
