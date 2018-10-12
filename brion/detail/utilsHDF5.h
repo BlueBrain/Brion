@@ -35,7 +35,6 @@ template <size_t M, typename T>
 struct array_dims<std::vector<vmml::vector<M, T>>>
 {
     static const size_t value = 2;
-    typedef T type;
 };
 
 template <size_t M, typename T>
@@ -45,12 +44,26 @@ struct type_of_array<std::vector<vmml::vector<M, T>>>
 };
 
 template <size_t M, typename T>
-struct data_converter<vmml::vector<M, T>>
+struct type_of_array<vmml::vector<M, T>>
 {
-    static T* transform_read(std::vector<vmml::vector<M, T>>& vector)
+    typedef T type;
+};
+
+template <size_t M, typename T>
+struct data_converter<std::vector<vmml::vector<M, T>>>
+{
+    inline data_converter(std::vector<vmml::vector<M, T>>&, DataSpace&) {}
+    inline T* transform_read(std::vector<vmml::vector<M, T>>& vector)
     {
-        return (T*)vector.data();
+        return reinterpret_cast<T*>(vector.data());
     }
+
+    inline T* transform_write(std::vector<vmml::vector<M, T>>& vector)
+    {
+        return reinterpret_cast<T*>(vector.data());
+    }
+
+    inline void process_result(std::vector<vmml::vector<M, T>>&) {}
 };
 }
 
