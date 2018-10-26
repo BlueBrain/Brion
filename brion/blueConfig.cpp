@@ -327,7 +327,8 @@ URI BlueConfig::getReportSource(const std::string& report) const
         return URI(std::string("file://") + _impl->getOutputRoot() + "/" +
                    report + ".h5");
 
-    return URI(_impl->getOutputRoot());
+    throw std::runtime_error("Invalid report type for report " + report + ": " +
+                             format);
 }
 
 URI BlueConfig::getSpikeSource() const
