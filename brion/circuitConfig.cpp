@@ -38,21 +38,23 @@ std::map<std::string, std::string> _fillComponents(const nlohmann::json& json,
 }
 
 std::vector<brion::CircuitConfig::SubnetworkFiles> _fillSubnetwork(
-    const nlohmann::json& json, const std::string& networkType,
-    const std::string& elementName, const std::string& typeName,
+    nlohmann::json::reference networks, const std::string& prefix,
     const PathResolver& resolver)
 {
     std::vector<brion::CircuitConfig::SubnetworkFiles> output;
 
-    const auto nodes = json.at("networks").at(networkType);
+    const std::string component = prefix + "s";
+    const std::string elementsFile = prefix + "s_file";
+    const std::string typesFile = prefix + "_types_file";
 
-    for (const auto& node : nodes)
-    {
-        brion::CircuitConfig::SubnetworkFiles network;
-        network.elements = resolver.toAbsolute(node[elementName]);
-        network.types = resolver.toAbsolute(node[typeName]);
-        output.push_back(network);
-    }
+    auto iter = networks.find(component);
+    if (iter == networks.end())
+        return output;
+
+    for (const auto& node : *iter)
+        output.emplace_back(brion::CircuitConfig::SubnetworkFiles{
+            resolver.toAbsolute(node.at(elementsFile)),
+            resolver.toAbsolute(node.at(typesFile))});
 
     return output;
 }
@@ -72,11 +74,10 @@ struct CircuitConfig::Impl
         {
         }
 
+        auto networks = json.at("networks");
         componentDirs = _fillComponents(json, resolver);
-        networkEdges = _fillSubnetwork(json, "edges", "edges_file",
-                                       "edge_types_file", resolver);
-        networkNodes = _fillSubnetwork(json, "nodes", "nodes_file",
-                                       "node_types_file", resolver);
+        networkEdges = _fillSubnetwork(networks, "edge", resolver);
+        networkNodes = _fillSubnetwork(networks, "node", resolver);
     }
 
     std::string targetSimulator;
