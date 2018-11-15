@@ -169,7 +169,7 @@ public:
      * modified
      * @version 2.0
      */
-    BRION_API std::future<floatsPtr> loadFrame(double timestamp) const;
+    BRION_API std::future<Frame> loadFrame(double timestamp) const;
 
     /** Load all frames inside a given time window.
      *

@@ -56,6 +56,11 @@ CompartmentReportView::~CompartmentReportView()
 {
 }
 
+CompartmentReport CompartmentReportView::getReader() const
+{
+    return CompartmentReport(_impl->readerImpl);
+}
+
 const brion::GIDSet& CompartmentReportView::getGIDs() const
 {
     return _impl->report->getGIDs();
@@ -66,14 +71,6 @@ const CompartmentReportMapping& CompartmentReportView::getMapping() const
     return _impl->mapping;
 }
 
-namespace
-{
-inline double _snapTimestamp(double t, double start, double timestep)
-{
-    return start + timestep * (size_t)std::floor((t - start) / timestep);
-}
-}
-
 std::future<brion::Frame> CompartmentReportView::load(double timestamp)
 {
     const double start = _impl->report->getStartTime();
@@ -82,21 +79,7 @@ std::future<brion::Frame> CompartmentReportView::load(double timestamp)
     if (timestamp < start || timestamp >= end)
         throw std::logic_error("Invalid timestamp");
 
-    const double timestep = _impl->report->getTimestep();
-
-    timestamp = _snapTimestamp(timestamp, start, timestep);
-
-    auto report = _impl->report;
-    auto future = report->loadFrame(timestamp);
-
-    return std::async(std::launch::deferred,
-                      [timestamp](decltype(future)&& f) {
-                          auto data = f.get();
-                          if (data)
-                              return brion::Frame{timestamp, data};
-                          return brion::Frame{0, brion::floatsPtr()};
-                      },
-                      std::move(future));
+    return _impl->report->loadFrame(timestamp);
 }
 
 std::future<brion::Frames> CompartmentReportView::load(double start, double end)

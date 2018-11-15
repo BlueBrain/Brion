@@ -269,7 +269,7 @@ int main(const int argc, char** argv)
         brion::floatsPtr data;
         try
         {
-            data = in.loadFrame(timestamp).get();
+            data = in.loadFrame(timestamp).get().data;
         }
         catch (...)
         {
@@ -356,8 +356,8 @@ int main(const int argc, char** argv)
         {
             // Making the timestamp fall in the middle of the frame
             const double t = start + frameIndex * step + step * 0.5;
-            auto frame1 = in.loadFrame(t).get();
-            auto frame2 = result.loadFrame(t).get();
+            auto frame1 = in.loadFrame(t).get().data;
+            auto frame2 = result.loadFrame(t).get().data;
 
             REQUIRE(frame1);
             REQUIRE(frame2);

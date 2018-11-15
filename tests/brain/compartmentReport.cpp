@@ -75,6 +75,16 @@ BOOST_AUTO_TEST_CASE(invalid_mapping)
     BOOST_CHECK_THROW(reader.createView(gids), std::runtime_error);
 }
 
+BOOST_AUTO_TEST_CASE(create_view)
+{
+    boost::filesystem::path path(BBP_TESTDATA);
+    path /= "local/simulations/may17_2011/Control/voltage.h5";
+    brain::CompartmentReport report(brion::URI(path.string()));
+    auto view = report.createView();
+    auto report2 = view.getReader();
+    BOOST_CHECK_EQUAL(&report.getMetaData(), &report2.getMetaData());
+}
+
 void testBounds(const char* relativePath)
 {
     boost::filesystem::path path(BBP_TESTDATA);
@@ -127,7 +137,7 @@ inline void testReadSoma(const char* relativePath)
     auto timestamp = report.getMetaData().startTime;
     auto frame = view.load(timestamp).get();
 
-    BOOST_CHECK(frame.timestamp == timestamp);
+    BOOST_CHECK_EQUAL(frame.timestamp, timestamp);
     BOOST_CHECK(frame.data);
     BOOST_CHECK_EQUAL((*frame.data)[0], -65);
 

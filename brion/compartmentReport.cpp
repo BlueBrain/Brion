@@ -30,6 +30,14 @@ namespace
 {
 using CompartmentPluginFactory =
     lunchbox::PluginFactory<CompartmentReportPlugin>;
+
+namespace
+{
+inline double _snapTimestamp(double t, double start, double timestep)
+{
+    return start + timestep * (size_t)std::floor((t - start) / timestep);
+}
+}
 }
 
 namespace detail
@@ -138,14 +146,13 @@ size_t CompartmentReport::getBufferSize() const
     return _impl->plugin->getBufferSize();
 }
 
-std::future<floatsPtr> CompartmentReport::loadFrame(
-    const double timestamp) const
+std::future<Frame> CompartmentReport::loadFrame(const double timestamp) const
 {
     auto task = [timestamp, this] {
         if (timestamp < getStartTime() || timestamp >= getEndTime())
-            return floatsPtr();
-
-        return _impl->plugin->loadFrame(timestamp);
+            return Frame();
+        auto t = _snapTimestamp(timestamp, getStartTime(), getTimestep());
+        return Frame{t, _impl->plugin->loadFrame(t)};
     };
     return lunchbox::ThreadPool::getInstance().post(task);
 }
