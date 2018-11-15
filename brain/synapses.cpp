@@ -183,16 +183,19 @@ struct Synapses::Impl : public Synapses::BaseImpl
                 haveExtra ? synapseExtra->read(gid, 1) : brion::SynapseMatrix();
             for (size_t j = 0; j < attr.shape()[0]; ++j)
             {
-                const uint32_t preGid = attr[j][0];
-                FILTER(preGid);
+                const uint32_t connected = attr[j][0];
+                FILTER(connected);
 
                 if (!haveGIDs)
                 {
-                    _preGID.get()[i] = preGid;
+                    // This code path is exclusive of external projections,
+                    // which are afferent only
+                    assert(_afferent);
+                    _preGID.get()[i] = connected;
                     _postGID.get()[i] = gid;
                 }
-                assert(_preGID.get()[i] == preGid);
-                assert(_postGID.get()[i] == gid);
+                assert(_preGID.get()[i] == _afferent ? connected : gid);
+                assert(_postGID.get()[i] == _afferent ? gid : connected);
                 assert(i < _size);
 
                 if (haveExtra)
