@@ -126,7 +126,14 @@ public:
 private:
     CompartmentReport(const CompartmentReport&) = delete;
     CompartmentReport& operator=(const CompartmentReport&) = delete;
+    CompartmentReport(
+        const std::shared_ptr<detail::CompartmentReportReader>& impl)
+        : _impl(impl)
+    {
+    }
 
     std::shared_ptr<detail::CompartmentReportReader> _impl;
+
+    friend class CompartmentReportView;
 };
 }

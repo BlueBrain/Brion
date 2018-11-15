@@ -165,10 +165,10 @@ void testBounds(const char* relativePath)
                                     gids);
     brion::floatsPtr frame;
 
-    frame = report.loadFrame(report.getStartTime()).get();
+    frame = report.loadFrame(report.getStartTime()).get().data;
     BOOST_CHECK(frame);
 
-    frame = report.loadFrame(report.getEndTime()).get();
+    frame = report.loadFrame(report.getEndTime()).get().data;
     BOOST_CHECK(!frame);
 }
 
@@ -233,8 +233,8 @@ void test_compare(const brion::URI& uri1, const brion::URI& uri2)
     {
         const double time = start + n * step;
 
-        brion::floatsPtr frame1 = report1.loadFrame(time).get();
-        brion::floatsPtr frame2 = report2.loadFrame(time).get();
+        brion::floatsPtr frame1 = report1.loadFrame(time).get().data;
+        brion::floatsPtr frame2 = report2.loadFrame(time).get().data;
 
         BOOST_CHECK(frame1);
         BOOST_CHECK(frame2);
@@ -330,7 +330,7 @@ bool convert(const brion::URI& fromURI, const brion::URI& toURI)
             // round-off errors.
             const double time = start + n * step + step * 0.5;
 
-            brion::floatsPtr data = from.loadFrame(time).get();
+            brion::floatsPtr data = from.loadFrame(time).get().data;
             BOOST_CHECK(data);
             if (!data)
                 return false;
@@ -382,7 +382,7 @@ void testPerf(const brion::URI& uri)
     for (float i = report.getStartTime(); i < report.getEndTime();
          i += report.getTimestep())
     {
-        brion::floatsPtr frame = report.loadFrame(i).get();
+        brion::floatsPtr frame = report.loadFrame(i).get().data;
         BOOST_CHECK(frame);
     }
     const bp::time_duration readTime =
@@ -420,11 +420,11 @@ void testReadSoma(const char* relativePath)
         BOOST_CHECK_EQUAL(c[0], 1);
     }
 
-    brion::floatsPtr frame = report.loadFrame(report.getStartTime()).get();
+    brion::floatsPtr frame = report.loadFrame(report.getStartTime()).get().data;
     BOOST_CHECK(frame);
     BOOST_CHECK_EQUAL((*frame)[0], -65);
 
-    frame = report.loadFrame(4.5).get();
+    frame = report.loadFrame(4.5).get().data;
     BOOST_CHECK(frame);
     BOOST_CHECK_CLOSE((*frame)[0], -10.1440039f, .000001f);
 }
@@ -496,7 +496,7 @@ void testReadAllCompartments(const char* relativePath)
     BOOST_CHECK_EQUAL(offsets[1][1], 630);
     BOOST_CHECK_EQUAL(offsets.back().back(), 20359);
 
-    brion::floatsPtr frame = report.loadFrame(.8).get();
+    brion::floatsPtr frame = report.loadFrame(.8).get().data;
     BOOST_CHECK(frame);
     BOOST_CHECK_CLOSE((*frame)[0], -65.2919388, .000001f);
     BOOST_CHECK_CLOSE((*frame)[1578], -65.2070618, .000001f);
@@ -510,12 +510,12 @@ void testReadAllCompartments(const char* relativePath)
     BOOST_CHECK_EQUAL(report.getTimestep(), 0.1);
     BOOST_CHECK_EQUAL(report.getFrameSize(), 629);
 
-    frame = report.loadFrame(report.getStartTime()).get();
+    frame = report.loadFrame(report.getStartTime()).get().data;
 
     BOOST_CHECK(frame);
     BOOST_CHECK_EQUAL((*frame)[0], -65);
 
-    frame = report.loadFrame(4.5).get();
+    frame = report.loadFrame(4.5).get().data;
     BOOST_CHECK(frame);
 
     BOOST_CHECK_CLOSE((*frame)[0], -65.3935928f, .000001f);
@@ -558,14 +558,14 @@ void testReadSubtarget(const char* relativePath)
     BOOST_CHECK_EQUAL(report.getCellCount(), 2);
     BOOST_CHECK_EQUAL(report.getFrameSize(), 938);
 
-    brion::floatsPtr frame = report.loadFrame(report.getStartTime()).get();
+    brion::floatsPtr frame = report.loadFrame(report.getStartTime()).get().data;
     BOOST_CHECK(frame);
     BOOST_CHECK_EQUAL((*frame)[offsets[0][0]], -65);
     BOOST_CHECK_EQUAL((*frame)[offsets[1][0]], -65);
     BOOST_CHECK_EQUAL((*frame)[offsets[0][1]], -65);
     BOOST_CHECK_EQUAL((*frame)[offsets[1][1]], -65);
 
-    frame = report.loadFrame(4.5).get();
+    frame = report.loadFrame(4.5).get().data;
     BOOST_CHECK(frame);
     BOOST_CHECK_CLOSE((*frame)[offsets[0][0]], -65.3935928f, .000001f);
     BOOST_CHECK_CLOSE((*frame)[offsets[1][0]], -65.9297104f, .000001f);
@@ -605,7 +605,7 @@ void testReadFrames(const char* relativePath)
     size_t index = 0;
     for (double time : *frames.timeStamps)
     {
-        brion::floatsPtr frame = report.loadFrame(time).get();
+        brion::floatsPtr frame = report.loadFrame(time).get().data;
         BOOST_CHECK(frame);
         auto frameBegin =
             frames.data->begin() + report.getFrameSize() * index++;
@@ -624,7 +624,7 @@ void testReadFrames(const char* relativePath)
     index = 0;
     for (double time : *frames.timeStamps)
     {
-        brion::floatsPtr frame = report.loadFrame(time).get();
+        brion::floatsPtr frame = report.loadFrame(time).get().data;
         BOOST_CHECK(frame);
         auto frameBegin =
             frames.data->begin() + report.getFrameSize() * index++;

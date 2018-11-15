@@ -44,7 +44,7 @@ public:
     BRAIN_API ~CompartmentReportView();
 
     /** @return the parent reader of the view */
-    BRAIN_API CompartmentReport& getReader() const;
+    BRAIN_API CompartmentReport getReader() const;
 
     /** @return the considered GIDs
      * @version 2.0
