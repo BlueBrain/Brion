@@ -71,12 +71,33 @@ Strings Simulation::getCompartmentReportNames() const
 
 GIDSet Simulation::getGIDs() const
 {
-    return _impl->getGIDs();
+    return _impl->getGIDs("", 1.0, nullptr);
 }
 
 GIDSet Simulation::getGIDs(const std::string& name) const
 {
-    return _impl->getGIDs(name);
+    return _impl->getGIDs(name, 1.0, nullptr);
+}
+
+GIDSet Simulation::getGIDs(const float fraction) const
+{
+    return _impl->getGIDs("", fraction, nullptr);
+}
+
+GIDSet Simulation::getGIDs(const std::string& name, const float fraction) const
+{
+    return _impl->getGIDs(name, fraction, nullptr);
+}
+
+GIDSet Simulation::getGIDs(const float fraction, const size_t seed) const
+{
+    return _impl->getGIDs("", fraction, &seed);
+}
+
+GIDSet Simulation::getGIDs(const std::string& name, const float fraction,
+                           const size_t seed) const
+{
+    return _impl->getGIDs(name, fraction, &seed);
 }
 
 Strings Simulation::getTargetNames() const

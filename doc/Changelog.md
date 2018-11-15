@@ -3,6 +3,11 @@ Changelog {#Changelog}
 
 # git master
 
+* [250](https://github.com/BlueBrain/Brion/pull/250):
+  Added new overloads of brain::Simulation::getGIDs to get random GID sets.
+* [249](https://github.com/BlueBrain/Brion/pull/249):
+  - brion::CompartmentReport::loadFrame changed to return brion::Frame
+  - Implemented missing brain::CompartmentReportView::getReport
 * [239](https://github.com/BlueBrain/Brion/pull/239):
   - Added two query options to configure chunking and chunk cache size when
     opening/creating SONATA compartment reports.

@@ -21,6 +21,7 @@
  */
 
 #include "targets.h"
+#include "util.h"
 
 #include <brain/neuron/morphology.h>
 #include <brion/blueConfig.h>
@@ -53,7 +54,6 @@
 
 #include <future>
 #include <memory>
-#include <random>
 #include <unordered_map>
 #include <unordered_set>
 
@@ -138,31 +138,6 @@ std::vector<bool> _getAttribute<bool>(const brion::NodeGroup& nodeGroup,
     std::transform(values.begin(), values.end(), result.begin(),
                    [](const uint8_t x) { return x != 0; });
     return result;
-}
-
-template <typename T>
-void _shuffle(T& container, const size_t* seed)
-{
-    std::random_device randomDevice;
-    std::mt19937_64 randomEngine(randomDevice());
-    const char* seedEnv = getenv("BRAIN_CIRCUIT_SEED");
-    if (seed)
-    {
-        randomEngine.seed(*seed);
-    }
-    else if (seedEnv)
-    {
-        try
-        {
-            randomEngine.seed(std::stoul(seedEnv));
-        }
-        catch (const std::exception& exc)
-        {
-            LBWARN << "Could not set BRAIN_CIRCUIT_SEED to " << seedEnv << ": "
-                   << exc.what() << std::endl;
-        }
-    }
-    std::shuffle(container.begin(), container.end(), randomEngine);
 }
 
 using CachedMorphologies =
@@ -400,12 +375,8 @@ public:
             LBTHROW(
                 std::runtime_error("Fraction for getRandomGIDs() must be "
                                    "in the range [0,1]"));
-
-        const GIDSet& gids = target.empty() ? getGIDs() : getGIDs(target);
-        uint32_ts randomGids(gids.begin(), gids.end());
-        _shuffle(randomGids, seed);
-        randomGids.resize(size_t(std::ceil(randomGids.size() * fraction)));
-        return GIDSet(randomGids.begin(), randomGids.end());
+        return randomSet(target.empty() ? getGIDs() : getGIDs(target), fraction,
+                         seed);
     }
 
     virtual Vector3fs getPositions(const GIDSet& gids) const = 0;

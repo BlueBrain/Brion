@@ -18,6 +18,7 @@
  */
 
 #include "targets.h"
+#include "util.h"
 
 #include <brion/blueConfig.h>
 #include <brion/simulationConfig.h>
@@ -41,8 +42,8 @@ struct Simulation::Impl
     virtual ~Impl() {}
     virtual brion::URI getCircuitSource() const = 0;
     virtual Strings getTargetNames() const = 0;
-    virtual GIDSet getGIDs() const = 0;
-    virtual GIDSet getGIDs(const std::string& name) const = 0;
+    virtual GIDSet getGIDs(const std::string& label, const float fraction,
+                           const size_t* const seed) const = 0;
     virtual Strings getCompartmentReportNames() const = 0;
     virtual brion::URI getSpikeReportSource() const = 0;
     virtual brion::URI getCompartmentReportSource(
@@ -74,21 +75,14 @@ public:
     }
 
     Strings getTargetNames() const final { return _targets.getTargetNames(); }
-    GIDSet getGIDs() const
+    GIDSet getGIDs(const std::string& target, const float fraction,
+                   const size_t* const seed) const final
     {
-        const auto target =
-            _config.get(brion::CONFIGSECTION_RUN, _label, "CircuitTarget");
-        if (target.empty())
-        {
-            const auto circuit = Circuit{_config};
-            return circuit.getGIDs();
-        }
-        return getGIDs(target);
-    }
-
-    GIDSet getGIDs(const std::string& name) const
-    {
-        return _targets.getGIDs(name);
+        GIDSet gids = target.empty() ? _getGIDs() : _targets.getGIDs(target);
+        if (fraction == 1)
+            return gids;
+        else
+            return randomSet(gids, fraction, seed);
     }
 
     Strings getCompartmentReportNames() const final
@@ -114,6 +108,18 @@ private:
     Targets _targets;
     std::string _label;
     std::string _outputPath;
+
+    GIDSet _getGIDs() const
+    {
+        const auto target =
+            _config.get(brion::CONFIGSECTION_RUN, _label, "CircuitTarget");
+        if (target.empty())
+        {
+            const auto circuit = Circuit{_config};
+            return circuit.getGIDs();
+        }
+        return getGIDs(target, 1.0, nullptr);
+    }
 };
 
 class SonataConfig : public Simulation::Impl
@@ -134,13 +140,17 @@ public:
         LBWARN << "Node set processing not supported yet in SONATA";
         return Strings();
     }
-    GIDSet getGIDs() const final
+    GIDSet getGIDs(const std::string& target, const float fraction,
+                   const size_t* const seed) const final
     {
-        const auto circuit = Circuit{getCircuitSource()};
-        return circuit.getGIDs();
-    }
-    GIDSet getGIDs(const std::string&) const
-    {
+        if (target.empty())
+        {
+            const auto circuit = Circuit{getCircuitSource()};
+            if (fraction == 1)
+                return circuit.getGIDs();
+            else
+                return randomSet(circuit.getGIDs(), fraction, seed);
+        }
         LBTHROW(
             std::runtime_error("Target translation not implemented in SONATA"));
     }

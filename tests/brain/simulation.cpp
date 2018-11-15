@@ -41,6 +41,25 @@ BOOST_AUTO_TEST_CASE(test_open)
     brain::Simulation simulation{brain::URI{bbp::test::getBlueconfig()}};
 }
 
+BOOST_AUTO_TEST_CASE(test_get_gids)
+{
+    brain::Simulation simulation{brain::URI{bbp::test::getBlueconfig()}};
+    auto t1 = simulation.getGIDs();
+    BOOST_CHECK_EQUAL(*t1.begin(), 1);
+    BOOST_CHECK_EQUAL(*t1.rbegin(), 600);
+    BOOST_CHECK_EQUAL(t1.size(), 600);
+
+    auto t2 = simulation.getGIDs("Layer1");
+    BOOST_CHECK_EQUAL(t2.size(), 16);
+    auto t3 = simulation.getGIDs("Layer1", 0.5);
+    BOOST_CHECK_EQUAL(t3.size(), 8);
+    auto t4 = simulation.getGIDs("Layer1", 0.5, 0);
+    BOOST_CHECK_EQUAL(t4.size(), 8);
+    auto t5 = simulation.getGIDs("Layer1", 0.5, 1);
+    BOOST_CHECK_EQUAL(t5.size(), 8);
+    BOOST_CHECK(t4 != t5);
+}
+
 BOOST_AUTO_TEST_CASE(test_open_circuit)
 {
     brain::Simulation simulation{brain::URI{bbp::test::getBlueconfig()}};
