@@ -47,6 +47,19 @@ public:
     /** @return the gids of a cell set given its name. */
     BRAIN_API GIDSet getGIDs(const std::string& name) const;
 
+    /** @return the a fraction of the gids of the default circuit target. */
+    BRAIN_API GIDSet getGIDs(float fraction) const;
+
+    /** @return the a fraction of the gids of the default circuit target. */
+    BRAIN_API GIDSet getGIDs(float fraction, size_t seed) const;
+
+    /** @return the a fraction of the gids of a circuit target. */
+    BRAIN_API GIDSet getGIDs(const std::string& name, float fraction) const;
+
+    /** @return the a fraction of the gids of the default circuit target. */
+    BRAIN_API GIDSet getGIDs(const std::string& name, float fraction,
+                             size_t seed) const;
+
     /** @return the names of the reports listed in the config. */
     BRAIN_API Strings getCompartmentReportNames() const;
 
