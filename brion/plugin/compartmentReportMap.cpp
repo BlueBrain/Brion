@@ -26,6 +26,9 @@
 #include <lunchbox/string.h>
 
 #include <cstring>
+#ifdef BRION_USE_OPENMP
+#include <omp.h>
+#endif
 
 namespace lunchbox
 {
