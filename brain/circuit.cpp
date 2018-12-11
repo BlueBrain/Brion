@@ -228,51 +228,48 @@ private:
     {
         // < GID, key >
         Strings keys;
+#ifdef BRION_USE_KEYV
         if (_cache)
         {
-#ifdef BRION_USE_KEYV
             // In the case of recentering of morphologies is needed, the keys
             // already encode that.
             if (coords == Circuit::Coordinates::global)
-                keys = _cache->createKeys(uris, gids);
-            else
-            {
-                const auto recenter = _recenterAll
-                                          ? std::vector<bool>(uris.size(), true)
-                                          : _recenter;
-                if (!recenter.empty())
-                    keys = _cache->createKeys(uris, recenter);
-                else
-                    keys = _cache->createKeys(uris);
-            }
-#else
-            (void)gids;
-            (void)coords;
+                return _cache->createKeys(uris, gids);
+
+            const auto& recenter =
+                _recenterAll ? std::vector<bool>(uris.size(), true) : _recenter;
+            if (!recenter.empty())
+                return _cache->createKeys(uris, recenter);
+
+            return _cache->createKeys(uris);
+        }
 #endif
+        keys.reserve(uris.size());
+        if (coords == Circuit::Coordinates::global)
+        {
+            for (auto gid : gids)
+                keys.push_back(std::to_string(gid));
+            return keys;
+        }
+
+        // A 'c' is appended to the end when some morphologies need
+        // recentering and others don't.
+        if (!_recenterAll && !_recenter.empty())
+        {
+            size_t i = 0;
+            for (const auto& uri : uris)
+            {
+                auto key = uri.getPath();
+                if (_recenter[i])
+                    key += "c";
+                keys.emplace_back(std::move(key));
+                ++i;
+            }
         }
         else
         {
-            // No cache available, just use the uris as the keys.
-            // A 'c' is appending to the end when some morphologies need
-            // recentering and other don't
-            keys.reserve(uris.size());
-            if (!_recenterAll && !_recenter.empty())
-            {
-                size_t i = 0;
-                for (const auto& uri : uris)
-                {
-                    auto key = uri.getPath();
-                    if (_recenter[i])
-                        key += "c";
-                    keys.emplace_back(std::move(key));
-                    ++i;
-                }
-            }
-            else
-            {
-                for (const auto& uri : uris)
-                    keys.emplace_back(uri.getPath());
-            }
+            for (const auto& uri : uris)
+                keys.emplace_back(uri.getPath());
         }
         return keys;
     }

@@ -235,7 +235,7 @@ void _checkMorphology(const brain::neuron::Morphology& morphology,
 
     BOOST_REQUIRE(p.size() == q.size());
     for (size_t i = 0; i != p.size(); ++i)
-        BOOST_CHECK_SMALL((p[i] - q[i]).length(), 0.0001f);
+        BOOST_CHECK_SMALL((p[i] - q[i]).length(), 0.0002f);
 }
 }
 
@@ -299,7 +299,7 @@ BOOST_AUTO_TEST_CASE(load_global_morphologies)
     const brain::Circuit circuit{brain::URI{bbp::test::getBlueconfig()}};
 
     brion::GIDSet gids;
-    for (uint32_t gid = 1; gid < 500; gid += 75)
+    for (uint32_t gid = 1; gid < 10; ++gid)
         gids.insert(gid);
     const brain::neuron::Morphologies morphologies =
         circuit.loadMorphologies(gids, brain::Circuit::Coordinates::global);
@@ -307,10 +307,15 @@ BOOST_AUTO_TEST_CASE(load_global_morphologies)
 
     // Checking the first morphology
     brain::Matrix4f matrix;
-    matrix.rotate_y(-75.992327 * M_PI / 180.0f);
-    matrix.setTranslation(brain::Vector3f(54.410675, 1427.669280, 124.882234));
+    matrix.rotate_y(152.927388 * M_PI / 180.0f);
+    matrix.setTranslation(brain::Vector3f(28.758332, 1393.556264, 98.258210));
+    _checkMorphology(*morphologies[1], "R-C270106C.h5", matrix);
 
-    _checkMorphology(*morphologies[0], "R-C010306G.h5", matrix);
+    // Checking another cell with the same morphology
+    brain::Matrix4f matrix2;
+    matrix2.rotate_y(76.380744 * M_PI / 180.0f);
+    matrix2.setTranslation(brain::Vector3f(46.656769, 1437.640777, -11.603118));
+    _checkMorphology(*morphologies[5], "R-C270106C.h5", matrix2);
 }
 
 #ifdef BRAIN_USE_MVD3
