@@ -522,7 +522,14 @@ void CompartmentReportHDF5::_parseBasicCellInfo()
     catch (...)
     {
     }
-    if (*offsets.rbegin() >= _sourceMapping.frameSize)
+    if ((offsets.size() == gids.size() &&
+         offsets.back() >= _sourceMapping.frameSize) ||
+        // An extra offset with the total size is required:
+        // https://github.com/AllenInstitute/sonata/issues/62
+        // The code will support having a missing offset for already existing
+        // reports.
+        (offsets.size() == gids.size() + 1 &&
+         offsets.back() != _sourceMapping.frameSize))
         LBTHROW(std::runtime_error("Bad report: inconsistent cell offsets"));
 
     auto cellCount = gids.size();
