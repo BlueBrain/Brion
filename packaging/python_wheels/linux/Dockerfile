@@ -1,4 +1,4 @@
-FROM quay.io/pypa/manylinux1_x86_64@sha256:a0f4dd1303b10dbbd99f84e6d7e9b6575efd5c3a6b16519a15703a70a5833b4d
+FROM quay.io/pypa/manylinux1_x86_64@sha256:b03e30ce7f306d711c6e60bf6cc3313fee40bfed84d2774deeb608fabc410031
 RUN yum install -y zlib-devel bzip2-devel flex
 
 ############
@@ -30,6 +30,7 @@ RUN rm -rf hdf5-1.8.17.tar.bz2 hdf5-1.8.17
 ############
 
 RUN curl -OL https://downloads.sourceforge.net/project/boost/boost/1.59.0/boost_1_59_0.tar.gz && tar xfz boost_1_59_0.tar.gz
+RUN cd boost_1_59_0 && sed -i -e "s/_PyUnicode_AsString/(void*)_PyUnicode_AsString/" libs/python/src/converter/builtin_converters.cpp
 RUN cd boost_1_59_0 && ./bootstrap.sh --with-libraries=date_time,iostreams,filesystem,program_options,regex,serialization,system,test && ./b2 -s NO_BZIP2=1 -j2 -q cxxflags=-fPIC cflags=-fPIC threading=multi link=static --build-type=minimal install
 RUN cd boost_1_59_0 && ./b2 --clean
 RUN rm -rf boost_1_59_0.tar.gz # don't delete build folder, needed to build boost.python for different python versions on-the-fly
