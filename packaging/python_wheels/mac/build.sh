@@ -8,7 +8,8 @@ export MACOSX_DEPLOYMENT_TARGET="10.9"
 export PYTHON_CONFIGURE_OPTS="--enable-universalsdk=/ --with-universal-archs=intel"
 export PYENV_ROOT=$WORKSPACE/pyenv
 export PATH="$PYENV_ROOT/bin:$PATH"
-PYTHON_VERSIONS="2.7.14 3.4.7 3.5.4 3.6.4"
+PYTHON_VERSIONS="2.7.14 3.5.4 3.6.4 3.7.2"
+
 HDF5=hdf5-1.8.17
 BOOST=boost_1_59_0
 WHEELHOUSE=`pwd`/../wheelhouse
@@ -23,9 +24,12 @@ function install_pyenv
 function install_python_versions
 {
     pyenv install 2.7.14 -s
-    pyenv install 3.4.7 -s
     pyenv install 3.5.4 -s
     pyenv install 3.6.4 -s
+    # For Python 3.7 we have to ensure that python-build detects the OpenSSL
+    # version installed by itself when configuring Python.
+    PYTHON_CONFIGURE_OPTS="--with-open-ssl=${PYENV_ROOT}/versions/3.7.2/" \
+    pyenv install 3.7.2 -s
 
     export PATH=$(pyenv root)/shims:$PATH
 }
@@ -111,6 +115,10 @@ function build_boost
     fi
 
     pushd $WORKSPACE/$BOOST
+
+    # Patching sources
+    sed -i -e "s/_PyUnicode_AsString/(void*)_PyUnicode_AsString/" libs/python/src/converter/builtin_converters.cpp
+
     ./bootstrap.sh --with-libraries=date_time,iostreams,filesystem,program_options,regex,serialization,system,test
 
     ./b2 -j2 -q                                  \
@@ -248,7 +256,7 @@ function build_wheel
     mkdir $version 2>/dev/null
     pushd $version
 
-    pyenv global $version
+    pyenv global $version || return 1
     PYTHON=$(pyenv which python)
 
     echo -e "\nBuilding for Python $version: $PYTHON\n"

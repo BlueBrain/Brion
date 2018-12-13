@@ -4,20 +4,20 @@ set -e
 cd "$( dirname "${BASH_SOURCE[0]}" )"
 source ../common.sh
 
-PYTHON_VERSIONS="cp27-cp27mu cp27-cp27m cp34-cp34m cp35-cp35m cp36-cp36m"
+PYTHON_VERSIONS="cp27-cp27mu cp27-cp27m cp35-cp35m cp36-cp36m cp37-cp37m"
 PACKAGING_DIR=/io/packaging/python_wheels/
 WHEELHOUSE=$PACKAGING_DIR/wheelhouse
 
 get_python_include()
 {
-    local PYTHON=$1; shift
+    local PYTHON=$1
     $PYTHON -c 'import distutils.sysconfig as s; print(s.get_python_inc())'
 }
 
 build_boost_python()
 {
-    local PYTHON=$1; shift
-    local PYTHON_INC=$1; shift
+    local PYTHON=$1
+    local PYTHON_INC=$2
 
     pushd /boost_1_59_0
 
@@ -37,7 +37,7 @@ build_boost_python()
 
 build_brain()
 {
-    local version=$1; shift
+    local version=$1
 
     local PYTHON=/opt/python/$version/bin/python
     local MAJOR_VERSION=$($PYTHON -c 'import sys; print(sys.version_info[0])')
