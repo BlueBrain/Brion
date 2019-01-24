@@ -52,8 +52,15 @@ struct CsvConfig::Impl
         if (file.fail())
             throw std::runtime_error("Could not open file `" + uri + "`");
 
+        // The following code only works with LF and CRLF line endings.
         for (std::string line; std::getline(file, line);)
+        {
+            if (!line.empty() && line.back() == '\r')
+                line.pop_back();
+            if (line.find_first_not_of(' ') == std::string::npos)
+                continue;
             table.push_back(explode_whitespace(line));
+        }
 
         // Verify layout
         const size_t numColumns = table.front().size();
