@@ -51,6 +51,15 @@ public:
     {
     }
 
+    bp::object getChildren()
+    {
+        const Sections& sections = Part::getChildren();
+        bp::list result;
+        for (const auto& i : sections)
+            result.append(MorphologyPartWrapper<Section>(i, morphology));
+        return result;
+    }
+
     MorphologyPtr morphology;
 };
 
@@ -97,15 +106,6 @@ bp::object Section_getParent(const SectionWrapper& section)
         return bp::object(
             SectionWrapper(section.getParent(), section.morphology));
     return bp::object();
-}
-
-bp::object Section_getChildren(const SectionWrapper& section)
-{
-    const Sections& sections = section.getChildren();
-    bp::list result;
-    for (const auto& i : sections)
-        result.append(SectionWrapper(i, section.morphology));
-    return result;
 }
 
 MorphologyPtr Morphology_initFromURI(const std::string& uri)
@@ -206,7 +206,9 @@ bp::class_<SomaWrapper>(
     .def("max_radius", &Soma::getMaxRadius, (selfarg),
          DOXY_FN(brain::neuron::Soma::getMaxRadius))
     .def("centroid", &Soma::getCentroid, (selfarg),
-         DOXY_FN(brain::neuron::Soma::getCentroid));
+         DOXY_FN(brain::neuron::Soma::getCentroid))
+    .def("children", &SomaWrapper::getChildren, (selfarg),
+         DOXY_FN(brain::neuron::Soma::getChildren));
 
 bp::class_<SectionWrapper>(
     "Section", DOXY_CLASS(brain::neuron::Section), bp::no_init)
@@ -231,7 +233,7 @@ bp::class_<SectionWrapper>(
          DOXY_FN(brain::neuron::Section::getSampleDistancesToSoma))
     .def("parent", Section_getParent, (selfarg),
          DOXY_FN(brain::neuron::Section::getParent))
-    .def("children", Section_getChildren, (selfarg),
+    .def("children", &SectionWrapper::getChildren, (selfarg),
          DOXY_FN(brain::neuron::Section::getChildren));
 
 bp::class_<Morphology, boost::noncopyable, MorphologyPtr>(
