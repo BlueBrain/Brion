@@ -115,6 +115,7 @@ class TestMorphologyFunctions(unittest.TestCase):
             assert(len(p) == 4)
         assert(numpy.isclose(soma.mean_radius(), 0.1))
         assert(soma.centroid() == (0, 0, 0))
+        assert(len(soma.children()) == 4)
 
 class TestMorphologyMemoryManagement(unittest.TestCase):
 
