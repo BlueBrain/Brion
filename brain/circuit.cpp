@@ -321,7 +321,11 @@ private:
             return; // Do not recenter is almost there
 #pragma omp parallel for
         for (size_t i = 0; i < points.size(); ++i)
-            points[i] -= centroid;
+        {
+            points[i][0] -= centroid[0];
+            points[i][1] -= centroid[1];
+            points[i][2] -= centroid[2];
+        }
     }
 };
 }
