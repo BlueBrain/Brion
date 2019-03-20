@@ -1,7 +1,7 @@
 Changelog {#Changelog}
 =========
 
-# git master
+# Release 3.0.0 (20-03-2019)
 
 * [250](https://github.com/BlueBrain/Brion/pull/250):
   Added new overloads of brain::Simulation::getGIDs to get random GID sets.
@@ -71,7 +71,7 @@ Changelog {#Changelog}
   certain Morphology methods has been removed. In the case of h5v2 morphologies,
   the implementation will pick the most complete repair stage.
 
-# Release 2.0.0 (30-May-2017)
+# Release 2.0.0 (30-05-2017)
 
 * [159](https://github.com/BlueBrain/Brion/pull/159):
   Changed mapping index according to Pandas requirements for indexing.
@@ -117,7 +117,7 @@ Changelog {#Changelog}
   Optimized brain::Circuit::loadMorphologies for slow stat'ing
   filesystems (GPFS)
 
-# Release 1.9.0 (09-Dec-2016)
+# Release 1.9.0 (09-12-2016)
 
 * [117](https://github.com/BlueBrain/Brion/pull/117):
   Changes and fixes in Brain Python module:
@@ -157,7 +157,7 @@ Changelog {#Changelog}
   Use PersistentMap for cache in brain::Circuit::loadMorphologies(); add thread
   safety w/ synapses cache
 
-# Release 1.8.0 (30-Jun-2016)
+# Release 1.8.0 (30-06-2016)
 
 * [77](https://github.com/BlueBrain/Brion/pull/77):
   Add brain::Circuit::getMorphologyTypes() and brain::Circuit::getElectrophysiologyTypes()
@@ -181,7 +181,7 @@ Changelog {#Changelog}
 * [63](https://github.com/BlueBrain/Brion/pull/63):
   Moved old BBPSDK/Monsteer spike report to Brain (pending refactoring)
 
-# Release 1.7.0 (24-Mar-2016)
+# Release 1.7.0 (24-03-2016)
 
 * [56](https://github.com/BlueBrain/Brion/pull/56):
   Improved target parser
@@ -220,7 +220,7 @@ Changelog {#Changelog}
 * [28](https://github.com/BlueBrain/Brion/pull/28):
   SpikeReport continues parsing files that have broken lines
 
-# Release 1.6.0 (9-Nov-2015)
+# Release 1.6.0 (9-11-2015)
 
 * [24](https://github.com/BlueBrain/Brion/pull/24):
   Add getURI() method in SpikeReport.
@@ -238,7 +238,7 @@ Changelog {#Changelog}
   points, these types are translated into the most reasonable one based on the
   point ancestors.
 
-# Release 1.5.0 (7-Jul-2015)
+# Release 1.5.0 (7-07-2015)
 
 * Add RESTING_VOLTAGE constant.
 * Add support for binary spike reports.
@@ -260,7 +260,7 @@ Changelog {#Changelog}
 * Replace use of iostreams by lunchbox::MemoryMap.
 * Several bugfixes and cleanups.
 
-# Release 1.4.0 (8-Oct-2014)
+# Release 1.4.0 (8-10-2014)
 
 * Old report readers have been adapted to be static plugins using
   lunchbox::IOPluginFactory.
