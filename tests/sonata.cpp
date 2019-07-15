@@ -198,7 +198,7 @@ BOOST_AUTO_TEST_CASE(circuit_config_getComponents)
 {
     auto config = brion::CircuitConfig(TEST_SONATA_SIMPLE_NETWORK_URI);
     BOOST_CHECK_EQUAL(config.getComponentPath("morphologies_dir"),
-                      TEST_SONATA_PATH + "/./morphologies");
+                      TEST_SONATA_PATH + "/morphologies");
 }
 
 BOOST_AUTO_TEST_CASE(circuit_config_getNetworkNodes)
@@ -207,18 +207,16 @@ BOOST_AUTO_TEST_CASE(circuit_config_getNetworkNodes)
     const auto nodes = config.getNodes();
     BOOST_CHECK_EQUAL(nodes[0].elements, TEST_SONATA_PATH + "/simple_nodes.h5");
     BOOST_CHECK_EQUAL(nodes[0].types, TEST_SONATA_PATH + "/node_types.csv");
-    BOOST_CHECK_EQUAL(nodes[1].elements,
-                      TEST_SONATA_PATH + "/./simple_nodes.h5");
-    BOOST_CHECK_EQUAL(nodes[1].types, TEST_SONATA_PATH + "/./node_types.csv");
+    BOOST_CHECK_EQUAL(nodes[1].elements, TEST_SONATA_PATH + "/simple_nodes.h5");
+    BOOST_CHECK_EQUAL(nodes[1].types, TEST_SONATA_PATH + "/node_types.csv");
 }
 
 BOOST_AUTO_TEST_CASE(circuit_config_getNetworkEdges)
 {
     auto config = brion::CircuitConfig(TEST_SONATA_SIMPLE_NETWORK_URI);
     const auto edges = config.getEdges();
-    BOOST_CHECK_EQUAL(edges[0].elements,
-                      TEST_SONATA_PATH + "/./simple_edges.h5");
-    BOOST_CHECK_EQUAL(edges[0].types, TEST_SONATA_PATH + "/./edge_types.csv");
+    BOOST_CHECK_EQUAL(edges[0].elements, TEST_SONATA_PATH + "/simple_edges.h5");
+    BOOST_CHECK_EQUAL(edges[0].types, TEST_SONATA_PATH + "/edge_types.csv");
 }
 
 ////////////////////////////////////////////////////////////////////////////
@@ -265,6 +263,4 @@ BOOST_AUTO_TEST_CASE(csv_config_getProperties)
 
 /////////////////////////////////////////////////////////////////////////////
 
-BOOST_AUTO_TEST_CASE(sonata_SimulationConfig_constructors)
-{
-}
+BOOST_AUTO_TEST_CASE(sonata_SimulationConfig_constructors) {}

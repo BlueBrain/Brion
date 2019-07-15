@@ -133,7 +133,7 @@ nlohmann::json _expandVariables(const nlohmann::json& json,
 
     return jsonFlat.unflatten();
 }
-}
+} // namespace
 
 nlohmann::json parseSonataJson(const std::string& uri)
 {
@@ -158,22 +158,42 @@ PathResolver::PathResolver(const std::string& basePath)
 std::string PathResolver::toAbsolute(const std::string& pathStr) const
 {
     const boost::filesystem::path path(pathStr);
-    if (path.is_absolute())
-        return path.string();
-    const auto absolute = boost::filesystem::absolute(path, _basePath);
+    const auto absolute = path.is_absolute()
+                              ? path
+                              : boost::filesystem::absolute(path, _basePath);
 #if BOOST_VERSION / 100 >= 1060
     return absolute.lexically_normal().string();
 #else
-    try
+    // https://stackoverflow.com/questions/1746136/how-do-i-normalize-a-pathname-using-boostfilesystem
+    boost::filesystem::path result;
+    for (boost::filesystem::path::iterator it = absolute.begin();
+         it != absolute.end(); ++it)
     {
-        // Try to remove the annoying extra dots. This could use
-        // lexically_normal starting from boost 1.60
-        return boost::filesystem::canonical(absolute).string();
+        if (*it == "..")
+        {
+            // /a/b/.. is not necessarily /a if b is a symbolic link
+            if (boost::filesystem::is_symlink(result))
+                result /= *it;
+            // /a/b/../.. is not /a/b/.. under most circumstances
+            // We can end up with ..s in our result because of symbolic links
+            else if (result.filename() == "..")
+                result /= *it;
+            // Otherwise it should be safe to resolve the parent
+            else
+                result = result.parent_path();
+        }
+        else if (*it == ".")
+        {
+            // Ignore
+        }
+        else
+        {
+            // Just cat other path entries
+            result /= *it;
+        }
     }
-    catch (const boost::filesystem::filesystem_error&)
-    {
-        return absolute.string();
-    }
+
+    return result.string();
 #endif
 }
-}
+} // namespace brion
