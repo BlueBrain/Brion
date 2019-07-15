@@ -47,14 +47,8 @@ BOOST_AUTO_TEST_CASE(verify_data)
 
     BOOST_CHECK_EQUAL(config.getNetworkConfig(),
                       (path / "simple_network.json").string());
-    // The extra ./ is necessary because we need at least boost 1.60 to remove
-    // . and .. for paths that do not resolve to an existing file.
     BOOST_CHECK_EQUAL(config.getNodeSetFilepath(),
-#if BOOST_VERSION / 100 > 1060
                       (path / "node_sets.json").string());
-#else
-                      (path / "./node_sets.json").string());
-#endif
     BOOST_CHECK_EQUAL(config.getSpikesFilepath(),
                       (path / "the_spikes.h5").string());
 

@@ -70,11 +70,13 @@ struct SimulationConfig::Impl
 
             auto reference = output.find("spikes_file");
             if (reference == output.end())
-                spikesFile = (outputDir / _defaultSpikesFileName).string();
+                spikesFile = _resolver.toAbsolute(
+                    (outputDir / _defaultSpikesFileName).string());
             else
             {
                 const std::string filename = *reference;
-                spikesFile = (outputDir / filename).string();
+                spikesFile =
+                    _resolver.toAbsolute((outputDir / filename).string());
             }
 
             const auto reports = json.find("reports");
@@ -97,12 +99,13 @@ struct SimulationConfig::Impl
                     if (reference != report->end())
                     {
                         const std::string filename = *reference;
-                        reportFilepaths[name] = (outputDir / filename).string();
+                        reportFilepaths[name] = _resolver.toAbsolute(
+                            (outputDir / filename).string());
                     }
                     else
                     {
-                        reportFilepaths[name] =
-                            (outputDir / fs::path(name + ".h5")).string();
+                        reportFilepaths[name] = _resolver.toAbsolute(
+                            (outputDir / fs::path(name + ".h5")).string());
                     }
                 }
             }
@@ -160,4 +163,4 @@ std::string SimulationConfig::getCompartmentReportFilepath(
         LBTHROW(std::runtime_error("Unknown report: " + name));
     return i->second;
 }
-}
+} // namespace brion
