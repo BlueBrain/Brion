@@ -73,7 +73,7 @@ inline std::string lexical_cast(const brion::BlueConfigSection& b)
     }
     throw boost::bad_lexical_cast();
 }
-}
+} // namespace boost
 
 namespace brion
 {
@@ -213,16 +213,14 @@ public:
     Strings names[CONFIGSECTION_ALL];
     ValueTable table[CONFIGSECTION_ALL];
 };
-}
+} // namespace detail
 
 BlueConfig::BlueConfig(const std::string& source)
     : _impl(new detail::BlueConfig(source))
 {
 }
 
-BlueConfig::~BlueConfig()
-{
-}
+BlueConfig::~BlueConfig() = default;
 
 const std::string& BlueConfig::getSource() const
 {
@@ -358,13 +356,24 @@ brion::URIs BlueConfig::getTargetSources() const
     const std::string& run = _impl->getRun();
 
     URIs uris;
-    const std::string& nrnPath =
+    const auto nrnPath =
         get(brion::CONFIGSECTION_RUN, run, BLUECONFIG_NRN_PATH_KEY);
+
+    const auto circuitPath =
+        get(brion::CONFIGSECTION_RUN, run, BLUECONFIG_CIRCUIT_PATH_KEY);
+
     if (!nrnPath.empty())
     {
         URI uri;
         uri.setScheme("file");
-        uri.setPath(nrnPath + "/" + CIRCUIT_TARGET_FILE);
+
+        // If nrnPath is a directory we look for 'start.target' there, otherwise
+        // we fallback to circuitPath
+        auto basePath = fs::is_directory(nrnPath) ? nrnPath : circuitPath;
+        // Trim trailing slashes
+        boost::trim_right_if(basePath, [](auto c) { return c == '/'; });
+
+        uri.setPath(basePath + "/" + CIRCUIT_TARGET_FILE);
         uris.push_back(uri);
     }
 
@@ -418,4 +427,4 @@ std::ostream& operator<<(std::ostream& os, const BlueConfig& config)
 
     return os;
 }
-}
+} // namespace brion
