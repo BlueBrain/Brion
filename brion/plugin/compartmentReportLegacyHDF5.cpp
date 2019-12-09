@@ -274,7 +274,7 @@ bool CompartmentReportLegacyHDF5::writeCompartments(const uint32_t gid,
             for (size_t k = 0; k < counts[j]; ++k)
                 mapping[0][i++] = j;
 
-        dataset.write(mapping);
+        dataset.write(mapping.data());
         return true;
     }
     catch (const HighFive::Exception& e)
