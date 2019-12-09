@@ -24,6 +24,9 @@
 #include "detail/circuit.h"
 
 #include "synapsesStream.h"
+#include "synapses.h"
+
+#include <libsonata/include/bbp/sonata/edges.h>
 
 #include <servus/uint128_t.h>
 
@@ -524,5 +527,45 @@ SynapsesStream Circuit::getProjectedSynapses(
     const SynapsePrefetch prefetch) const
 {
     return SynapsesStream(*this, preGIDs, postGIDs, prefetch);
+}
+
+uint32_ts Circuit::getProjectedEfferentGIDs(
+    const GIDSet& preGIDs, const std::string& projection) const
+{
+    const std::string projPath = _impl->getSynapseProjectionSource(projection);
+    if(projPath.find("sonata") == std::string::npos)
+    {
+        SynapsesStream ss = getExternalAfferentSynapses(preGIDs, projection);
+        auto future = ss.read(ss.getRemaining());
+        future.wait();
+        Synapses syn = future.get();
+        uint32_ts result (syn.preGIDs(), syn.preGIDs() + syn.size());
+        return result;
+    }
+    else
+    {
+        std::set<uint64_t> uniqueIds;
+        // Input ids must be decreased by 1
+        for(uint32_t oldId : preGIDs)
+        {
+            if(oldId > 0)
+                uniqueIds.insert(oldId - 1);
+        }
+
+        const size_ts nodeIds (uniqueIds.begin(), uniqueIds.end());
+        uint32_ts result;
+        const bbp::sonata::EdgeStorage edgeStorage (projPath);
+        for(const auto& name : edgeStorage.populationNames())
+        {
+            const bbp::sonata::EdgePopulation edges (projPath, "", name);
+            const bbp::sonata::Selection s = edges.efferentEdges(nodeIds);
+
+            for(auto gid : edges.targetNodeIDs(s))
+            {
+                result.push_back(static_cast<uint32_t>(gid) + 1);
+            }
+        }
+        return result;
+    }
 }
 }

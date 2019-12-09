@@ -51,7 +51,7 @@ set(BRAIN_SOURCES
 set(BRAIN_PUBLIC_INCLUDE_DIRECTORIES ${Boost_INCLUDE_DIRS})
 set(BRAIN_LINK_LIBRARIES
   PUBLIC Brion vmmlib
-  PRIVATE Lunchbox ${Boost_FILESYSTEM_LIBRARIES}
+  PRIVATE sonata_shared Lunchbox ${Boost_FILESYSTEM_LIBRARIES}
 )
 
 if(TARGET Keyv)
@@ -64,6 +64,8 @@ set(BRAIN_NAMESPACE brain)
 if(TARGET MVDTool)
   list(APPEND BRAIN_LINK_LIBRARIES PRIVATE MVDTool)
 endif()
+
+set(BRAIN_OMIT_EXPORT ON)
 
 common_library(Brain)
 if(TARGET MVDTool)

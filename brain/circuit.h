@@ -244,6 +244,16 @@ public:
         const GIDSet& preGIDs, const GIDSet& postGIDs,
         SynapsePrefetch prefetch = SynapsePrefetch::none) const;
 
+    /**
+     * Return a list of efferent cells GIDs from a given projection
+     *
+     * @param preGIDs projection source cell IDs
+     * @param projection projection name
+     * @return list of efferent GIDs from inside the circuit
+     */
+    BRAIN_API uint32_ts getProjectedEfferentGIDs(
+        const GIDSet& preGIDs, const std::string& projection) const;
+
     class Impl; //!< @internal, public for inheritance MVD2/3 impls
 
 private:

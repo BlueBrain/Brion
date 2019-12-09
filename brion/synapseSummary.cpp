@@ -91,7 +91,7 @@ public:
             return SynapseSummaryMatrix();
 
         SynapseSummaryMatrix values(boost::extents[_dims[0]][_dims[1]]);
-        _dataset->read(values);
+        _dataset->read(values.data());
         return values;
     }
 

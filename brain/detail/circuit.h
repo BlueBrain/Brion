@@ -414,6 +414,8 @@ public:
     virtual URI getMorphologySource() const = 0;
 
     virtual MorphologyCache* getMorphologyCache() const { return nullptr; }
+    virtual std::string getSynapseSource() const = 0;
+    virtual std::string getSynapseProjectionSource(const std::string& name) const = 0;
     virtual SynapseCache* getSynapseCache() const { return nullptr; }
     virtual const brion::SynapseSummary& getSynapseSummary() const = 0;
     virtual const brion::Synapse& getSynapseAttributes(
@@ -679,6 +681,15 @@ public:
     }
 
     URI getMorphologySource() const final { return morphologySource; }
+    std::string getSynapseSource() const
+    {
+        return synapseSource.getPath();
+    }
+    std::string getSynapseProjectionSource(const std::string& name) const
+    {
+        (void)name;
+        LBTHROW(std::runtime_error("Unimplemented"));
+    }
     const brion::SynapseSummary& getSynapseSummary() const final
     {
         LBTHROW(std::runtime_error("Unimplemented"));
@@ -766,6 +777,20 @@ public:
         if (_morphologyCache)
             return &_morphologyCache;
         return nullptr;
+    }
+
+    std::string getSynapseSource() const
+    {
+        return _synapseSource.getPath();
+    }
+
+    std::string getSynapseProjectionSource(const std::string& name) const
+    {
+        auto it = _afferentProjectionSources.find(name);
+        if(it == _afferentProjectionSources.end())
+            LBTHROW(std::runtime_error("Projection " + name + " not found"))
+
+        return it->second.getPath();
     }
 
     SynapseCache* getSynapseCache() const final

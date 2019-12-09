@@ -141,7 +141,7 @@ public:
         const auto selection = dataset.dataset->select(columns);
 
         SynapseMatrix values(boost::extents[dataset.dims.first][bits.count()]);
-        selection.read(values);
+        selection.read(values.data());
         return values;
     }
 
