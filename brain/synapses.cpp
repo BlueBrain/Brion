@@ -31,7 +31,7 @@
 #include <brion/synapse.h>
 #include <brion/synapseSummary.h>
 
-#include <libsonata/include/bbp/sonata/edges.h>
+#include <bbp/sonata/edges.h>
 
 #include <lunchbox/log.h>
 

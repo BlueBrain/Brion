@@ -26,7 +26,7 @@
 #include "synapsesStream.h"
 #include "synapses.h"
 
-#include <libsonata/include/bbp/sonata/edges.h>
+#include <bbp/sonata/edges.h>
 
 #include <servus/uint128_t.h>
 
