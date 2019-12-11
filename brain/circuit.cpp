@@ -23,8 +23,8 @@
 #include "circuit.h"
 #include "detail/circuit.h"
 
-#include "synapsesStream.h"
 #include "synapses.h"
+#include "synapsesStream.h"
 
 #include <bbp/sonata/edges.h>
 
