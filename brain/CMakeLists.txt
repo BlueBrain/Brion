@@ -65,7 +65,7 @@ if(TARGET MVDTool)
   list(APPEND BRAIN_LINK_LIBRARIES PRIVATE MVDTool)
 endif()
 
-set(BRAIN_OMIT_EXPORT ON)
+#set(BRAIN_OMIT_EXPORT ON)
 
 common_library(Brain)
 if(TARGET MVDTool)
