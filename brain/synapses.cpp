@@ -602,8 +602,8 @@ struct Synapses::SonataImpl : public Synapses::InternalBaseImpl
         memcpy(_preGID.get(), filteredPreGids.data(), _size * sizeof(uint32_t));
         memcpy(_postGID.get(), filteredPostGids.data(), _size * sizeof(uint32_t));
 
-        if (!_afferent)
-            _preGID.swap(_postGID);
+        /*if (!_afferent)
+            _preGID.swap(_postGID);*/
     }
 
     void _loadAttributes(const GIDSet* gids, const GIDSet* filterGIDs) const
