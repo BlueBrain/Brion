@@ -5,7 +5,7 @@
 #
 
 cmake_minimum_required(VERSION 3.1 FATAL_ERROR)
-project(Brion VERSION 3.0.0)
+project(Brion VERSION 3.1.0)
 set(Brion_VERSION_ABI 10)
 
 list(APPEND CMAKE_MODULE_PATH ${PROJECT_SOURCE_DIR}/CMake
