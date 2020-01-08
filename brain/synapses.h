@@ -219,13 +219,15 @@ public:
     /** @internal */
     struct BaseImpl
     {
-        virtual ~BaseImpl(){};
+        virtual ~BaseImpl(){}
     };
     /** @internal */
     std::shared_ptr<const BaseImpl> _impl;
 
 private:
+    struct InternalBaseImpl;
     struct Impl;
+    struct SonataImpl;
 
     friend struct detail::SynapsesStream;
     Synapses(const Circuit& circuit, const GIDSet& gids,

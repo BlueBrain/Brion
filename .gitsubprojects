@@ -1,4 +1,5 @@
 # -*- mode: cmake -*-
+git_subproject(libsonata https://github.com/BlueBrain/libsonata.git ec58d16)
 git_subproject(Servus https://github.com/HBPVIS/Servus.git 170bd93)
 git_subproject(Lunchbox https://github.com/Eyescale/Lunchbox.git 9bd6a7d)
 git_subproject(Keyv https://github.com/BlueBrain/Keyv.git 8340fa2)

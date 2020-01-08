@@ -1,6 +1,15 @@
 Changelog {#Changelog}
 =========
 
+# Release 3.1.0 (07-01-2020)
+
+* [269](https://github.com/BlueBrain/Brion/pull/269):
+  Introduce SONATA support
+* [263](https://github.com/BlueBrain/Brion/pull/263):
+  Detect start.target in CircuitPath
+* [255](https://github.com/BlueBrain/Brion/pull/255):
+  Adding Python 3.7 and removing 3.4 from wheels
+
 # Release 3.0.0 (20-03-2019)
 
 * [250](https://github.com/BlueBrain/Brion/pull/250):

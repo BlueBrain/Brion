@@ -356,27 +356,37 @@ brion::URIs BlueConfig::getTargetSources() const
     const std::string& run = _impl->getRun();
 
     URIs uris;
-    const auto nrnPath =
+    auto nrnPath =
         get(brion::CONFIGSECTION_RUN, run, BLUECONFIG_NRN_PATH_KEY);
+    boost::trim_right_if(nrnPath, [](auto c) { return c == '/'; });
 
-    const auto circuitPath =
+    auto circuitPath =
         get(brion::CONFIGSECTION_RUN, run, BLUECONFIG_CIRCUIT_PATH_KEY);
+    boost::trim_right_if(circuitPath, [](auto c) { return c == '/'; });
 
-    if (!nrnPath.empty())
+    // fs::is_directory may wrongly return true for symlinks
+    // (even if these are pointing to files)
+
+    // Check if valid nrnPath (on sonata build circuit config files,
+    // nrnPath is a symlink to highfive edge file)
+    if (!nrnPath.empty() && fs::exists(nrnPath + "/" + CIRCUIT_TARGET_FILE))
     {
         URI uri;
         uri.setScheme("file");
-
-        // If nrnPath is a directory we look for 'start.target' there, otherwise
-        // we fallback to circuitPath
-        auto basePath = fs::is_directory(nrnPath) ? nrnPath : circuitPath;
-        // Trim trailing slashes
-        boost::trim_right_if(basePath, [](auto c) { return c == '/'; });
-
-        uri.setPath(basePath + "/" + CIRCUIT_TARGET_FILE);
+        uri.setPath(nrnPath + "/" + CIRCUIT_TARGET_FILE);
+        uris.push_back(uri);
+    }
+    // Otherwise try to fetch start.target from circuit path
+    else if(!circuitPath.empty()
+            && fs::exists(circuitPath + "/" + CIRCUIT_TARGET_FILE))
+    {
+        URI uri;
+        uri.setScheme("file");
+        uri.setPath(circuitPath + "/" + CIRCUIT_TARGET_FILE);
         uris.push_back(uri);
     }
 
+    // Finally, fetch any user defined target file
     const std::string& targetPath =
         get(brion::CONFIGSECTION_RUN, run, BLUECONFIG_TARGET_FILE_KEY);
     if (!targetPath.empty())

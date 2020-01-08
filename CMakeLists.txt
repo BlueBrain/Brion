@@ -5,7 +5,7 @@
 #
 
 cmake_minimum_required(VERSION 3.1 FATAL_ERROR)
-project(Brion VERSION 3.0.0)
+project(Brion VERSION 3.1.0)
 set(Brion_VERSION_ABI 10)
 
 list(APPEND CMAKE_MODULE_PATH ${PROJECT_SOURCE_DIR}/CMake
@@ -43,6 +43,7 @@ common_find_package(PythonLibs)
 common_find_package(Servus REQUIRED)
 common_find_package(Sphinx 1.3)
 common_find_package(vmmlib REQUIRED)
+common_find_package(sonata REQUIRED)
 option(BRION_USE_ZEROEQ "Use ZeroEQ for plugin backend and morphologyServer" OFF)
 if(BRION_USE_ZEROEQ)
   git_subproject(ZeroEQ https://github.com/HBPVIS/ZeroEQ.git 1e66ee3)

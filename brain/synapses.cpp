@@ -31,6 +31,8 @@
 #include <brion/synapse.h>
 #include <brion/synapseSummary.h>
 
+#include <bbp/sonata/edges.h>
+
 #include <lunchbox/log.h>
 
 #include <mutex>
@@ -69,15 +71,162 @@ bool _hasSurfacePositions(const Circuit::Impl& circuit)
 #endif
 }
 
-struct Synapses::Impl : public Synapses::BaseImpl
+struct Synapses::InternalBaseImpl : public Synapses::BaseImpl
 {
-    Impl(const Circuit& circuit, const GIDSet& gids, const GIDSet& filterGIDs,
+    InternalBaseImpl(const Circuit& circuit, const GIDSet& gids, const GIDSet& filterGIDs,
          const bool afferent, const SynapsePrefetch prefetch)
         : _circuit(circuit._impl)
         , _gids(prefetch != SynapsePrefetch::all ? gids : GIDSet())
         , _filterGIDs(prefetch != SynapsePrefetch::all ? filterGIDs : GIDSet())
         , _afferent(afferent)
         , _size(0)
+    {
+    }
+
+    InternalBaseImpl(const Circuit& circuit, const GIDSet& gids, const std::string& source,
+         const SynapsePrefetch prefetch)
+        : _circuit(circuit._impl)
+        , _gids(prefetch != SynapsePrefetch::all ? gids : GIDSet())
+        , _afferent(true)
+        , _externalSource(source)
+        , _size(0)
+    {
+    }
+
+#define FILTER(gid)                                                         \
+    if (!filterGIDs->empty() && filterGIDs->find(gid) == filterGIDs->end()) \
+        continue;
+
+    virtual ~InternalBaseImpl() {}
+
+    virtual void _loadConnectivity(const GIDSet* gids, const GIDSet* filterGIDs) const = 0;
+    virtual void _loadAttributes(const GIDSet* gids, const GIDSet* filterGIDs) const = 0;
+    virtual void _loadPositions(const GIDSet* gids, const GIDSet* filterGIDs) const = 0;
+    virtual void _ensureGIDs() const = 0;
+    virtual void _ensureAttributes() const = 0;
+    virtual void _ensurePositions() const = 0;
+
+    void _allocateAttributes(const size_t size, const bool allocateIndex) const
+    {
+        if (allocateIndex)
+            _allocate(_index, size);
+
+        _allocate(_preSectionID, size);
+        _allocate(_preSegmentID, size);
+        _allocate(_preDistance, size);
+
+        _allocate(_postSectionID, size);
+        _allocate(_postSegmentID, size);
+        _allocate(_postDistance, size);
+
+        _allocate(_delay, size);
+        _allocate(_conductance, size);
+        _allocate(_utilization, size);
+        _allocate(_depression, size);
+        _allocate(_facilitation, size);
+        _allocate(_decay, size);
+        _allocate(_efficacy, size);
+    }
+
+    void _allocatePositions(const size_t size) const
+    {
+        _allocate(_preSurfacePositionX, size);
+        _allocate(_preSurfacePositionY, size);
+        _allocate(_preSurfacePositionZ, size);
+        _allocate(_preCenterPositionX, size);
+        _allocate(_preCenterPositionY, size);
+        _allocate(_preCenterPositionZ, size);
+
+        _allocate(_postSurfacePositionX, size);
+        _allocate(_postSurfacePositionY, size);
+        _allocate(_postSurfacePositionZ, size);
+        _allocate(_postCenterPositionX, size);
+        _allocate(_postCenterPositionY, size);
+        _allocate(_postCenterPositionZ, size);
+    }
+
+    void _clearPositions() const
+    {
+        _preSurfacePositionX.reset();
+        _preSurfacePositionY.reset();
+        _preSurfacePositionZ.reset();
+        _preCenterPositionX.reset();
+        _preCenterPositionY.reset();
+        _preCenterPositionZ.reset();
+        _postSurfacePositionX.reset();
+        _postSurfacePositionY.reset();
+        _postSurfacePositionZ.reset();
+        _postCenterPositionX.reset();
+        _postCenterPositionY.reset();
+        _postCenterPositionZ.reset();
+    }
+
+    size_t _getSize() const { return _size; }
+
+    const std::shared_ptr<const Circuit::Impl> _circuit;
+    const GIDSet _gids;
+    const GIDSet _filterGIDs;
+    const bool _afferent;
+    std::string _externalSource;
+
+    template <typename T>
+    struct FreeDeleter
+    {
+        void operator()(T* ptr) { free(ptr); }
+    };
+
+    typedef std::unique_ptr<uint32_t, FreeDeleter<uint32_t>> UIntPtr;
+    typedef std::unique_ptr<int, FreeDeleter<int>> IntPtr;
+    typedef std::unique_ptr<size_t, FreeDeleter<size_t>> size_tPtr;
+    typedef std::unique_ptr<float, FreeDeleter<float>> floatPtr;
+
+    mutable size_t _size;
+
+    mutable size_tPtr _index;
+
+    mutable UIntPtr _preGID;
+    mutable UIntPtr _preSectionID;
+    mutable UIntPtr _preSegmentID;
+    mutable floatPtr _preDistance;
+    mutable floatPtr _preSurfacePositionX;
+    mutable floatPtr _preSurfacePositionY;
+    mutable floatPtr _preSurfacePositionZ;
+    mutable floatPtr _preCenterPositionX;
+    mutable floatPtr _preCenterPositionY;
+    mutable floatPtr _preCenterPositionZ;
+
+    mutable UIntPtr _postGID;
+    mutable UIntPtr _postSectionID;
+    mutable UIntPtr _postSegmentID;
+    mutable floatPtr _postDistance;
+    mutable floatPtr _postSurfacePositionX;
+    mutable floatPtr _postSurfacePositionY;
+    mutable floatPtr _postSurfacePositionZ;
+    mutable floatPtr _postCenterPositionX;
+    mutable floatPtr _postCenterPositionY;
+    mutable floatPtr _postCenterPositionZ;
+
+    mutable floatPtr _delay;
+    mutable floatPtr _conductance;
+    mutable floatPtr _utilization;
+    mutable floatPtr _depression;
+    mutable floatPtr _facilitation;
+    mutable floatPtr _decay;
+    mutable IntPtr _efficacy;
+
+    mutable std::once_flag _attributeFlag;
+    mutable std::once_flag _positionFlag;
+    mutable std::once_flag _indexFlag;
+    // Besides the call_once flags, we still need to ensure exclusive access
+    // to state.
+    mutable std::mutex _mutex;
+};
+
+struct Synapses::Impl : public Synapses::InternalBaseImpl
+{
+    Impl(const Circuit& circuit, const GIDSet& gids, const GIDSet& filterGIDs,
+         const bool afferent, const SynapsePrefetch prefetch)
+        : Synapses::InternalBaseImpl(circuit, gids, filterGIDs, afferent, prefetch)
     {
         _loadConnectivity(&gids, &filterGIDs);
 
@@ -91,11 +240,7 @@ struct Synapses::Impl : public Synapses::BaseImpl
 
     Impl(const Circuit& circuit, const GIDSet& gids, const std::string& source,
          const SynapsePrefetch prefetch)
-        : _circuit(circuit._impl)
-        , _gids(prefetch != SynapsePrefetch::all ? gids : GIDSet())
-        , _afferent(true)
-        , _externalSource(source)
-        , _size(0)
+        : Synapses::InternalBaseImpl(circuit, gids, source, prefetch)
     {
         // We don't have a summary file for projected afferent synapses.
         // But at least we have to figure out the size of the container.
@@ -110,10 +255,6 @@ struct Synapses::Impl : public Synapses::BaseImpl
                            &empty);
         }
     }
-
-#define FILTER(gid)                                                         \
-    if (!filterGIDs->empty() && filterGIDs->find(gid) == filterGIDs->end()) \
-        continue;
 
     void _loadConnectivity(const GIDSet* gids, const GIDSet* filterGIDs) const
     {
@@ -345,61 +486,6 @@ struct Synapses::Impl : public Synapses::BaseImpl
         }
     }
 
-    void _allocateAttributes(const size_t size, const bool allocateIndex) const
-    {
-        if (allocateIndex)
-            _allocate(_index, size);
-
-        _allocate(_preSectionID, size);
-        _allocate(_preSegmentID, size);
-        _allocate(_preDistance, size);
-
-        _allocate(_postSectionID, size);
-        _allocate(_postSegmentID, size);
-        _allocate(_postDistance, size);
-
-        _allocate(_delay, size);
-        _allocate(_conductance, size);
-        _allocate(_utilization, size);
-        _allocate(_depression, size);
-        _allocate(_facilitation, size);
-        _allocate(_decay, size);
-        _allocate(_efficacy, size);
-    }
-
-    void _allocatePositions(const size_t size) const
-    {
-        _allocate(_preSurfacePositionX, size);
-        _allocate(_preSurfacePositionY, size);
-        _allocate(_preSurfacePositionZ, size);
-        _allocate(_preCenterPositionX, size);
-        _allocate(_preCenterPositionY, size);
-        _allocate(_preCenterPositionZ, size);
-
-        _allocate(_postSurfacePositionX, size);
-        _allocate(_postSurfacePositionY, size);
-        _allocate(_postSurfacePositionZ, size);
-        _allocate(_postCenterPositionX, size);
-        _allocate(_postCenterPositionY, size);
-        _allocate(_postCenterPositionZ, size);
-    }
-
-    void _clearPositions() const
-    {
-        _preSurfacePositionX.reset();
-        _preSurfacePositionY.reset();
-        _preSurfacePositionZ.reset();
-        _preCenterPositionX.reset();
-        _preCenterPositionY.reset();
-        _preCenterPositionZ.reset();
-        _postSurfacePositionX.reset();
-        _postSurfacePositionY.reset();
-        _postSurfacePositionZ.reset();
-        _postCenterPositionX.reset();
-        _postCenterPositionY.reset();
-        _postCenterPositionZ.reset();
-    }
-
     void _ensureGIDs() const
     {
         if (_externalSource.empty())
@@ -422,79 +508,326 @@ struct Synapses::Impl : public Synapses::BaseImpl
         // Until C++17 call_once is using decay_copy
         std::call_once(_positionFlag, &Impl::_loadPositions, this, &_gids,
                        &_filterGIDs);
+    }  
+};
+
+struct Synapses::SonataImpl : public Synapses::InternalBaseImpl
+{
+
+#define TRY_GET_ATTRIBUTE(buffer, source, type, name, selection) \
+    try { \
+        buffer = source.getAttribute<type>(name, selection); \
+    } catch(...) { }
+
+#define ADD_TO_STORAGE(storage, storageIndex, source, sourceIndex) \
+    if(!source.empty()) \
+        storage.get()[storageIndex] = source[sourceIndex];
+
+    SonataImpl(const Circuit& circuit, const GIDSet& gids, const GIDSet& filterGIDs,
+         const bool afferent, const SynapsePrefetch prefetch)
+        : Synapses::InternalBaseImpl(circuit, gids, filterGIDs, afferent, prefetch)
+    {
+        _loadConnectivity(&gids, &filterGIDs);
+
+        if (int(prefetch) & int(SynapsePrefetch::attributes))
+            std::call_once(_attributeFlag, &SonataImpl::_loadAttributes, this, &gids,
+                           &filterGIDs);
+        if (int(prefetch) & int(SynapsePrefetch::positions))
+            std::call_once(_positionFlag, &SonataImpl::_loadPositions, this, &gids,
+                           &filterGIDs);
     }
 
-    size_t _getSize() const { return _size; }
-    const std::shared_ptr<const Circuit::Impl> _circuit;
-    const GIDSet _gids;
-    const GIDSet _filterGIDs;
-    const bool _afferent;
-    std::string _externalSource;
-
-    template <typename T>
-    struct FreeDeleter
+    SonataImpl(const Circuit& circuit, const GIDSet& gids, const std::string& source,
+         const SynapsePrefetch prefetch)
+        : Synapses::InternalBaseImpl(circuit, gids, source, prefetch)
     {
-        void operator()(T* ptr) { free(ptr); }
-    };
+        const std::string projSourceFile = _circuit->getSynapseProjectionSource(source);
+        // We don't have a summary file for projected afferent synapses.
+        // But at least we have to figure out the size of the container.
+        const bbp::sonata::EdgeStorage edgeStorage (projSourceFile);
+        for(const auto& popName : edgeStorage.populationNames())
+        {
+            const bbp::sonata::EdgePopulation edges (projSourceFile, "", popName);
+            _size += edges.size();
+        }
 
-    typedef std::unique_ptr<uint32_t, FreeDeleter<uint32_t>> UIntPtr;
-    typedef std::unique_ptr<int, FreeDeleter<int>> IntPtr;
-    typedef std::unique_ptr<size_t, FreeDeleter<size_t>> size_tPtr;
-    typedef std::unique_ptr<float, FreeDeleter<float>> floatPtr;
+        if (int(prefetch) & int(SynapsePrefetch::attributes))
+        {
+            GIDSet empty;
+            std::call_once(_attributeFlag, &SonataImpl::_loadAttributes, this, &gids,
+                           &empty);
+        }
+    }
 
-    mutable size_t _size;
+    void _loadConnectivity(const GIDSet* gids, const GIDSet* filterGIDs) const
+    {
+        const std::string synapseFilePath = _circuit->getSynapseSource();
 
-    mutable size_tPtr _index;
+        std::set<uint64_t> uniqueIds;
+        // Input ids must be decreased by 1
+        for(uint32_t oldId : *gids)
+        {
+            if(oldId > 0)
+                uniqueIds.insert(oldId - 1);
+        }
 
-    mutable UIntPtr _preGID;
-    mutable UIntPtr _preSectionID;
-    mutable UIntPtr _preSegmentID;
-    mutable floatPtr _preDistance;
-    mutable floatPtr _preSurfacePositionX;
-    mutable floatPtr _preSurfacePositionY;
-    mutable floatPtr _preSurfacePositionZ;
-    mutable floatPtr _preCenterPositionX;
-    mutable floatPtr _preCenterPositionY;
-    mutable floatPtr _preCenterPositionZ;
+        uint32_ts filteredPreGids, filteredPostGids;
+        const std::vector<uint64_t> nodeIds (uniqueIds.begin(), uniqueIds.end());
+        const bbp::sonata::EdgeStorage edgeStorage (synapseFilePath);
+        for(const auto& name : edgeStorage.populationNames())
+        {
+            const bbp::sonata::EdgePopulation edges (synapseFilePath, "", name);
+            const bbp::sonata::Selection s = _afferent? edges.afferentEdges(nodeIds)
+                                                      : edges.efferentEdges(nodeIds);
 
-    mutable UIntPtr _postGID;
-    mutable UIntPtr _postSectionID;
-    mutable UIntPtr _postSegmentID;
-    mutable floatPtr _postDistance;
-    mutable floatPtr _postSurfacePositionX;
-    mutable floatPtr _postSurfacePositionY;
-    mutable floatPtr _postSurfacePositionZ;
-    mutable floatPtr _postCenterPositionX;
-    mutable floatPtr _postCenterPositionY;
-    mutable floatPtr _postCenterPositionZ;
+            const size_ts preGidsTemp = edges.sourceNodeIDs(s);
+            const size_ts postGidsTemp = edges.targetNodeIDs(s);
 
-    mutable floatPtr _delay;
-    mutable floatPtr _conductance;
-    mutable floatPtr _utilization;
-    mutable floatPtr _depression;
-    mutable floatPtr _facilitation;
-    mutable floatPtr _decay;
-    mutable IntPtr _efficacy;
+            // Result ids must be incremented by one to return in the same
+            // range as the input source GIDs
+            for(size_t i = 0; i < preGidsTemp.size(); i++)
+            {
+                uint32_t preN = static_cast<uint32_t>(preGidsTemp[i]);
+                FILTER(preN)
 
-    mutable std::once_flag _attributeFlag;
-    mutable std::once_flag _positionFlag;
-    mutable std::once_flag _indexFlag;
-    // Besides the call_once flags, we still need to ensure exclusive access
-    // to state.
-    mutable std::mutex _mutex;
+                filteredPreGids.push_back(preN + 1);
+                filteredPostGids.push_back(
+                            static_cast<uint32_t>(postGidsTemp[i]) + 1);
+            }
+        }
+
+        _size = filteredPreGids.size();
+        _allocate(_preGID, _size);
+        _allocate(_postGID, _size);
+        memcpy(_preGID.get(), filteredPreGids.data(), _size * sizeof(uint32_t));
+        memcpy(_postGID.get(), filteredPostGids.data(), _size * sizeof(uint32_t));
+    }
+
+    void _loadAttributes(const GIDSet* gids, const GIDSet* filterGIDs) const
+    {
+        std::lock_guard<std::mutex> lock(_mutex);
+
+        if (_efficacy)
+            return;
+
+        std::string synapseFilePath;
+        if(_externalSource.empty())
+            synapseFilePath = _circuit->getSynapseSource();
+        else
+            synapseFilePath = _circuit->getSynapseProjectionSource(_externalSource);
+
+        std::set<uint64_t> uniqueIds;
+        // Input ids must be decreased by 1
+        for(uint32_t oldId : *gids)
+        {
+            if(oldId > 0)
+                uniqueIds.insert(oldId - 1);
+        }
+        const std::vector<uint64_t> nodeIds (uniqueIds.begin(), uniqueIds.end());
+        const bbp::sonata::EdgeStorage edgeStorage (synapseFilePath);
+
+        // For external afferent projections we haven't had the chance to
+        // get the connectivity.
+        const bool haveGIDs = _externalSource.empty();
+        if (!haveGIDs)
+        {
+            _allocate(_preGID, _size);
+            _allocate(_postGID, _size);
+        }
+
+        _allocateAttributes(_size, _afferent);
+
+        size_t i = 0;
+        for(const auto& name : edgeStorage.populationNames())
+        {
+            const bbp::sonata::EdgePopulation edges (synapseFilePath, "", name);
+            const bbp::sonata::Selection s = _afferent? edges.afferentEdges(nodeIds)
+                                                      : edges.efferentEdges(nodeIds);
+
+            const auto preGIDs = edges.sourceNodeIDs(s);
+            const auto postGIDs = edges.targetNodeIDs(s);
+
+            std::vector<float> delays;
+            std::vector<float> decayTimes;
+            std::vector<uint32_t> preSegmentIds;
+            std::vector<uint32_t> preSectionIds;
+            std::vector<uint32_t> postSegmentIds;
+            std::vector<uint32_t> postSectionIds;
+            std::vector<float> conductances;
+            std::vector<float> facilitations;
+            std::vector<float> depressions;
+            TRY_GET_ATTRIBUTE(delays, edges, float, "delay", s)
+            TRY_GET_ATTRIBUTE(decayTimes, edges, float, "decay_time", s)
+            TRY_GET_ATTRIBUTE(preSegmentIds, edges, uint32_t, "afferent_segment_id", s)
+            TRY_GET_ATTRIBUTE(preSectionIds, edges, uint32_t, "afferent_section_id", s)
+            TRY_GET_ATTRIBUTE(postSegmentIds, edges, uint32_t, "efferent_segment_id", s)
+            TRY_GET_ATTRIBUTE(postSectionIds, edges, uint32_t, "efferent_section_id", s)
+            TRY_GET_ATTRIBUTE(conductances, edges, float, "conductance", s)
+            TRY_GET_ATTRIBUTE(facilitations, edges, float, "facilitation_time", s)
+            TRY_GET_ATTRIBUTE(depressions, edges, float, "depression_time", s)
+
+
+            for(size_t j = 0; j < edges.size(); j++)
+            {
+                FILTER(static_cast<uint32_t>(preGIDs[j] + 1));
+                if(!haveGIDs)
+                {
+                    if(preGIDs.size() > j)
+                        _preGID.get()[i] = static_cast<uint32_t>(preGIDs[j] + 1);
+                    if(postGIDs.size() > j)
+                        _postGID.get()[i] = static_cast<uint32_t>(postGIDs[j] + 1);
+                }
+
+                ADD_TO_STORAGE(_delay, i, delays, j)
+                ADD_TO_STORAGE(_decay, i, decayTimes, j)
+                ADD_TO_STORAGE(_preSectionID, i, preSectionIds, j)
+                ADD_TO_STORAGE(_preSegmentID, i, preSegmentIds, j)
+                ADD_TO_STORAGE(_postSectionID, i, postSectionIds, j)
+                ADD_TO_STORAGE(_postSegmentID, i, postSectionIds, j)
+                ADD_TO_STORAGE(_conductance, i, conductances, j)
+                ADD_TO_STORAGE(_facilitation, i, facilitations, j)
+                ADD_TO_STORAGE(_depression, i, depressions, j)
+                i++;
+            }
+        }
+
+        if(!_afferent)
+        {
+            swap(_preGID, _postGID);
+        }
+    }
+
+    void _loadPositions(const GIDSet* gids, const GIDSet* filterGIDs) const
+    {
+        std::lock_guard<std::mutex> lock(_mutex);
+
+        if (!_externalSource.empty())
+        {
+            LBTHROW(
+                std::runtime_error("Synapse positions are not available "
+                                   "for external projection synapses"));
+        }
+
+        if (_efficacy)
+            return;
+
+        std::string synapseFilePath = _circuit->getSynapseSource();
+
+        std::set<uint64_t> uniqueIds;
+        // Input ids must be decreased by 1
+        for(uint32_t oldId : *gids)
+        {
+            if(oldId > 0)
+                uniqueIds.insert(oldId - 1);
+        }
+        const std::vector<uint64_t> nodeIds (uniqueIds.begin(), uniqueIds.end());
+        const bbp::sonata::EdgeStorage edgeStorage (synapseFilePath);
+
+        if (_preCenterPositionX)
+            return;
+
+        _allocatePositions(_size);
+
+        size_t i = 0;
+
+        for(const auto& name : edgeStorage.populationNames())
+        {
+            const bbp::sonata::EdgePopulation edges (synapseFilePath, "", name);
+            const bbp::sonata::Selection s = _afferent? edges.afferentEdges(nodeIds)
+                                                      : edges.efferentEdges(nodeIds);
+
+            const auto preGids = edges.sourceNodeIDs(s);
+            const auto postGids = edges.targetNodeIDs(s);
+
+            const auto preCenterXs = edges.getAttribute<double>("afferent_center_x", s);
+            const auto preCenterYs = edges.getAttribute<double>("afferent_center_y", s);
+            const auto preCenterZs = edges.getAttribute<double>("afferent_center_z", s);
+            const auto preSurfaceXs = edges.getAttribute<double>("afferent_surface_x", s);
+            const auto preSurfaceYs = edges.getAttribute<double>("afferent_surface_y", s);
+            const auto preSurfaceZs = edges.getAttribute<double>("afferent_surface_z", s);
+            const auto postCenterXs = edges.getAttribute<double>("efferent_center_x", s);
+            const auto postCenterYs = edges.getAttribute<double>("efferent_center_y", s);
+            const auto postCenterZs = edges.getAttribute<double>("efferent_center_z", s);
+            const auto postSurfaceXs = edges.getAttribute<double>("efferent_surface_x", s);
+            const auto postSurfaceYs = edges.getAttribute<double>("efferent_surface_y", s);
+            const auto postSurfaceZs = edges.getAttribute<double>("efferent_surface_z", s);
+
+            for(size_t j = 0; j < edges.size(); j++)
+            {
+                FILTER(static_cast<uint32_t>(preGids[j] + 1))
+
+                ADD_TO_STORAGE(_preCenterPositionX, i, preCenterXs, j)
+                ADD_TO_STORAGE(_preCenterPositionY, i, preCenterYs, j)
+                ADD_TO_STORAGE(_preCenterPositionZ, i, preCenterZs, j)
+                ADD_TO_STORAGE(_preSurfacePositionX, i, preSurfaceXs, j)
+                ADD_TO_STORAGE(_preSurfacePositionY, i, preSurfaceYs, j)
+                ADD_TO_STORAGE(_preSurfacePositionZ, i, preSurfaceZs, j)
+                ADD_TO_STORAGE(_postCenterPositionX, i, postCenterXs, j)
+                ADD_TO_STORAGE(_postCenterPositionY, i, postCenterYs, j)
+                ADD_TO_STORAGE(_postCenterPositionZ, i, postCenterZs, j)
+                ADD_TO_STORAGE(_postSurfacePositionX, i, postSurfaceXs, j)
+                ADD_TO_STORAGE(_postSurfacePositionY, i, postSurfaceYs, j)
+                ADD_TO_STORAGE(_postSurfacePositionZ, i, postSurfaceZs, j)
+
+                i++;
+            }
+        }
+
+        if(!_afferent)
+        {
+            swap(_preCenterPositionX, _postCenterPositionX);
+            swap(_preCenterPositionY, _postCenterPositionY);
+            swap(_preCenterPositionZ, _postCenterPositionZ);
+            swap(_preSurfacePositionX, _postSurfacePositionX);
+            swap(_preSurfacePositionY, _postSurfacePositionY);
+            swap(_preSurfacePositionZ, _postSurfacePositionZ);
+        }
+    }
+
+    void _ensureGIDs() const
+    {
+        if (_externalSource.empty())
+            return;
+
+        // Until C++17 call_once is using decay_copy
+        std::call_once(_attributeFlag, &SonataImpl::_loadAttributes, this, &_gids,
+                       &_filterGIDs);
+    }
+
+    void _ensureAttributes() const
+    {
+        // Until C++17 call_once is using decay_copy
+        std::call_once(_attributeFlag, &SonataImpl::_loadAttributes, this, &_gids,
+                       &_filterGIDs);
+    }
+
+    void _ensurePositions() const
+    {
+        // Until C++17 call_once is using decay_copy
+        std::call_once(_positionFlag, &SonataImpl::_loadPositions, this, &_gids,
+                       &_filterGIDs);
+    }
 };
 
 Synapses::Synapses(const Circuit& circuit, const GIDSet& gids,
                    const GIDSet& filterGIDs, const bool afferent,
                    const SynapsePrefetch prefetch)
-    : _impl(new Impl(circuit, gids, filterGIDs, afferent, prefetch))
+//    : _impl(new Impl(circuit, gids, filterGIDs, afferent, prefetch))
 {
+    if(circuit._impl->getSynapseSource().find("sonata") != std::string::npos)
+        _impl = std::shared_ptr<Synapses::BaseImpl>(new SonataImpl(circuit, gids, filterGIDs, afferent, prefetch));
+    else
+        _impl = std::shared_ptr<Synapses::BaseImpl>(new Impl(circuit, gids, filterGIDs, afferent, prefetch));
 }
 
 Synapses::Synapses(const Circuit& circuit, const GIDSet& gids,
                    const std::string& source, const SynapsePrefetch prefetch)
-    : _impl(new Impl(circuit, gids, source, prefetch))
+//    : _impl(new Impl(circuit, gids, source, prefetch))
 {
+    if(circuit._impl->getSynapseSource().find("sonata") != std::string::npos)
+        _impl = std::shared_ptr<Synapses::BaseImpl>(new SonataImpl(circuit, gids, source, prefetch));
+    else
+        _impl = std::shared_ptr<Synapses::BaseImpl>(new Impl(circuit, gids, source, prefetch));
 }
 
 Synapses::~Synapses()
@@ -510,6 +843,36 @@ Synapses::Synapses(const SynapsesStream& stream)
                            stream._impl->_externalSource,
                            stream._impl->_prefetch))
 {
+    if(stream._impl->_externalSource.empty())
+    {
+        if(stream._impl->_circuit._impl->getSynapseSource().find("sonata") != std::string::npos)
+            _impl = std::shared_ptr<Synapses::BaseImpl>(
+                        new SonataImpl(
+                            stream._impl->_circuit, stream._impl->_gids,
+                            stream._impl->_filterGIDs, stream._impl->_afferent,
+                            stream._impl->_prefetch));
+        else
+            _impl = std::shared_ptr<Synapses::BaseImpl>(
+                           new Impl(
+                               stream._impl->_circuit, stream._impl->_gids,
+                               stream._impl->_filterGIDs, stream._impl->_afferent,
+                               stream._impl->_prefetch));
+    }
+    else
+    {
+        if(stream._impl->_circuit._impl->getSynapseSource().find("sonata") != std::string::npos)
+            _impl = std::shared_ptr<Synapses::BaseImpl>(
+                           new SonataImpl(
+                               stream._impl->_circuit, stream._impl->_gids,
+                               stream._impl->_externalSource,
+                               stream._impl->_prefetch));
+        else
+            _impl = std::shared_ptr<Synapses::BaseImpl>(
+                           new Impl(
+                               stream._impl->_circuit, stream._impl->_gids,
+                               stream._impl->_externalSource,
+                               stream._impl->_prefetch));
+    }
 }
 
 Synapses::Synapses(const Synapses& rhs) noexcept : _impl(rhs._impl)
