@@ -29,8 +29,6 @@ set(COMMON_PROJECT_DOMAIN ch.epfl.bluebrain)
 include(Common)
 
 add_subdirectory(libsonata)
-add_library(sonata::sonata_shared ALIAS sonata_shared)
-add_library(sonata::sonata_static ALIAS sonata_static)
 
 common_find_package(BBPTestData)
 common_find_package(Boost REQUIRED COMPONENTS
@@ -54,6 +52,9 @@ endif()
 common_find_package_post()
 
 list(APPEND BRION_DEPENDENT_LIBRARIES Boost Servus vmmlib)
+
+add_library(sonata::sonata_shared ALIAS sonata_shared)
+add_library(sonata::sonata_static ALIAS sonata_static)
 
 add_subdirectory(brion)
 add_subdirectory(brain)
