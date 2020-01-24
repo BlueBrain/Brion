@@ -29,5 +29,5 @@ before_install:
 script:
   - mkdir $BUILD_TYPE
   - cd $BUILD_TYPE
-  - HDF5_ROOT=/usr/local/opt/hdf5 cmake -GNinja -DCLONE_SUBPROJECTS=ON  -DSUBPROJECT_Keyv=$OPTIONAL -DCMAKE_INSTALL_PREFIX=$PWD/install -DCMAKE_BUILD_TYPE=$BUILD_TYPE ..
+  - HDF5_ROOT=/usr/local/opt/hdf5 cmake -GNinja -DCLONE_SUBPROJECTS=ON  -DSUBPROJECT_Keyv=$OPTIONAL -DCMAKE_INSTALL_PREFIX=$PWD/install -DCMAKE_BUILD_TYPE=$BUILD_TYPE -DEXTLIB_FROM_SUBMODULES=ON ..
   - ninja all && ninja $PROJECT_NAME-tests && ninja smoketests
