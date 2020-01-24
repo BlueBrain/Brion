@@ -24,7 +24,7 @@ before_install:
   # having an error
   - brew install gcc || brew link --overwrite gcc
   - brew install cppcheck doxygen ninja
-  - brew install hdf5
+  - brew list hdf5 || brew install hdf5
   - brew install boost-python
 script:
   - mkdir $BUILD_TYPE
