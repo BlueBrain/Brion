@@ -26,6 +26,7 @@
 namespace brion
 {
 const char* const SPIKE_FILE = "/out.dat";
+const char* const SONATA_SPIKE_FILE = "/out.h5";
 const char* const CIRCUIT_FILE_MVD2 = "/circuit.mvd2";
 const char* const CIRCUIT_FILE_MVD3 = "/circuit.mvd3";
 const char* const CIRCUIT_TARGET_FILE = "/start.target";

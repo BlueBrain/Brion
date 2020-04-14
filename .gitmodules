@@ -4,3 +4,7 @@
 [submodule "Pydoxine"]
 	path = Pydoxine
 	url = https://github.com/BlueBrain/Pydoxine
+[submodule "libsonata"]
+	path = libsonata
+	url = https://github.com/BlueBrain/libsonata.git
+	branch = master
