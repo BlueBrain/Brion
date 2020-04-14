@@ -321,7 +321,7 @@ URI BlueConfig::getReportSource(const std::string& report) const
         return URI(std::string("file://") + _impl->getOutputRoot() + "/" +
                    report + ".bbp");
 
-    if (format == "hdf5" || format.empty() || fs::is_directory(format))
+    if (format == "hdf5"  || format == "sonata" || format.empty() || fs::is_directory(format))
         return URI(std::string("file://") + _impl->getOutputRoot() + "/" +
                    report + ".h5");
 
@@ -335,6 +335,11 @@ URI BlueConfig::getSpikeSource() const
         get(CONFIGSECTION_RUN, _impl->getRun(), BLUECONFIG_SPIKES_PATH_KEY);
     if (path.empty())
         path = _impl->getOutputRoot() + SPIKE_FILE;
+
+    // If we dont find out.dat, try out.hdf5
+    if(!fs::exists(path))
+        path = _impl->getOutputRoot() + SONATA_SPIKE_FILE;
+
     URI uri;
     uri.setScheme("file");
     uri.setPath(path);

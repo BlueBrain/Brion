@@ -57,8 +57,9 @@ SpikeReportHDF5::SpikeReportHDF5(const SpikeReportInitData& initData)
     }())
 {
     const auto group = _file.getGroup("/spikes");
-    const auto setGids = group.getDataSet("gids");
-    const auto setTimestamps = group.getDataSet("timestamps");
+    const auto allG = group.getGroup("All");
+    const auto setGids = allG.getDataSet("node_ids");
+    const auto setTimestamps = allG.getDataSet("timestamps");
 
     uint32_ts gids;
     floats timestamps;
