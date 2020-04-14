@@ -53,9 +53,6 @@ common_find_package_post()
 
 list(APPEND BRION_DEPENDENT_LIBRARIES Boost Servus vmmlib)
 
-#add_library(sonata::sonata_shared ALIAS sonata_shared)
-#add_library(sonata::sonata_static ALIAS sonata_static)
-
 add_subdirectory(brion)
 add_subdirectory(brain)
 add_subdirectory(apps)
