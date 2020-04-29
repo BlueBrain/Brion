@@ -59,16 +59,6 @@ void _allocate(T& data, const size_t size)
     data.reset((typename T::element_type*)ptr);
     // cppcheck-suppress memleak
 }
-
-#ifdef BRION_USE_KEYV
-bool _hasSurfacePositions(const Circuit::Impl& circuit)
-{
-    const auto& synapse = circuit.getSynapsePositions(true);
-    assert(synapse.getNumAttributes() == brion::SYNAPSE_OLD_POSITION_ALL ||
-           synapse.getNumAttributes() == brion::SYNAPSE_POSITION_ALL);
-    return synapse.getNumAttributes() == brion::SYNAPSE_POSITION_ALL;
-}
-#endif
 }
 
 struct Synapses::InternalBaseImpl : public Synapses::BaseImpl
@@ -382,31 +372,15 @@ struct Synapses::Impl : public Synapses::InternalBaseImpl
         Strings keys;
         CachedSynapses loaded;
 
-#if BRION_USE_KEYV
-        auto cache = _circuit->getSynapseCache();
-        if (cache)
-        {
-            keys = cache->createKeys(*gids, _afferent);
-            loaded =
-                cache->loadPositions(keys, _hasSurfacePositions(*_circuit));
-        }
-#else
-        const bool cache = false;
-#endif
-
         // delay the opening of the synapse file as much as possible, even
         // though the code looks ugly... As the circuit impl keeps the file
         // opened, we can safely just get a loose pointer here.
         const brion::Synapse* positions = nullptr;
 
         size_t i = 0;
-        auto key = keys.begin();
         bool haveSurfacePositions = false;
         for (const auto gid : *gids)
         {
-            auto it = cache ? loaded.find(*key) : loaded.end();
-            const bool cached = it != loaded.end();
-
             const auto readFromFile = [&] {
                 if (!positions)
                 {
@@ -429,17 +403,7 @@ struct Synapses::Impl : public Synapses::InternalBaseImpl
                     return positions->read(gid, brion::SYNAPSE_OLD_POSITION);
             };
 
-            const brion::SynapseMatrix pos =
-                cached ? it->second : readFromFile();
-
-#ifdef BRION_USE_KEYV
-            if (cache)
-            {
-                if (!cached)
-                    cache->savePositions(gid, *key, pos);
-                ++key;
-            }
-#endif
+            const brion::SynapseMatrix pos = readFromFile();
 
             for (size_t j = 0; j < pos.size(); ++j)
             {

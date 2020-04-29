@@ -91,11 +91,8 @@ public:
         // needs recentering or not. This is only the case for local
         // morphologies.
         const Strings keys = _getKeys(gids, uris, coords);
-#ifdef BRION_USE_KEYV
-        CachedMorphologies cached = _loadFromCache(keys);
-#else
+
         CachedMorphologies cached;
-#endif
 
         struct MorphologyUse
         {
@@ -193,11 +190,6 @@ public:
                 morphology.reset(new neuron::Morphology(raw));
             }
 
-#ifdef BRION_USE_KEYV
-            // Saving to the cache.
-            if (_cache)
-                _cache->save(uri.getPath(), key, morphology);
-#endif
             // Assigning the morphology to its entry in the cache
             value = morphology;
             result.push_back(morphology);
@@ -231,22 +223,6 @@ private:
     {
         // < GID, key >
         Strings keys;
-#ifdef BRION_USE_KEYV
-        if (_cache)
-        {
-            // In the case of recentering of morphologies is needed, the keys
-            // already encode that.
-            if (coords == Circuit::Coordinates::global)
-                return _cache->createKeys(uris, gids);
-
-            const auto& recenter =
-                _recenterAll ? std::vector<bool>(uris.size(), true) : _recenter;
-            if (!recenter.empty())
-                return _cache->createKeys(uris, recenter);
-
-            return _cache->createKeys(uris);
-        }
-#endif
         keys.reserve(uris.size());
         if (coords == Circuit::Coordinates::global)
         {
@@ -276,21 +252,6 @@ private:
         }
         return keys;
     }
-
-#ifdef BRION_USE_KEYV
-    /** Loads keys from cache and recenters morphologies when needed.
-        The output morphologies are final. */
-    CachedMorphologies _loadFromCache(const Strings& keys)
-    {
-        if (!_cache)
-            return CachedMorphologies();
-
-        std::set<std::string> keySet;
-        for (const auto& key : keys)
-            keySet.insert(key);
-        return _cache->load(keySet);
-    }
-#endif
 
     void _recenterMorphology(brion::Morphology& morphology)
     {
