@@ -49,9 +49,9 @@ if(BRION_USE_ZEROEQ)
 endif()
 common_find_package_post()
 
-add_subdirectory(deps)
-
 list(APPEND BRION_DEPENDENT_LIBRARIES Boost Servus glm)
+
+add_subdirectory(deps)
 
 add_subdirectory(brion)
 add_subdirectory(brain)
