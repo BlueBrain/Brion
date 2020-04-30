@@ -24,12 +24,6 @@ if(TARGET BBPTestData)
   list(APPEND SPIKECONVERTER_LINK_LIBRARIES BBPTestData)
 endif()
 
-if(BRION_USE_ZEROEQ AND TARGET ZeroEQ)
-  set(MORPHOLOGYSERVER_SOURCES morphologyServer.cpp)
-  set(MORPHOLOGYSERVER_LINK_LIBRARIES Brion Lunchbox ZeroEQ Keyv)
-  common_application(morphologyServer NOHELP)
-endif()
-
 common_application(spikeConverter)
 common_application(morphologyConverter)
 common_application(compartmentConverter)

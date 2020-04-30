@@ -54,10 +54,6 @@ set(BRAIN_LINK_LIBRARIES
   PRIVATE sonata::sonata_shared Lunchbox ${Boost_FILESYSTEM_LIBRARIES}
 )
 
-if(TARGET Keyv)
-  list(APPEND BRAIN_LINK_LIBRARIES PRIVATE Keyv)
-endif()
-
 set(BRAIN_INCLUDE_NAME brain)
 set(BRAIN_NAMESPACE brain)
 
