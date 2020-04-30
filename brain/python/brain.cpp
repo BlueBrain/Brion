@@ -29,8 +29,6 @@
 
 #include "../compartmentReport.h"
 
-#include <vmmlib/vector.hpp>
-
 namespace brain
 {
 void export_Circuit();

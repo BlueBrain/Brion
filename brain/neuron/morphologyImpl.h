@@ -24,9 +24,9 @@
 #include "morphology.h"
 
 #include <brion/morphology.h>
+#include <brion/types.h>
+
 #include <lunchbox/lfVector.h>
-#include <vmmlib/aabb.hpp>
-#include <vmmlib/matrix.hpp>
 
 #include <mutex>
 
@@ -41,14 +41,14 @@ class Morphology::Impl
 public:
     const brion::ConstMorphologyPtr data;
 
-    const Matrix4f transformation;
+    const glm::mat4 transformation;
 
     uint32_t somaSection;
 
     explicit Impl(const URI& source);
-    Impl(const URI& source, const Matrix4f& transform);
+    Impl(const URI& source, const glm::mat4& transform);
     explicit Impl(brion::ConstMorphologyPtr morphology);
-    Impl(brion::MorphologyPtr morphology, const Matrix4f& transform);
+    Impl(brion::MorphologyPtr morphology, const glm::mat4& transform);
     Impl(const void* data, const size_t size);
 
     SectionRange getSectionRange(const uint32_t sectionID) const;
@@ -69,7 +69,7 @@ public:
 
     const uint32_ts& getChildren(const uint32_t sectionID) const;
 
-    const AABB& getBoundingBox() const;
+    const brion::AABB& getBoundingBox() const;
 
 private:
     // Distances caches. These caches need to be thread-safe to follow the
@@ -82,7 +82,7 @@ private:
     std::vector<uint32_ts> _sectionChildren;
 
     mutable std::once_flag _boundingBoxValid;
-    mutable AABB _aabb;
+    mutable brion::AABB _aabb;
 
     void _transform(brion::MorphologyPtr morphology);
     void _extractInformation();

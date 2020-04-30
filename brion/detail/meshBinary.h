@@ -26,7 +26,6 @@
 #include <lunchbox/debug.h>
 #include <lunchbox/log.h>
 #include <lunchbox/memoryMap.h>
-#include <vmmlib/vector.hpp>
 
 namespace brion
 {
@@ -116,7 +115,7 @@ public:
     virtual size_t getNumVertices() const { return _vertices; }
     virtual Vector3fsPtr readVertices() const
     {
-        return readBuffer<Vector3f>(_ptr + _vertexSeek, _vertices);
+        return readBuffer<glm::vec3>(_ptr + _vertexSeek, _vertices);
     }
 
     virtual uint16_tsPtr readVertexSections() const

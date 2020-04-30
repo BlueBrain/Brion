@@ -43,19 +43,20 @@ Morphology::Impl::Impl(const URI& source)
 {
 }
 
-Morphology::Impl::Impl(const URI& source, const Matrix4f& transform)
+Morphology::Impl::Impl(const URI& source, const glm::mat4& transform)
     : Impl(brion::MorphologyPtr(new brion::Morphology(source)), transform)
 {
 }
 
 Morphology::Impl::Impl(brion::ConstMorphologyPtr morphology)
     : data(morphology)
+    , transformation(glm::mat4(1.f)) // builds identity matrix
 {
     _extractInformation();
 }
 
 Morphology::Impl::Impl(brion::MorphologyPtr morphology,
-                       const Matrix4f& transform)
+                       const glm::mat4& transform)
     : data(morphology)
     , transformation(transform)
 
@@ -168,7 +169,7 @@ Vector4fs Morphology::Impl::getSectionSamples(const uint32_t sectionID,
         // Interpolating the cross section at point.
         const float alpha = (length - accumLengths[index]) /
                             (accumLengths[index + 1] - accumLengths[index]);
-        const Vector4f sample =
+        const glm::vec4 sample =
             points[start + 1] * alpha + points[start] * (1 - alpha);
         result.push_back(sample);
     }
@@ -220,16 +221,16 @@ const uint32_ts& Morphology::Impl::getChildren(const uint32_t sectionID) const
     return _sectionChildren[sectionID];
 }
 
-const AABB& Morphology::Impl::getBoundingBox() const
+const brion::AABB& Morphology::Impl::getBoundingBox() const
 {
     std::call_once(_boundingBoxValid, [this]() {
         // Dealing with single point soma;
         const auto points = getSectionSamples(somaSection);
         if (points.size() == 1)
         {
-            const auto center = points[0].get_sub_vector<3, 0>();
+            const glm::vec3 center (points[0]);
             const auto radius = points[0][3];
-            const auto diagonal = Vector3f(radius, radius, radius);
+            const glm::vec3 diagonal (radius, radius, radius);
             _aabb.merge(center + diagonal);
             _aabb.merge(center - diagonal);
         }
@@ -237,8 +238,8 @@ const AABB& Morphology::Impl::getBoundingBox() const
         {
             // The soma profile points are not excluded, but it
             // shouldn't matter.
-            const auto point = Vector3f(sample[0], sample[1], sample[2]);
-            auto radius = Vector3f(sample[3], sample[3], sample[3]) * 0.5;
+            const glm::vec3 point (sample[0], sample[1], sample[2]);
+            const auto radius = (glm::vec3(sample[3], sample[3], sample[3]) * 0.5f);
             _aabb.merge(point + radius);
             _aabb.merge(point - radius);
         }
@@ -253,8 +254,8 @@ void Morphology::Impl::_transform(brion::MorphologyPtr morphology)
     for (size_t i = 0; i < points.size(); ++i)
     {
         auto& p = points[i];
-        const Vector3f& pp = transformation * p.get_sub_vector<3, 0>();
-        p.set_sub_vector<3, 0>(pp);
+        const glm::vec3 pp (transformation * p);
+        p = glm::vec4(pp.x, pp.y, pp.z, p.w);
     }
 }
 
@@ -293,10 +294,10 @@ float Morphology::Impl::_computeSectionLength(const uint32_t sectionID) const
     float length = 0;
     for (size_t i = range.first; i != range.second - 1; ++i)
     {
-        const Vector4f& start = points[i];
-        const Vector4f& end = points[i + 1];
-        const Vector3f& diff = (end - start).get_sub_vector<3, 0>();
-        length += diff.length();
+        const glm::vec4& start = points[i];
+        const glm::vec4& end = points[i + 1];
+        const glm::vec3& diff (end - start);
+        length += glm::length(diff);
     }
     return length;
 }
@@ -310,10 +311,10 @@ floats Morphology::Impl::_computeAccumulatedLengths(
     result.push_back(0);
     for (size_t i = range.first; i != range.second - 1; ++i)
     {
-        const Vector4f& start = points[i];
-        const Vector4f& end = points[i + 1];
-        const Vector3f& diff = (end - start).get_sub_vector<3, 0>();
-        result.push_back(result.back() + diff.length());
+        const glm::vec4& start = points[i];
+        const glm::vec4& end = points[i + 1];
+        const glm::vec3& diff (end - start);
+        result.push_back(result.back() + glm::length(diff));
     }
     return result;
 }

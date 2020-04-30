@@ -32,38 +32,38 @@ class File;
 namespace details
 {
 template <size_t M, typename T>
-struct array_dims<std::vector<vmml::vector<M, T>>>
+struct array_dims<std::vector<glm::vec<M, T, glm::defaultp>>>
 {
     static const size_t value = 2;
 };
 
 template <size_t M, typename T>
-struct type_of_array<std::vector<vmml::vector<M, T>>>
+struct type_of_array<std::vector<glm::vec<M, T, glm::defaultp>>>
 {
     typedef T type;
 };
 
 template <size_t M, typename T>
-struct type_of_array<vmml::vector<M, T>>
+struct type_of_array<glm::vec<M, T, glm::defaultp>>
 {
     typedef T type;
 };
 
 template <size_t M, typename T>
-struct data_converter<std::vector<vmml::vector<M, T>>>
+struct data_converter<std::vector<glm::vec<M, T, glm::defaultp>>>
 {
-    inline data_converter(std::vector<vmml::vector<M, T>>&, DataSpace&) {}
-    inline T* transform_read(std::vector<vmml::vector<M, T>>& vector)
+    inline data_converter(std::vector<glm::vec<M, T, glm::defaultp>>&, DataSpace&) {}
+    inline T* transform_read(std::vector<glm::vec<M, T, glm::defaultp>>& vector)
     {
         return reinterpret_cast<T*>(vector.data());
     }
 
-    inline T* transform_write(std::vector<vmml::vector<M, T>>& vector)
+    inline T* transform_write(std::vector<glm::vec<M, T, glm::defaultp>>& vector)
     {
         return reinterpret_cast<T*>(vector.data());
     }
 
-    inline void process_result(std::vector<vmml::vector<M, T>>&) {}
+    inline void process_result(std::vector<glm::vec<M, T, glm::defaultp>>&) {}
 };
 }
 
@@ -78,6 +78,25 @@ inline AtomicType<brion::MorphologyVersion>::AtomicType()
 {
     _hid = H5Tcopy(H5T_NATIVE_INT);
 }
+
+template<>
+inline AtomicType<glm::ivec2>::AtomicType()
+{
+    _hid = H5Tcopy(H5T_NATIVE_INT);
+}
+
+template<>
+inline AtomicType<glm::vec3>::AtomicType()
+{
+    _hid = H5Tcopy(H5T_NATIVE_INT);
+}
+
+template<>
+inline AtomicType<glm::vec4>::AtomicType()
+{
+    _hid = H5Tcopy(H5T_NATIVE_INT);
+}
+
 }
 
 namespace brion

@@ -42,7 +42,6 @@ common_find_package(PythonInterp)
 common_find_package(PythonLibs)
 common_find_package(Servus REQUIRED)
 common_find_package(Sphinx 1.3)
-common_find_package(vmmlib REQUIRED)
 option(BRION_USE_ZEROEQ "Use ZeroEQ for plugin backend and morphologyServer" OFF)
 if(BRION_USE_ZEROEQ)
   git_subproject(ZeroEQ https://github.com/HBPVIS/ZeroEQ.git 1e66ee3)
@@ -50,7 +49,9 @@ if(BRION_USE_ZEROEQ)
 endif()
 common_find_package_post()
 
-list(APPEND BRION_DEPENDENT_LIBRARIES Boost Servus vmmlib)
+add_subdirectory(deps)
+
+list(APPEND BRION_DEPENDENT_LIBRARIES Boost Servus glm)
 
 add_subdirectory(brion)
 add_subdirectory(brain)

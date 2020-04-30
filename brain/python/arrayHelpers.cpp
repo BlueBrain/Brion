@@ -24,10 +24,6 @@
 #include "brain/compartmentReport.h"
 #include "brain/compartmentReportMapping.h"
 
-#include <vmmlib/matrix.hpp>
-#include <vmmlib/quaternion.hpp>
-#include <vmmlib/vector.hpp>
-
 namespace bp = boost::python;
 
 namespace brain_python

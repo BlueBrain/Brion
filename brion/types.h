@@ -27,10 +27,8 @@
 #include <servus/uri.h>
 #include <set>
 
-#pragma warning(push)
-#pragma warning(disable : 4996)
-#include <vmmlib/types.hpp>
-#pragma warning(pop)
+#include <glm/glm.hpp>
+#include <glm/gtc/quaternion.hpp>
 
 #ifdef __GNUC__
 #define BRION_UNUSED __attribute__((unused))
@@ -55,71 +53,99 @@ class Synapse;
 class SynapseSummary;
 class Target;
 
-using vmml::Vector2i;
-using vmml::Vector3f;
-using vmml::Vector4f;
-using vmml::Vector3d;
-using vmml::Vector4d;
 using servus::uint128_t;
 
-typedef std::vector<char> chars;
-typedef std::vector<unsigned char> uchars;
-typedef std::vector<size_t> size_ts;
-typedef std::vector<int32_t> int32_ts;
-typedef std::vector<uint16_t> uint16_ts;
-typedef std::vector<uint32_t> uint32_ts;
-typedef std::vector<uint64_t> uint64_ts;
-typedef std::vector<float> floats;
-typedef std::vector<double> doubles;
-typedef std::vector<Vector2i> Vector2is;
-typedef std::vector<Vector3f> Vector3fs;
-typedef std::vector<Vector4f> Vector4fs;
-typedef std::vector<Vector3d> Vector3ds;
-typedef std::vector<Vector4d> Vector4ds;
-typedef std::vector<SectionType> SectionTypes;
-typedef std::vector<Target> Targets;
+using chars         = std::vector<char>;
+using uchars        = std::vector<unsigned char>;
+using size_ts       = std::vector<size_t>;
+using int32_ts      = std::vector<int32_t>;
+using uint16_ts     = std::vector<uint16_t>;
+using uint32_ts     = std::vector<uint32_t>;
+using uint64_ts     = std::vector<uint64_t>;
+using floats        = std::vector<float>;
+using doubles       = std::vector<double>;
+using Vector2is     = std::vector<glm::ivec2>;
+using Vector3fs     = std::vector<glm::vec3>;
+using Vector4fs     = std::vector<glm::vec4>;
+using Vector3ds     = std::vector<glm::dvec3>;
+using Vector4ds     = std::vector<glm::dvec4>;
+using SectionTypes  = std::vector<SectionType>;
+using Targets       = std::vector<Target>;
 
-typedef std::shared_ptr<int32_ts> int32_tsPtr;
-typedef std::shared_ptr<uint16_ts> uint16_tsPtr;
-typedef std::shared_ptr<uint32_ts> uint32_tsPtr;
-typedef std::shared_ptr<floats> floatsPtr;
-typedef std::shared_ptr<doubles> doublesPtr;
-typedef std::shared_ptr<Vector3fs> Vector3fsPtr;
-typedef std::shared_ptr<Vector3ds> Vector3dsPtr;
-typedef std::shared_ptr<Vector4ds> Vector4dsPtr;
+using int32_tsPtr   = std::shared_ptr<int32_ts>;
+using uint16_tsPtr  = std::shared_ptr<uint16_ts>;
+using uint32_tsPtr  = std::shared_ptr<uint32_ts>;
+using floatsPtr      = std::shared_ptr<floats>;
+using doublesPtr    = std::shared_ptr<doubles>;
+using Vector3fsPtr  = std::shared_ptr<Vector3fs>;
+using Vector3dsPtr  = std::shared_ptr<Vector3ds>;
+using Vector4dsPtr  = std::shared_ptr<Vector4ds>;
+
+struct AABB
+{
+    glm::vec3 _min {0.f, 0.f, 0.f};
+    glm::vec3 _max {0.f, 0.f, 0.f};
+
+    void merge(const glm::vec3& p) noexcept
+    {
+        _min.x = std::min(p.x, _min.x);
+        _min.y = std::min(p.y, _min.y);
+        _min.z = std::min(p.z, _min.z);
+
+        _max.x = std::max(p.x, _max.x);
+        _max.y = std::max(p.y, _max.y);
+        _max.z = std::max(p.z, _max.z);
+    }
+
+    void merge(const AABB& o) noexcept
+    {
+        _min.x = std::min(o._min.x, _min.x);
+        _min.y = std::min(o._min.y, _min.y);
+        _min.z = std::min(o._min.z, _min.z);
+
+        _max.x = std::max(o._max.x, _max.x);
+        _max.y = std::max(o._max.y, _max.y);
+        _max.z = std::max(o._max.z, _max.z);
+    }
+
+    glm::vec3& getMin() noexcept { return _min; }
+    const glm::vec3& getMin() const noexcept { return _min; }
+    glm::vec3& getMax() noexcept { return _max; }
+    const glm::vec3& getMax() const noexcept { return _max; }
+};
 
 using MorphologyPtr = std::shared_ptr<Morphology>;
 using ConstMorphologyPtr = std::shared_ptr<const Morphology>;
 
 /** Ordered set of GIDs of neurons. */
-typedef std::set<uint32_t> GIDSet;
+using GIDSet = std::set<uint32_t>;
 
-typedef GIDSet::const_iterator GIDSetCIter;
-typedef GIDSet::iterator GIDSetIter;
+using GIDSetCIter   = GIDSet::const_iterator;
+using GIDSetIter    = GIDSet::iterator;
 
 /** The offset for the voltage per section for each neuron, uin64_t max for
  *  sections with no compartments.
  */
-typedef std::vector<uint64_ts> SectionOffsets;
+using SectionOffsets = std::vector<uint64_ts>;
 
 /** The number of compartments per section for each neuron. */
-typedef std::vector<uint16_ts> CompartmentCounts;
+using CompartmentCounts = std::vector<uint16_ts>;
 
 /** Data matrix storing NeuronAttributes for each neuron. */
-typedef boost::multi_array<std::string, 2> NeuronMatrix;
+using NeuronMatrix = boost::multi_array<std::string, 2>;
 
 /** Data matrix storing SynapseAttributes for each neuron. */
-typedef boost::multi_array<float, 2> SynapseMatrix;
+using SynapseMatrix = boost::multi_array<float, 2>;
 
 /** Data matrix storing GID, numEfferent, numAfferent for each neuron. */
-typedef boost::multi_array<uint32_t, 2> SynapseSummaryMatrix;
+using SynapseSummaryMatrix = boost::multi_array<uint32_t, 2>;
 
 /** A spike */
-typedef std::pair<float, uint32_t> Spike;
-typedef std::vector<Spike> Spikes;
+using Spike     = std::pair<float, uint32_t>;
+using Spikes    = std::vector<Spike>;
 
 /** A list of Spikes events per cell gid, indexed by spikes times. */
-typedef std::multimap<float, uint32_t> SpikeMap;
+using SpikeMap = std::multimap<float, uint32_t>;
 
 struct Frame
 {
@@ -145,7 +171,7 @@ const float RESTING_VOLTAGE BRION_UNUSED = -67.; //!< Resting voltage in mV
 /** Lowest voltage after hyperpolarisation */
 const float MINIMUM_VOLTAGE BRION_UNUSED = -80.;
 
-typedef std::vector<std::string> Strings;
+using Strings = std::vector<std::string>;
 
 using servus::URI;
 using URIs = std::vector<URI>;

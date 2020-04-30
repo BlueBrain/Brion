@@ -32,6 +32,8 @@
 
 #include <boost/algorithm/string.hpp>
 
+#include <glm/gtc/quaternion.hpp>
+
 namespace brain
 {
 namespace
@@ -57,9 +59,10 @@ Matrix4fs _getTransforms(const Circuit::Impl& circuit, const GIDSet& gids)
 
     Matrix4fs transforms(positions.size());
 
-#pragma omp parallel for
+    #pragma omp parallel for
     for (size_t i = 0; i < positions.size(); ++i)
-        transforms[i] = Matrix4f(rotations[i], positions[i]);
+        transforms[i] = glm::mat4_cast(rotations[i]) * glm::translate(glm::mat4(), positions[i]);
+        
     return transforms;
 }
 
@@ -275,13 +278,13 @@ private:
         const size_t end = somaID == sections.size() - 1
                                ? points.size()
                                : sections[somaID + 1][0];
-        Vector3f centroid;
+        glm::vec3 centroid;
         for (size_t i = start; i != end; ++i)
-            centroid += points[i].get_sub_vector<3, 0>();
+            centroid += glm::vec3(points[i]);
         centroid /= float(end - start);
 
         // Translating all points
-        if (centroid.length() < 1e-6)
+        if (glm::length(centroid) < 1e-6)
             return; // Do not recenter is almost there
 #pragma omp parallel for
         for (size_t i = 0; i < points.size(); ++i)

@@ -19,7 +19,6 @@
 
 #include <BBP/TestDatasets.h>
 #include <brain/brain.h>
-#include <vmmlib/vmmlib.hpp>
 
 #define BOOST_TEST_MODULE Synapses
 #include <boost/test/unit_test.hpp>
@@ -54,7 +53,7 @@ BOOST_AUTO_TEST_CASE(projection_stream)
     std::future<brain::Synapses> future = stream.read();
     size_t i = 1;
     size_t totalSize = 0;
-    vmml::AABBf bbox;
+    brion::AABB bbox;
     while (!stream.eos())
     {
         const brain::Synapses synapses = future.get();
@@ -68,7 +67,7 @@ BOOST_AUTO_TEST_CASE(projection_stream)
         const float* __restrict__ posz = synapses.preSurfaceZPositions();
 
         for (size_t j = 0; j < synapses.size(); ++j)
-            bbox.merge(vmml::Vector3f(posx[j], posy[j], posz[j]));
+            bbox.merge(glm::vec3(posx[j], posy[j], posz[j]));
         totalSize += synapses.size();
     }
 

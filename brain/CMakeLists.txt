@@ -50,7 +50,7 @@ set(BRAIN_SOURCES
 
 set(BRAIN_PUBLIC_INCLUDE_DIRECTORIES ${Boost_INCLUDE_DIRS})
 set(BRAIN_LINK_LIBRARIES
-  PUBLIC Brion vmmlib
+  PUBLIC Brion glm
   PRIVATE sonata::sonata_shared Lunchbox ${Boost_FILESYSTEM_LIBRARIES}
 )
 

@@ -23,7 +23,6 @@
 #include <brion/api.h>
 #include <brion/types.h>
 #include <servus/serializable.h> // return value
-#include <vmmlib/vector.hpp>     // return value
 
 namespace brion
 {

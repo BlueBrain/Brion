@@ -1,0 +1,5 @@
+list(APPEND CMAKE_MODULE_PATH ${CMAKE_CURRENT_SOURCE_DIR})
+
+if(NOT TARGET glm)
+  include(GLMCMakeLists)
+endif()

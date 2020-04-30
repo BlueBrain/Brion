@@ -62,8 +62,8 @@ void checkEqualArrays(const std::vector<T>& array1,
 }
 
 template <typename T, long unsigned int M>
-void checkCloseArrays(const std::vector<vmml::vector<M, T>>& array1,
-                      const std::vector<vmml::vector<M, T>>& array2)
+void checkCloseArrays(const std::vector<glm::vec<M, T, glm::defaultp>>& array1,
+                      const std::vector<glm::vec<M, T, glm::defaultp>>& array2)
 {
     BOOST_CHECK_EQUAL(array1.size(), array2.size());
     for (size_t i = 0; i != std::min(array1.size(), array2.size()); ++i)

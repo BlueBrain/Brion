@@ -96,15 +96,16 @@ void _assign(const ::MVD3::Range& range, const GIDSet& gids, SrcArray& src,
         *j++ = assignOp(src[gid - range.offset - 1]);
 }
 
-Vector3f _toVector3f(const ::MVD3::Positions::const_subarray<1>::type& subarray)
+glm::vec3 _toVector3f(const ::MVD3::Positions::const_subarray<1>::type& subarray)
 {
-    return Vector3f(subarray[0], subarray[1], subarray[2]);
+    return glm::vec3(subarray[0], subarray[1], subarray[2]);
 }
 
-Quaternionf _toQuaternion(
+glm::quat _toQuaternion(
     const ::MVD3::Rotations::const_subarray<1>::type& subarray)
 {
-    return Quaternionf(subarray[0], subarray[1], subarray[2], subarray[3]);
+    return glm::angleAxis(static_cast<float>(subarray[0]), 
+                          glm::vec3(subarray[1], subarray[2], subarray[3]));
 }
 
 template <typename T>
@@ -331,7 +332,7 @@ public:
             const float y = attributeY[gid - startIdx];
             const float z = attributeZ[gid - startIdx];
 
-            output.push_back(Vector3f(x, y, z));
+            output.push_back(glm::vec3(x, y, z));
         }
         return output;
     }
@@ -388,7 +389,7 @@ public:
             // Special case for missing rotation angles.
             if (rX == 0 && rY == 0 && rZ == 0)
             {
-                output.push_back(Quaternionf());
+                output.push_back(glm::quat());
                 continue;
             }
 
@@ -398,8 +399,12 @@ public:
             // These are the values given by multiplying the rotation
             // matrices for R(X)R(Y)R(Z) i.e. extrinsic rotation around Z
             // then Y then X
-            vmml::Matrix3f mtx;
+            glm::mat3 mtx;
 
+            mtx[0] = glm::vec3(cY * cZ, cZ * sX * sY + cX * sZ, sX * sZ - cX * cZ * sY);
+            mtx[1] = glm::vec3(-cY * sZ, cX * cZ - sX * sY * sZ, cZ * sX + cX * sY * sZ);
+            mtx[2] = glm::vec3(sY, -cY * sX, cX * cY);
+            /*
             mtx(0, 0) = cY * cZ;
             mtx(0, 1) = -cY * sZ;
             mtx(0, 2) = sY;
@@ -409,8 +414,8 @@ public:
             mtx(2, 0) = sX * sZ - cX * cZ * sY;
             mtx(2, 1) = cZ * sX + cX * sY * sZ;
             mtx(2, 2) = cX * cY;
-
-            output.push_back(Quaternionf(mtx));
+            */
+            output.push_back(glm::quat_cast(mtx));
         }
 
         return output;
@@ -717,9 +722,9 @@ public:
         {
             try
             {
-                positions[i] = brion::Vector3f(lexical_cast<float>(data[i][0]),
-                                               lexical_cast<float>(data[i][1]),
-                                               lexical_cast<float>(data[i][2]));
+                positions[i] = glm::vec3(lexical_cast<float>(data[i][0]),
+                                         lexical_cast<float>(data[i][1]),
+                                         lexical_cast<float>(data[i][2]));
             }
             catch (const boost::bad_lexical_cast&)
             {
@@ -791,7 +796,7 @@ public:
             {
                 // transform rotation Y angle in degree into rotation quaternion
                 const float angle = lexical_cast<float>(data[i][0]) * deg2rad;
-                rotations[i] = Quaternionf(angle, Vector3f(0, 1, 0));
+                rotations[i] = glm::angleAxis(angle, glm::vec3(0.f, 1.f, 0.f));
             }
             catch (const boost::bad_lexical_cast&)
             {

@@ -42,10 +42,10 @@ BOOST_AUTO_TEST_CASE(getPositions)
     brion::GIDSet ids = {0, 2, 3, 7};
     const auto postitions = circuit.getPositions(ids);
 
-    BOOST_CHECK_EQUAL(postitions[0], vmml::Vector3f(0, 0, 0.5));
-    BOOST_CHECK_EQUAL(postitions[1], vmml::Vector3f(2, 0, 0.5));
-    BOOST_CHECK_EQUAL(postitions[2], vmml::Vector3f(3, 1, 0.5));
-    BOOST_CHECK_EQUAL(postitions[3], vmml::Vector3f(1, 1, -0.5));
+    BOOST_CHECK_EQUAL(postitions[0], glm::vec3(0.f, 0.f, 0.5f));
+    BOOST_CHECK_EQUAL(postitions[1], glm::vec3(2.f, 0.f, 0.5f));
+    BOOST_CHECK_EQUAL(postitions[2], glm::vec3(3.f, 1.f, 0.5f));
+    BOOST_CHECK_EQUAL(postitions[3], glm::vec3(1.f, 1.f, -0.5f));
 }
 
 BOOST_AUTO_TEST_CASE(getRotations)
@@ -54,9 +54,9 @@ BOOST_AUTO_TEST_CASE(getRotations)
     brion::GIDSet ids = {0, 1, 2, 3, 4, 5, 6, 7, 8, 9};
     const auto rotations = circuit.getRotations(ids);
 
-    const auto x_axis = vmml::Vector3f(1, 0, 0);
-    const auto y_axis = vmml::Vector3f(0, 1, 0);
-    const auto z_axis = vmml::Vector3f(0, 0, 1);
+    const auto x_axis = glm::vec3(1.f, 0.f, 0.f);
+    const auto y_axis = glm::vec3(0.f, 1.f, 0.f);
+    const auto z_axis = glm::vec3(0.f, 0.f, 1.f);
 
     // Rotate 180 degrees around X
     const auto rot0 = rotations[0].getRotationMatrix();

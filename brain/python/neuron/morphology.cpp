@@ -28,9 +28,6 @@
 #include <brain/neuron/section.h>
 #include <brain/neuron/soma.h>
 
-#include <vmmlib/matrix.hpp>
-#include <vmmlib/vector.hpp>
-
 namespace bp = boost::python;
 
 namespace brain

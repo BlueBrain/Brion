@@ -64,9 +64,9 @@ struct Sample
     {
         float radius;
         valid =
-            sscanf(line, "%20d%20f%20f%20f%20f%20d", (int*)&type, &point.x(),
-                   &point.y(), &point.z(), &radius, &parent) == 6;
-        point.w() = radius * 2; // The point array stores diameters.
+            sscanf(line, "%20d%20f%20f%20f%20f%20d", (int*)&type, &point.x,
+                   &point.y, &point.z, &radius, &parent) == 6;
+        point.w = radius * 2; // The point array stores diameters.
 
         if (type >= SWC_SECTION_CUSTOM)
             valid = false; // Unknown section type, custom samples are also
@@ -74,7 +74,7 @@ struct Sample
     }
 
     bool valid;
-    Vector4f point; // x, y, z and diameter
+    glm::vec4 point; // x, y, z and diameter
     SWCSectionType type;
     int parent = -1;        // sample index
     int nextID = -1;        // sample index
@@ -432,7 +432,7 @@ void MorphologySWC::_buildStructure(RawSWCInfo& info)
     while (sample)
     {
         _sections.push_back(
-            Vector2i(int(_points.size()), sample->parentSection));
+            glm::ivec2(int(_points.size()), sample->parentSection));
         _sectionTypes.push_back(SectionType(sample->type));
 
         // Pushing first point of the section using the parent sample
