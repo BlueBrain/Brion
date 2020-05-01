@@ -389,7 +389,7 @@ public:
             // Special case for missing rotation angles.
             if (rX == 0 && rY == 0 && rZ == 0)
             {
-                output.push_back(glm::quat());
+                output.push_back(glm::quat_cast(glm::mat4(1.f)));
                 continue;
             }
 
@@ -399,7 +399,7 @@ public:
             // These are the values given by multiplying the rotation
             // matrices for R(X)R(Y)R(Z) i.e. extrinsic rotation around Z
             // then Y then X
-            glm::mat3 mtx;
+            glm::mat3 mtx (1.f);
 
             mtx[0] = glm::vec3(cY * cZ, cZ * sX * sY + cX * sZ, sX * sZ - cX * cZ * sY);
             mtx[1] = glm::vec3(-cY * sZ, cX * cZ - sX * sY * sZ, cZ * sX + cX * sY * sZ);
@@ -711,7 +711,7 @@ public:
         if (gids.empty())
             return Vector3fs();
 
-        const brion::NeuronMatrix& data =
+        const brion::NeuronMatrix data =
             _circuit.get(gids, brion::NEURON_POSITION_X |
                                    brion::NEURON_POSITION_Y |
                                    brion::NEURON_POSITION_Z);
@@ -742,7 +742,7 @@ public:
         if (gids.empty())
             return size_ts();
 
-        const brion::NeuronMatrix& matrix =
+        const brion::NeuronMatrix matrix =
             _circuit.get(gids, brion::NEURON_MTYPE);
         size_ts result(matrix.shape()[0]);
 
@@ -763,7 +763,7 @@ public:
         if (gids.empty())
             return size_ts();
 
-        const brion::NeuronMatrix& matrix =
+        const brion::NeuronMatrix matrix =
             _circuit.get(gids, brion::NEURON_ETYPE);
         size_ts result(matrix.shape()[0]);
 
@@ -785,7 +785,7 @@ public:
             return Quaternionfs();
 
         const float deg2rad = float(M_PI) / 180.f;
-        const brion::NeuronMatrix& data =
+        const brion::NeuronMatrix data =
             _circuit.get(gids, brion::NEURON_ROTATION);
         Quaternionfs rotations(gids.size());
 
@@ -814,7 +814,7 @@ public:
         if (gids.empty())
             return Strings();
 
-        const brion::NeuronMatrix& matrix =
+        const brion::NeuronMatrix matrix =
             _circuit.get(gids, brion::NEURON_MORPHOLOGY_NAME);
         Strings result;
         result.reserve(matrix.shape()[0]);

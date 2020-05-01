@@ -254,7 +254,7 @@ void Morphology::Impl::_transform(brion::MorphologyPtr morphology)
     for (size_t i = 0; i < points.size(); ++i)
     {
         auto& p = points[i];
-        const glm::vec3 pp (transformation * p);
+        const glm::vec3 pp (transformation * glm::vec4(p.x, p.y, p.z, 1.f));
         p = glm::vec4(pp.x, pp.y, pp.z, p.w);
     }
 }
@@ -296,7 +296,7 @@ float Morphology::Impl::_computeSectionLength(const uint32_t sectionID) const
     {
         const glm::vec4& start = points[i];
         const glm::vec4& end = points[i + 1];
-        const glm::vec3& diff (end - start);
+        const glm::vec3 diff (end - start);
         length += glm::length(diff);
     }
     return length;
@@ -313,7 +313,7 @@ floats Morphology::Impl::_computeAccumulatedLengths(
     {
         const glm::vec4& start = points[i];
         const glm::vec4& end = points[i + 1];
-        const glm::vec3& diff (end - start);
+        const glm::vec3 diff (end - start);
         result.push_back(result.back() + glm::length(diff));
     }
     return result;

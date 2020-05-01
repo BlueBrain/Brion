@@ -51,8 +51,8 @@ URIs _getMorphologyURIs(const Circuit::Impl& circuit, const GIDSet& gids)
 
 Matrix4fs _getTransforms(const Circuit::Impl& circuit, const GIDSet& gids)
 {
-    const Vector3fs& positions = circuit.getPositions(gids);
-    const Quaternionfs& rotations = circuit.getRotations(gids);
+    const Vector3fs positions = circuit.getPositions(gids);
+    const Quaternionfs rotations = circuit.getRotations(gids);
     if (positions.size() != rotations.size())
         throw std::runtime_error(
             "Positions not equal rotations for given GIDs");
@@ -61,7 +61,7 @@ Matrix4fs _getTransforms(const Circuit::Impl& circuit, const GIDSet& gids)
 
     #pragma omp parallel for
     for (size_t i = 0; i < positions.size(); ++i)
-        transforms[i] = glm::mat4_cast(rotations[i]) * glm::translate(glm::mat4(), positions[i]);
+        transforms[i] = glm::mat4_cast(rotations[i]) * glm::translate(glm::mat4(1.f), positions[i]);
         
     return transforms;
 }

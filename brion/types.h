@@ -26,9 +26,13 @@
 #include <map>
 #include <servus/uri.h>
 #include <set>
+#include <vector>
 
+#define GLM_FORCE_CTOR_INIT
 #include <glm/glm.hpp>
-#include <glm/gtc/quaternion.hpp>
+#define GLM_ENABLE_EXPERIMENTAL
+#include <glm/ext.hpp>
+#include <glm/gtx/io.hpp>
 
 #ifdef __GNUC__
 #define BRION_UNUSED __attribute__((unused))
@@ -83,8 +87,8 @@ using Vector4dsPtr  = std::shared_ptr<Vector4ds>;
 
 struct AABB
 {
-    glm::vec3 _min {0.f, 0.f, 0.f};
-    glm::vec3 _max {0.f, 0.f, 0.f};
+    glm::vec3 _min {999999.f, 999999.f, 999999.f};
+    glm::vec3 _max {-999999.f, -999999.f, -999999.f};
 
     void merge(const glm::vec3& p) noexcept
     {
@@ -106,6 +110,11 @@ struct AABB
         _max.x = std::max(o._max.x, _max.x);
         _max.y = std::max(o._max.y, _max.y);
         _max.z = std::max(o._max.z, _max.z);
+    }
+
+    glm::vec3 getCenter() const noexcept
+    {
+        return (_max + _min) * 0.5f;
     }
 
     glm::vec3& getMin() noexcept { return _min; }
