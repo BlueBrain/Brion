@@ -20,8 +20,19 @@
 #include <BBP/TestDatasets.h>
 #include <brain/brain.h>
 
+#include <iostream>
+
 #define BOOST_TEST_MODULE Synapses
 #include <boost/test/unit_test.hpp>
+
+namespace std
+{
+    ostream& operator<<(ostream& o, const glm::vec3& v)
+    {
+        o << v.x << " " << v.y << " " << v.z;
+        return o;
+    }
+}
 
 BOOST_AUTO_TEST_CASE(projection)
 {
@@ -368,24 +379,24 @@ BOOST_AUTO_TEST_CASE(check_all_synapse_attributes)
     BOOST_CHECK_EQUAL(synapse.getFacilitation(), 29);
     BOOST_CHECK(synapse.getGID() == std::make_pair(1u, 0ul));
     BOOST_CHECK_EQUAL(synapse.getPostsynapticCenterPosition(),
-                      brion::Vector3f(3.799289703f, 1947.041748047f,
+                      glm::vec3(3.799289703f, 1947.041748047f,
                                       9.237932205f));
     BOOST_CHECK_EQUAL(synapse.getPostsynapticDistance(), 0.924134851f);
     BOOST_CHECK_EQUAL(synapse.getPostsynapticGID(), 1);
     BOOST_CHECK_EQUAL(synapse.getPostsynapticSectionID(), 70);
     BOOST_CHECK_EQUAL(synapse.getPostsynapticSegmentID(), 13);
     BOOST_CHECK_EQUAL(synapse.getPostsynapticSurfacePosition(),
-                      brion::Vector3f(3.603360415f, 1947.145141602f,
+                      glm::vec3(3.603360415f, 1947.145141602f,
                                       9.205502510f));
     BOOST_CHECK_EQUAL(synapse.getPresynapticCenterPosition(),
-                      brion::Vector3f(3.611587524f, 1947.084228516f,
+                      glm::vec3(3.611587524f, 1947.084228516f,
                                       9.198493958f));
     BOOST_CHECK_EQUAL(synapse.getPresynapticDistance(), 2.911511898f);
     BOOST_CHECK_EQUAL(synapse.getPresynapticGID(), 10);
     BOOST_CHECK_EQUAL(synapse.getPresynapticSectionID(), 2);
     BOOST_CHECK_EQUAL(synapse.getPresynapticSegmentID(), 15);
     BOOST_CHECK_EQUAL(synapse.getPresynapticSurfacePosition(),
-                      brion::Vector3f(3.792815685f, 1947.050537109f,
+                      glm::vec3(3.792815685f, 1947.050537109f,
                                       9.214178085f));
     BOOST_CHECK_EQUAL(synapse.getUtilization(), 0.362769693f);
 }

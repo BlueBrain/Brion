@@ -35,8 +35,8 @@
 #include <cstdarg>
 
 // typedef for brevity
-typedef brion::Vector4f V4f;
-typedef brion::Vector2i V2i;
+typedef glm::vec4 V4f;
+typedef glm::ivec2 V2i;
 
 namespace
 {
@@ -89,17 +89,17 @@ BOOST_AUTO_TEST_CASE(h5_read_v1)
 
     const auto points = morphology.getPoints();
     BOOST_CHECK_EQUAL(points.size(), 3272);
-    BOOST_CHECK_CLOSE(points[0].x(), -9.0625f, .000001f);
-    BOOST_CHECK_CLOSE(points[0].y(), -4.97781f, .0001f);
-    BOOST_CHECK_CLOSE(points[0].z(), 0.f, .000001f);
-    BOOST_CHECK_CLOSE(points[0].w(), 0.37f, .000001f);
+    BOOST_CHECK_CLOSE(points[0].x, -9.0625f, .000001f);
+    BOOST_CHECK_CLOSE(points[0].y, -4.97781f, .0001f);
+    BOOST_CHECK_CLOSE(points[0].z, 0.f, .000001f);
+    BOOST_CHECK_CLOSE(points[0].w, 0.37f, .000001f);
 
     const auto sections = morphology.getSections();
     BOOST_CHECK_EQUAL(sections.size(), 138);
-    BOOST_CHECK_EQUAL(sections[0].x(), 0);
-    BOOST_CHECK_EQUAL(sections[0].y(), -1);
-    BOOST_CHECK_EQUAL(sections[5].x(), 85);
-    BOOST_CHECK_EQUAL(sections[5].y(), 4);
+    BOOST_CHECK_EQUAL(sections[0].x, 0);
+    BOOST_CHECK_EQUAL(sections[0].y, -1);
+    BOOST_CHECK_EQUAL(sections[5].x, 85);
+    BOOST_CHECK_EQUAL(sections[5].y, 4);
 
     const auto types = morphology.getSectionTypes();
     BOOST_CHECK_EQUAL(types.size(), 138);
@@ -117,17 +117,17 @@ void _checkH5V2(const brion::Morphology& morphology)
 
     auto& points = morphology.getPoints();
     BOOST_CHECK_EQUAL(points.size(), 1499);
-    BOOST_CHECK_CLOSE(points[0].x(), 5.335999965667725f, .000001f);
-    BOOST_CHECK_CLOSE(points[0].y(), 2.702667474746704f, .000001f);
-    BOOST_CHECK_CLOSE(points[0].z(), -1.1733332872390747f, .000001f);
-    BOOST_CHECK_CLOSE(points[0].w(), 0.f, .000001f);
+    BOOST_CHECK_CLOSE(points[0].x, 5.335999965667725f, .000001f);
+    BOOST_CHECK_CLOSE(points[0].y, 2.702667474746704f, .000001f);
+    BOOST_CHECK_CLOSE(points[0].z, -1.1733332872390747f, .000001f);
+    BOOST_CHECK_CLOSE(points[0].w, 0.f, .000001f);
 
     auto& sections = morphology.getSections();
     BOOST_CHECK_EQUAL(sections.size(), 78);
-    BOOST_CHECK_EQUAL(sections[0].x(), 0);
-    BOOST_CHECK_EQUAL(sections[0].y(), -1);
-    BOOST_CHECK_EQUAL(sections[5].x(), 49);
-    BOOST_CHECK_EQUAL(sections[5].y(), 4);
+    BOOST_CHECK_EQUAL(sections[0].x, 0);
+    BOOST_CHECK_EQUAL(sections[0].y, -1);
+    BOOST_CHECK_EQUAL(sections[5].x, 49);
+    BOOST_CHECK_EQUAL(sections[5].y, 4);
 
     auto& types = morphology.getSectionTypes();
     BOOST_CHECK_EQUAL(types.size(), 78);

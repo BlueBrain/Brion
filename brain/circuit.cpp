@@ -61,7 +61,7 @@ Matrix4fs _getTransforms(const Circuit::Impl& circuit, const GIDSet& gids)
 
     #pragma omp parallel for
     for (size_t i = 0; i < positions.size(); ++i)
-        transforms[i] = glm::mat4_cast(rotations[i]) * glm::translate(glm::mat4(1.f), positions[i]);
+        transforms[i] = glm::translate(glm::mat4(1.f), positions[i]) * glm::mat4_cast(rotations[i]);
         
     return transforms;
 }

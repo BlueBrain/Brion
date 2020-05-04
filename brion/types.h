@@ -92,24 +92,14 @@ struct AABB
 
     void merge(const glm::vec3& p) noexcept
     {
-        _min.x = std::min(p.x, _min.x);
-        _min.y = std::min(p.y, _min.y);
-        _min.z = std::min(p.z, _min.z);
-
-        _max.x = std::max(p.x, _max.x);
-        _max.y = std::max(p.y, _max.y);
-        _max.z = std::max(p.z, _max.z);
+        _min = glm::min(p, _min);
+        _max = glm::max(p, _max);
     }
 
     void merge(const AABB& o) noexcept
     {
-        _min.x = std::min(o._min.x, _min.x);
-        _min.y = std::min(o._min.y, _min.y);
-        _min.z = std::min(o._min.z, _min.z);
-
-        _max.x = std::max(o._max.x, _max.x);
-        _max.y = std::max(o._max.y, _max.y);
-        _max.z = std::max(o._max.z, _max.z);
+        _min = glm::min(o._min, _min);
+        _max = glm::max(o._max, _max);
     }
 
     glm::vec3 getCenter() const noexcept

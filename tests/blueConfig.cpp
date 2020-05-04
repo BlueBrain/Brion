@@ -25,6 +25,8 @@
 #include <boost/filesystem/path.hpp>
 #include <boost/test/unit_test.hpp>
 
+#include <iostream>
+
 BOOST_AUTO_TEST_CASE(invalid_open)
 {
     BOOST_CHECK_THROW(brion::BlueConfig("/bla"), std::runtime_error);
