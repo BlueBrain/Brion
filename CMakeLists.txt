@@ -33,8 +33,6 @@ include(Common)
 
 if(NOT BRION_SKIP_LIBSONATA_SUBMODULE)
   add_subdirectory(libsonata)
-  add_library(sonata::sonata_shared ALIAS sonata_shared)
-  add_library(sonata::sonata_static ALIAS sonata_static)
 endif()
 
 common_find_package(BBPTestData)
@@ -58,6 +56,7 @@ endif()
 common_find_package_post()
 
 list(APPEND BRION_DEPENDENT_LIBRARIES Boost Servus vmmlib)
+list(APPEND BRAIN_DEPENDENT_LIBRARIES sonata_shared)
 
 add_subdirectory(brion)
 add_subdirectory(brain)
@@ -73,6 +72,11 @@ set(DOXYGEN_PREDEFINED_MACROS "BRAIN_API:=")
 include(DoxygenRule)
 
 add_subdirectory(doc/python)
+
+if(NOT BRION_SKIP_LIBSONATA_SUBMODULE)
+    add_library(sonata::sonata_shared ALIAS sonata_shared)
+    add_library(sonata::sonata_static ALIAS sonata_static)
+endif()
 
 # fill out setup.py metadata for wheel distribution
 configure_file(packaging/python_wheels/setup.py.in
