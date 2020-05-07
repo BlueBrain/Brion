@@ -81,7 +81,7 @@ Vector4fs Section::getSamples() const
     return _morphology->getSectionSamples(_id);
 }
 
-const Vector4f& Section::operator[](const int index) const
+const glm::vec4& Section::operator[](const int index) const
 {
     const auto range = _morphology->getSectionRange(_id);
     if (index >= 0)

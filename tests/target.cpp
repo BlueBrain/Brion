@@ -22,6 +22,8 @@
 #include <BBP/TestDatasets.h>
 #include <brion/brion.h>
 
+#include <iostream>
+
 #define BOOST_TEST_MODULE Target
 #include <boost/filesystem/path.hpp>
 #include <boost/test/unit_test.hpp>

@@ -31,41 +31,227 @@ class File;
 
 namespace details
 {
-template <size_t M, typename T>
-struct array_dims<std::vector<vmml::vector<M, T>>>
+// ARRAY SIZES
+// -------------------------------------------------------
+template <typename T>
+struct array_dims<std::vector<glm::tvec1<T>>>
 {
     static const size_t value = 2;
 };
 
-template <size_t M, typename T>
-struct type_of_array<std::vector<vmml::vector<M, T>>>
+template <typename T>
+struct array_dims<std::vector<glm::tvec2<T>>>
+{
+    static const size_t value = 2;
+};
+
+template <typename T>
+struct array_dims<std::vector<glm::tvec3<T>>>
+{
+    static const size_t value = 2;
+};
+
+template <typename T>
+struct array_dims<std::vector<glm::tvec4<T>>>
+{
+    static const size_t value = 2;
+};
+
+// ARRAY TYPES
+// -------------------------------------------------------
+template <typename T>
+struct type_of_array<std::vector<glm::tvec1<T>>>
 {
     typedef T type;
 };
 
-template <size_t M, typename T>
-struct type_of_array<vmml::vector<M, T>>
+template <typename T>
+struct type_of_array<std::vector<glm::tvec2<T>>>
 {
     typedef T type;
 };
 
-template <size_t M, typename T>
-struct data_converter<std::vector<vmml::vector<M, T>>>
+template <typename T>
+struct type_of_array<std::vector<glm::tvec3<T>>>
 {
-    inline data_converter(std::vector<vmml::vector<M, T>>&, DataSpace&) {}
-    inline T* transform_read(std::vector<vmml::vector<M, T>>& vector)
-    {
-        return reinterpret_cast<T*>(vector.data());
-    }
-
-    inline T* transform_write(std::vector<vmml::vector<M, T>>& vector)
-    {
-        return reinterpret_cast<T*>(vector.data());
-    }
-
-    inline void process_result(std::vector<vmml::vector<M, T>>&) {}
+    typedef T type;
 };
-}
+
+template <typename T>
+struct type_of_array<std::vector<glm::tvec4<T>>>
+{
+    typedef T type;
+};
+
+template <typename T>
+struct type_of_array<glm::tvec1<T>>
+{
+    typedef T type;
+};
+
+template <typename T>
+struct type_of_array<glm::tvec2<T>>
+{
+    typedef T type;
+};
+
+template <typename T>
+struct type_of_array<glm::tvec3<T>>
+{
+    typedef T type;
+};
+
+template <typename T>
+struct type_of_array<glm::tvec4<T>>
+{
+    typedef T type;
+};
+
+// DATA CONVERTERS
+// -------------------------------------------------------
+template <typename T>
+struct data_converter<std::vector<glm::tvec1<T>>>
+{
+    inline data_converter(std::vector<glm::tvec1<T>>&, DataSpace&) {}
+    inline T* transform_read(std::vector<glm::tvec1<T>>& vector)
+    {
+        _buf = std::vector<T>(vector.size(), T());
+        return reinterpret_cast<T*>(_buf.data());
+    }
+
+    inline T* transform_write(std::vector<glm::tvec1<T>>& vector)
+    {
+        _buf = std::vector<T>(vector.size(), T());
+        //#pragma omp parallel for
+        for(size_t i = 0; i < vector.size(); ++i)
+            _buf[i] = vector[i].x;
+
+        return reinterpret_cast<T*>(vector.data());
+    }
+
+    inline void process_result(std::vector<glm::tvec1<T>>& vector)
+    {
+        //#pragma omp parallel for
+        for(size_t i = 0; i < vector.size(); ++i)
+            vector[i] = glm::tvec1<T>(_buf[i]);
+    }
+
+    std::vector<T> _buf;
+};
+
+template <typename T>
+struct data_converter<std::vector<glm::tvec2<T>>>
+{
+    inline data_converter(std::vector<glm::tvec2<T>>&, DataSpace&) {}
+    inline T* transform_read(std::vector<glm::tvec2<T>>& vector)
+    {
+        _buf = std::vector<T>(vector.size() * 2, T());
+        return reinterpret_cast<T*>(_buf.data());
+    }
+
+    inline T* transform_write(std::vector<glm::tvec2<T>>& vector)
+    {
+        _buf = std::vector<T>(vector.size() * 2, T());
+        //#pragma omp parallel for
+        for(size_t i = 0; i < vector.size(); ++i)
+        {
+            const auto idx = i * 2;
+            _buf[idx] = vector[i].x;
+            _buf[idx+1] = vector[i].y;
+        }
+        return reinterpret_cast<T*>(vector.data());
+    }
+
+    inline void process_result(std::vector<glm::tvec2<T>>& vector)
+    {
+        //#pragma omp parallel for
+        for(size_t i = 0; i < vector.size(); ++i)
+        {
+            const auto idx = i * 2;
+            vector[i] = glm::tvec2<T>(_buf[idx], _buf[idx+1]);
+        }
+    }
+
+    std::vector<T> _buf;
+};
+
+template <typename T>
+struct data_converter<std::vector<glm::tvec3<T>>>
+{
+    inline data_converter(std::vector<glm::tvec3<T>>&, DataSpace&) {}
+    inline T* transform_read(std::vector<glm::tvec3<T>>& vector)
+    {
+        _buf = std::vector<T>(vector.size() * 3, T());
+        return reinterpret_cast<T*>(_buf.data());
+    }
+
+    inline T* transform_write(std::vector<glm::tvec3<T>>& vector)
+    {
+        _buf = std::vector<T>(vector.size() * 3, T());
+        //#pragma omp parallel for
+        for(size_t i = 0; i < vector.size(); ++i)
+        {
+            const auto idx = i * 3;
+            _buf[idx] = vector[i].x;
+            _buf[idx+1] = vector[i].y;
+            _buf[idx+2] = vector[i].z;
+        }
+        return reinterpret_cast<T*>(vector.data());
+    }
+
+    inline void process_result(std::vector<glm::tvec3<T>>& vector)
+    {
+        //#pragma omp parallel for
+        for(size_t i = 0; i < vector.size(); ++i)
+        {
+            const auto idx = i * 3;
+            vector[i] = glm::tvec3<T>(_buf[idx], _buf[idx+1], _buf[idx+2]);
+        }
+    }
+
+    std::vector<T> _buf;
+};
+
+template <typename T>
+struct data_converter<std::vector<glm::tvec4<T>>>
+{
+    inline data_converter(std::vector<glm::tvec4<T>>&, DataSpace&) {}
+    inline T* transform_read(std::vector<glm::tvec4<T>>& vector)
+    {
+        _buf = std::vector<T>(vector.size() * 4, T());
+        return reinterpret_cast<T*>(_buf.data());
+    }
+
+    inline T* transform_write(std::vector<glm::tvec4<T>>& vector)
+    {
+        _buf = std::vector<T>(vector.size() * 4, T());
+        //#pragma omp parallel for
+        for(size_t i = 0; i < vector.size(); ++i)
+        {
+            const auto idx = i * 4;
+            _buf[idx] = vector[i].x;
+            _buf[idx+1] = vector[i].y;
+            _buf[idx+2] = vector[i].z;
+            _buf[idx+3] = vector[i].w;
+        }
+        return reinterpret_cast<T*>(vector.data());
+    }
+
+    inline void process_result(std::vector<glm::tvec4<T>>& vector)
+    {
+        //#pragma omp parallel for
+        for(size_t i = 0; i < vector.size(); ++i)
+        {
+            const auto idx = i * 4;
+            vector[i] = glm::tvec4<T>(_buf[idx], _buf[idx+1],
+                                      _buf[idx+2], _buf[idx+3]);
+        }
+    }
+
+    std::vector<T> _buf;
+};
+
+}// namespace details
 
 template <>
 inline AtomicType<brion::SectionType>::AtomicType()
@@ -78,6 +264,32 @@ inline AtomicType<brion::MorphologyVersion>::AtomicType()
 {
     _hid = H5Tcopy(H5T_NATIVE_INT);
 }
+
+
+template<>
+inline AtomicType<glm::ivec2>::AtomicType()
+{
+    _hid = H5Tcopy(H5T_NATIVE_INT);
+}
+
+template<>
+inline AtomicType<glm::vec2>::AtomicType()
+{
+    _hid = H5Tcopy(H5T_NATIVE_INT);
+}
+
+template<>
+inline AtomicType<glm::vec3>::AtomicType()
+{
+    _hid = H5Tcopy(H5T_NATIVE_INT);
+}
+
+template<>
+inline AtomicType<glm::vec4>::AtomicType()
+{
+    _hid = H5Tcopy(H5T_NATIVE_INT);
+}
+
 }
 
 namespace brion

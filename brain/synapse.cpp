@@ -20,8 +20,6 @@
 #include "synapse.h"
 #include "synapses.h"
 
-#include <vmmlib/vector.hpp>
-
 namespace brain
 {
 Synapse::Synapse(const Synapses& synapses, const size_t index) noexcept
@@ -59,21 +57,21 @@ float Synapse::getPresynapticDistance() const
     return _synapses.preDistances()[_index];
 }
 
-Vector3f Synapse::getPresynapticSurfacePosition() const
+glm::vec3 Synapse::getPresynapticSurfacePosition() const
 {
     if (!_synapses.preSurfaceXPositions())
         throw std::runtime_error("Surface synapse positions not available");
 
-    return Vector3f(_synapses.preSurfaceXPositions()[_index],
-                    _synapses.preSurfaceYPositions()[_index],
-                    _synapses.preSurfaceZPositions()[_index]);
+    return glm::vec3(_synapses.preSurfaceXPositions()[_index],
+                     _synapses.preSurfaceYPositions()[_index],
+                     _synapses.preSurfaceZPositions()[_index]);
 }
 
-Vector3f Synapse::getPresynapticCenterPosition() const
+glm::vec3 Synapse::getPresynapticCenterPosition() const
 {
-    return Vector3f(_synapses.preCenterXPositions()[_index],
-                    _synapses.preCenterYPositions()[_index],
-                    _synapses.preCenterZPositions()[_index]);
+    return glm::vec3(_synapses.preCenterXPositions()[_index],
+                     _synapses.preCenterYPositions()[_index],
+                     _synapses.preCenterZPositions()[_index]);
 }
 
 uint32_t Synapse::getPostsynapticGID() const
@@ -96,21 +94,21 @@ float Synapse::getPostsynapticDistance() const
     return _synapses.postDistances()[_index];
 }
 
-Vector3f Synapse::getPostsynapticSurfacePosition() const
+glm::vec3 Synapse::getPostsynapticSurfacePosition() const
 {
     if (!_synapses.postSurfaceXPositions())
         throw std::runtime_error("Surface synapse positions not available");
 
-    return Vector3f(_synapses.postSurfaceXPositions()[_index],
-                    _synapses.postSurfaceYPositions()[_index],
-                    _synapses.postSurfaceZPositions()[_index]);
+    return glm::vec3(_synapses.postSurfaceXPositions()[_index],
+                     _synapses.postSurfaceYPositions()[_index],
+                     _synapses.postSurfaceZPositions()[_index]);
 }
 
-Vector3f Synapse::getPostsynapticCenterPosition() const
+glm::vec3 Synapse::getPostsynapticCenterPosition() const
 {
-    return Vector3f(_synapses.postCenterXPositions()[_index],
-                    _synapses.postCenterYPositions()[_index],
-                    _synapses.postCenterZPositions()[_index]);
+    return glm::vec3(_synapses.postCenterXPositions()[_index],
+                     _synapses.postCenterYPositions()[_index],
+                     _synapses.postCenterZPositions()[_index]);
 }
 
 float Synapse::getDelay() const

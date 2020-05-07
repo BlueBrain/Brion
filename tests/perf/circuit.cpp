@@ -2,6 +2,8 @@
 #include <brain/brain.h>
 #include <lunchbox/clock.h>
 
+#include <iostream>
+
 #define BOOST_TEST_MODULE CircuitPerf
 #include <boost/test/unit_test.hpp>
 

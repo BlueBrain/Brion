@@ -23,6 +23,8 @@
 #include <servus/uint128_t.h>
 #include <tests/paths.h>
 
+#include <iostream>
+
 #define BOOST_TEST_MODULE SpikeReport
 #include <boost/filesystem/operations.hpp>
 #include <boost/filesystem/path.hpp>

@@ -27,8 +27,8 @@
 #include <cstdarg>
 
 // typedef for brevity
-typedef brion::Vector4f V4f;
-typedef brion::Vector3f V3f;
+typedef glm::vec4 V4f;
+typedef glm::vec3 V3f;
 
 namespace
 {
@@ -61,13 +61,31 @@ void checkEqualArrays(const std::vector<T>& array1,
                                   array2.end());
 }
 
-template <typename T, long unsigned int M>
-void checkCloseArrays(const std::vector<vmml::vector<M, T>>& array1,
-                      const std::vector<vmml::vector<M, T>>& array2)
+template <typename T>
+void checkCloseArrays(const std::vector<glm::tvec2<T>>& array1,
+                      const std::vector<glm::tvec2<T>>& array2)
 {
     BOOST_CHECK_EQUAL(array1.size(), array2.size());
     for (size_t i = 0; i != std::min(array1.size(), array2.size()); ++i)
-        BOOST_CHECK_SMALL((array1[i] - array2[i]).length(), 0.00001f);
+        BOOST_CHECK_SMALL(glm::length(array1[i] - array2[i]), 0.00001f);
+}
+
+template <typename T>
+void checkCloseArrays(const std::vector<glm::tvec3<T>>& array1,
+                      const std::vector<glm::tvec3<T>>& array2)
+{
+    BOOST_CHECK_EQUAL(array1.size(), array2.size());
+    for (size_t i = 0; i != std::min(array1.size(), array2.size()); ++i)
+        BOOST_CHECK_SMALL(glm::length(array1[i] - array2[i]), 0.00001f);
+}
+
+template <typename T>
+void checkCloseArrays(const std::vector<glm::tvec4<T>>& array1,
+                      const std::vector<glm::tvec4<T>>& array2)
+{
+    BOOST_CHECK_EQUAL(array1.size(), array2.size());
+    for (size_t i = 0; i != std::min(array1.size(), array2.size()); ++i)
+        BOOST_CHECK_SMALL(glm::length(array1[i] - array2[i]), 0.00001f);
 }
 
 template <typename T>
@@ -107,7 +125,7 @@ BOOST_AUTO_TEST_CASE(v2_morphology_constructors)
     brion::ConstMorphologyPtr raw(new brion::Morphology(TEST_MORPHOLOGY_URI));
 
     const brain::neuron::Morphology morphology1(TEST_MORPHOLOGY_URI);
-    BOOST_CHECK_EQUAL(morphology1.getTransformation(), brain::Matrix4f());
+    BOOST_CHECK_EQUAL(morphology1.getTransformation(), glm::mat4(1.f));
     checkEqualMorphologies(morphology1, *raw);
 
     const brain::neuron::Morphology morphology2(raw);
@@ -172,7 +190,7 @@ BOOST_AUTO_TEST_CASE(get_section_samples)
     {
         float i2 = i * i;
         points.push_back(
-            brion::Vector4f(0, -i2 / 20.0, i2 / 20.0, 0.5 + i2 / 1000.0));
+            V4f(0, -i2 / 20.0f, i2 / 20.0f, 0.5f + i2 / 1000.0f));
     }
     auto section = morphology.getSection(1);
     BOOST_CHECK_EQUAL(section.getNumSamples(), points.size());
@@ -183,7 +201,7 @@ BOOST_AUTO_TEST_CASE(get_section_samples)
     {
         float i2 = i * i;
         points.push_back(
-            brion::Vector4f(i2 / 20.0, 0, i2 / 20.0, 0.5 + i2 / 1000.0));
+            V4f(i2 / 20.0, 0, i2 / 20.0, 0.5 + i2 / 1000.0));
     }
     section = morphology.getSection(4);
     BOOST_CHECK_EQUAL(section.getNumSamples(), points.size());
@@ -194,7 +212,7 @@ BOOST_AUTO_TEST_CASE(get_section_samples)
     {
         float i2 = i * i;
         points.push_back(
-            brion::Vector4f(-i2 / 20.0, 0, i2 / 20.0, 0.5 + i2 / 1000.0));
+            V4f(-i2 / 20.0, 0, i2 / 20.0, 0.5 + i2 / 1000.0));
     }
     section = morphology.getSection(7);
     BOOST_CHECK_EQUAL(section.getNumSamples(), points.size());
@@ -205,7 +223,7 @@ BOOST_AUTO_TEST_CASE(get_section_samples)
     {
         float i2 = i * i;
         points.push_back(
-            brion::Vector4f(0, i2 / 20.0, i2 / 20.0, 0.5 + i2 / 1000.0));
+            V4f(0, i2 / 20.0, i2 / 20.0, 0.5 + i2 / 1000.0));
     }
     section = morphology.getSection(10);
     BOOST_CHECK_EQUAL(section.getNumSamples(), points.size());
@@ -268,11 +286,9 @@ BOOST_AUTO_TEST_CASE(get_soma_geometry)
     BOOST_CHECK_CLOSE(soma.getMeanRadius(), 0.1, 1e-5);
     BOOST_CHECK_EQUAL(soma.getCentroid(), V3f());
 
-    brain::Matrix4f matrix;
-    matrix.setTranslation(V3f(2, 0, 0));
+    glm::mat4 matrix = glm::translate(glm::mat4(1.f), V3f(2.f, 0.f, 0.f));
     brain::neuron::Morphology transformed(TEST_MORPHOLOGY_URI, matrix);
-    BOOST_CHECK_MESSAGE(transformed.getSoma().getCentroid().equals(
-                            V3f(2, 0, 0)),
+    BOOST_CHECK_MESSAGE(transformed.getSoma().getCentroid() == V3f(2.f, 0.f, 0.f),
                         transformed.getSoma().getCentroid());
 }
 
@@ -325,16 +341,18 @@ BOOST_AUTO_TEST_CASE(morphology_hierarchy)
 
 BOOST_AUTO_TEST_CASE(transform_with_matrix)
 {
-    brain::Matrix4f matrix;
-    matrix.rotate_z(M_PI * 0.5);
+    glm::mat4 matrix = glm::rotate(glm::mat4(1.f), 
+                                   static_cast<float>(M_PI) * 0.5f, 
+                                   glm::vec3(0.f, 0.f, 1.f));
     brain::neuron::Morphology rotated(TEST_MORPHOLOGY_URI, matrix);
     checkCloseArraysUpToGiven(rotated.getPoints(),
                               {V4f(.0, .1, .0, .1), V4f(-.1, .0, .0, .1),
                                V4f(.0, -.1, .0, .1), V4f(.1, .0, .0, .1)});
 
-    matrix = brain::Matrix4f();
-    matrix.rotate_z(M_PI * 0.5);
-    matrix.setTranslation(V3f(2, 0, 0));
+    matrix = glm::rotate(glm::mat4(1.f), 
+                         static_cast<float>(M_PI) * 0.5f, 
+                         glm::vec3(0.f, 0.f, 1.f));
+    matrix *= glm::translate(glm::mat4(1.f), V3f(2.f, 0.f, 0.f));
     brain::neuron::Morphology transformed(TEST_MORPHOLOGY_URI, matrix);
     BOOST_CHECK_EQUAL(transformed.getTransformation(), matrix);
     checkCloseArraysUpToGiven(transformed.getPoints(),

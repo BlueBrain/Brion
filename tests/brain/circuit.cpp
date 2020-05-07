@@ -21,6 +21,8 @@
 #include <brain/brain.h>
 #include <brion/brion.h>
 
+#include <iostream>
+
 #define BOOST_TEST_MODULE Circuit
 #include <boost/algorithm/string.hpp>
 #include <boost/filesystem/path.hpp>
@@ -184,12 +186,12 @@ BOOST_AUTO_TEST_CASE(brain_circuit_positions)
     const brain::Vector3fs positions = circuit.getPositions(gids);
     BOOST_CHECK_EQUAL(positions.size(), gids.size());
 
-    typedef brain::Vector3f V3;
+    typedef glm::vec3 V3;
     BOOST_CHECK_SMALL(
-        (positions[0] - V3(54.410675, 1427.669280, 124.882234)).length(),
+        glm::length(positions[0] - V3(54.410675, 1427.669280, 124.882234)),
         0.000001f);
     BOOST_CHECK_SMALL(
-        (positions[1] - V3(28.758332, 1393.556264, 98.258210)).length(),
+        glm::length(positions[1] - V3(28.758332, 1393.556264, 98.258210)),
         0.000001f);
 }
 
@@ -224,18 +226,18 @@ void _checkMorphology(const brain::neuron::Morphology& morphology,
 }
 void _checkMorphology(const brain::neuron::Morphology& morphology,
                       const std::string& other,
-                      const brain::Matrix4f& transform)
+                      const glm::mat4& transform)
 {
     const brain::neuron::Morphology reference{
         brain::URI{BBP_TESTDATA + ("/local/morphologies/01.07.08/h5/" + other)},
         transform};
     const auto& p = morphology.getPoints();
     const auto& q = reference.getPoints();
-    BOOST_REQUIRE(reference.getTransformation().equals(transform));
+    BOOST_REQUIRE(reference.getTransformation() == transform);
 
     BOOST_REQUIRE(p.size() == q.size());
     for (size_t i = 0; i != p.size(); ++i)
-        BOOST_CHECK_SMALL((p[i] - q[i]).length(), 0.0002f);
+        BOOST_CHECK_SMALL(glm::length(p[i] - q[i]), 0.0002f);
 }
 }
 
@@ -306,15 +308,17 @@ BOOST_AUTO_TEST_CASE(load_global_morphologies)
     BOOST_CHECK_EQUAL(morphologies.size(), gids.size());
 
     // Checking the first morphology
-    brain::Matrix4f matrix;
-    matrix.rotate_y(152.927388 * M_PI / 180.0f);
-    matrix.setTranslation(brain::Vector3f(28.758332, 1393.556264, 98.258210));
+    glm::mat4 matrix = glm::rotate(glm::mat4(1.f), 
+                                   152.927388f * static_cast<float>(M_PI) / 180.0f, 
+                                   glm::vec3(0.f, 1.f, 0.f));
+    matrix *= glm::translate(glm::mat4(1.f), glm::vec3(28.758332f, 1393.556264f, 98.258210f));
     _checkMorphology(*morphologies[1], "R-C270106C.h5", matrix);
 
     // Checking another cell with the same morphology
-    brain::Matrix4f matrix2;
-    matrix2.rotate_y(76.380744 * M_PI / 180.0f);
-    matrix2.setTranslation(brain::Vector3f(46.656769, 1437.640777, -11.603118));
+    glm::mat4 matrix2 = glm::rotate(glm::mat4(1.f), 
+                                    76.380744f * static_cast<float>(M_PI) / 180.0f, 
+                                    glm::vec3(0.f, 1.f, 0.f));
+    matrix2 *= glm::translate(glm::mat4(1.f), glm::vec3(46.656769f, 1437.640777f, -11.603118f));
     _checkMorphology(*morphologies[5], "R-C270106C.h5", matrix2);
 }
 
@@ -332,25 +336,33 @@ BOOST_AUTO_TEST_CASE(all_mvd3)
     BOOST_CHECK_EQUAL(positions.size(), numNeurons);
     BOOST_CHECK_EQUAL(transforms.size(), numNeurons);
 
-    BOOST_CHECK_SMALL((positions[20] - brion::Vector3f(30.1277100000,
-                                                       1794.1259110000,
-                                                       19.8605870000))
-                          .length(),
+    BOOST_CHECK_SMALL(glm::length(positions[20] - glm::vec3(30.1277100000f,
+                                                 1794.1259110000f,
+                                                 19.8605870000f)),
                       0.000001f);
-    BOOST_CHECK_SMALL((positions[100] - brion::Vector3f(48.7579240000,
-                                                        1824.4589930000,
-                                                        15.3025840000))
-                          .length(),
+    BOOST_CHECK_SMALL(glm::length(positions[100] - glm::vec3(48.7579240000f,
+                                                        1824.4589930000f,
+                                                        15.3025840000f)),
                       0.000001f);
 
-    BOOST_CHECK(transforms[20].equals(
-        brain::Matrix4f(brain::Quaternionf(0, 0.923706, 0, 0.383102),
-                        brain::Vector3f(30.12771, 1794.125911, 19.860587)),
-        0.00001f));
-    BOOST_CHECK(transforms[100].equals(
-        brain::Matrix4f(brain::Quaternionf(0, -0.992667, 0, 0.120884),
-                        brain::Vector3f(48.757924, 1824.458993, 15.302584)),
-        0.00001f));
+    glm::quat q;
+    q.x = 0.f;
+    q.y = 0.923706f;
+    q.z = 0.f;
+    q.w = 0.383102;
+
+    const auto m1check = glm::translate(glm::mat4(1.f), 
+                                        glm::vec3(30.12771f, 1794.125911f, 19.860587f))
+                         * glm::mat4_cast(q);
+
+    BOOST_CHECK(transforms[20] == m1check);
+
+    q.y = -0.992667f;
+    q.w = 0.120884;
+    const auto m2check = glm::translate(glm::mat4(1.f), 
+                                        glm::vec3(48.757924f, 1824.458993f, 15.302584f))
+                         * glm::mat4_cast(q);
+    BOOST_CHECK(transforms[100] == m2check);
 }
 
 BOOST_AUTO_TEST_CASE(partial_mvd3)
@@ -369,25 +381,26 @@ BOOST_AUTO_TEST_CASE(partial_mvd3)
     BOOST_CHECK_EQUAL(positions.size(), 4);
     BOOST_CHECK_EQUAL(transforms.size(), 4);
 
-    BOOST_CHECK_SMALL((positions[1] - brion::Vector3f(30.1277100000,
-                                                      1794.1259110000,
-                                                      19.8605870000))
-                          .length(),
+    BOOST_CHECK_SMALL(glm::length(positions[1] - glm::vec3(30.1277100000f,
+                                                      1794.1259110000f,
+                                                      19.8605870000f)),
                       0.000001f);
-    BOOST_CHECK_SMALL((positions[2] - brion::Vector3f(48.7579240000,
+    BOOST_CHECK_SMALL(glm::length(positions[2] - glm::vec3(48.7579240000,
                                                       1824.4589930000,
-                                                      15.3025840000))
-                          .length(),
+                                                      15.3025840000)),
                       0.000001f);
 
-    BOOST_CHECK(transforms[1].equals(
-        brain::Matrix4f(brain::Quaternionf(0, 0.923706, 0, 0.383102),
-                        brain::Vector3f(30.12771, 1794.125911, 19.860587)),
-        0.00001f));
-    BOOST_CHECK(transforms[2].equals(
-        brain::Matrix4f(brain::Quaternionf(0, -0.992667, 0, 0.120884),
-                        brain::Vector3f(48.757924, 1824.458993, 15.302584)),
-        0.00001f));
+    glm::quat quat1check (0.f, 0.923706f, 0.f, 0.383102f);
+    glm::mat4 check1 = glm::translate(glm::mat4(1.f), 
+                                      glm::vec3(30.12771f, 1794.125911f, 19.860587f)) *
+                       glm::mat4_cast(quat1check);
+    BOOST_CHECK(transforms[1] == check1);
+
+    glm::quat quat2check (0.f, -0.992667, 0.f, 0.120884);
+    glm::mat4 check2 = glm::translate(glm::mat4(1.f), 
+                                      glm::vec3(48.757924, 1824.458993, 15.302584)) *
+                       glm::mat4_cast(quat2check);
+    BOOST_CHECK(transforms[2] == check2);
 }
 
 BOOST_AUTO_TEST_CASE(morphology_names_mvd3)

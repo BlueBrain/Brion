@@ -53,12 +53,6 @@ class Synapses;
 class SynapsesIterator;
 class SynapsesStream;
 
-using vmml::Matrix4f;
-using vmml::Quaternionf;
-using vmml::Vector2i;
-using vmml::Vector3f;
-using vmml::Vector4f;
-
 using brion::GIDSet;
 using brion::Strings;
 using brion::URI;
@@ -75,11 +69,9 @@ using brion::Spike;
 using brion::Spikes;
 using brion::CompartmentCounts;
 
-using AABB = vmml::AABB<float>;
-
 using CompartmentReportFrames = std::vector<CompartmentReportFrame>;
-using Matrix4fs = std::vector<Matrix4f>;
-using Quaternionfs = std::vector<Quaternionf>;
+using Matrix4fs = std::vector<glm::mat4>;
+using Quaternionfs = std::vector<glm::quat>;
 
 using SpikeReportReaderPtr = std::shared_ptr<SpikeReportReader>;
 using SpikeReportWriterPtr = std::shared_ptr<SpikeReportWriter>;

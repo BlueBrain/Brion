@@ -70,7 +70,7 @@ public:
     BRAIN_API float getMaxRadius() const;
 
     /** Return the average of the profile points. */
-    BRAIN_API Vector3f getCentroid() const;
+    BRAIN_API glm::vec3 getCentroid() const;
 
     /** Return the first order sections starting from the soma. */
     BRAIN_API Sections getChildren() const;

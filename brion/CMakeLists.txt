@@ -93,7 +93,7 @@ endif()
 
 set(BRION_PUBLIC_INCLUDE_DIRECTORIES ${Boost_INCLUDE_DIRS})
 set(BRION_LINK_LIBRARIES
-  PUBLIC Servus vmmlib
+  PUBLIC Servus glm
   PRIVATE Lunchbox HighFive ${Boost_FILESYSTEM_LIBRARIES}
           ${Boost_REGEX_LIBRARIES} ${CMAKE_THREADS_LIB_INIT} ${_plugin_lib}
 )
