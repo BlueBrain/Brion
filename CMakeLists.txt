@@ -8,6 +8,9 @@ cmake_minimum_required(VERSION 3.1 FATAL_ERROR)
 project(Brion VERSION 3.1.0)
 set(Brion_VERSION_ABI 10)
 
+
+option(BRION_SKIP_LIBSONATA_SUBMODULE "Skip libsonata module" OFF)
+
 list(APPEND CMAKE_MODULE_PATH ${PROJECT_SOURCE_DIR}/CMake
   ${CMAKE_SOURCE_DIR}/CMake/common ${PROJECT_SOURCE_DIR}/Pydoxine/CMake)
 if(NOT EXISTS ${CMAKE_SOURCE_DIR}/CMake/common/Common.cmake)
@@ -28,7 +31,11 @@ set(BRION_PORT_DEPENDS sphinx py-lxml)
 set(COMMON_PROJECT_DOMAIN ch.epfl.bluebrain)
 include(Common)
 
-add_subdirectory(libsonata)
+if(NOT BRION_SKIP_LIBSONATA_SUBMODULE)
+  add_subdirectory(libsonata)
+  add_library(sonata::sonata_shared ALIAS sonata_shared)
+  add_library(sonata::sonata_static ALIAS sonata_static)
+endif()
 
 common_find_package(BBPTestData)
 common_find_package(Boost REQUIRED COMPONENTS
@@ -71,5 +78,3 @@ add_subdirectory(doc/python)
 configure_file(packaging/python_wheels/setup.py.in
                ${PROJECT_BINARY_DIR}/packaging/python_wheels/setup.py)
                
-add_library(sonata::sonata_shared ALIAS sonata_shared)
-add_library(sonata::sonata_static ALIAS sonata_static)
