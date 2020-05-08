@@ -48,20 +48,20 @@ void export_module();
 
 struct Vector3fToTuple
 {
-    static PyObject* convert(const brain::Vector3f& v)
+    static PyObject* convert(const glm::vec3& v)
     {
         boost::python::object tuple =
-            boost::python::make_tuple(v.x(), v.y(), v.z());
+            boost::python::make_tuple(v.x, v.y, v.z);
         return boost::python::incref(tuple.ptr());
     }
 };
 
 struct Vector4fToTuple
 {
-    static PyObject* convert(const brain::Vector4f& v)
+    static PyObject* convert(const glm::vec4& v)
     {
         boost::python::object tuple =
-            boost::python::make_tuple(v.x(), v.y(), v.z(), v.w());
+            boost::python::make_tuple(v.x, v.y, v.z, v.w);
         return boost::python::incref(tuple.ptr());
     }
 };
@@ -84,8 +84,8 @@ BOOST_PYTHON_MODULE(_brain)
 #endif
 
     boost::python::to_python_converter<servus::URI, URItoString>();
-    boost::python::to_python_converter<brain::Vector3f, Vector3fToTuple>();
-    boost::python::to_python_converter<brain::Vector4f, Vector4fToTuple>();
+    boost::python::to_python_converter<glm::vec3, Vector3fToTuple>();
+    boost::python::to_python_converter<glm::vec4, Vector4fToTuple>();
 
     brain_python::importArray();
 

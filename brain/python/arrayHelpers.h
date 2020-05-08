@@ -47,7 +47,7 @@ boost::python::object toNumpy(const std::vector<T>& vector, const U& custodian);
 template <typename T, typename U>
 boost::python::object toNumpy(const T* array, size_t size, const U& custodian);
 
-boost::python::object toNumpy(const brain::Matrix4f& matrix);
+boost::python::object toNumpy(const glm::mat4& matrix);
 
 /** Copy the GIDs from a numpy array into a uint32_t vector.
  *  @param object The python object representing the numpy array.

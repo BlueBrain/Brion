@@ -25,14 +25,13 @@
 
 #include "synapses.h"
 #include "synapsesStream.h"
+#include "types.h"
 
 #include <bbp/sonata/edges.h>
 
 #include <servus/uint128_t.h>
 
 #include <boost/algorithm/string.hpp>
-
-#include <glm/gtc/quaternion.hpp>
 
 namespace brain
 {
