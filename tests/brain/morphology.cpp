@@ -286,7 +286,7 @@ BOOST_AUTO_TEST_CASE(get_soma_geometry)
     BOOST_CHECK_CLOSE(soma.getMeanRadius(), 0.1, 1e-5);
     BOOST_CHECK_EQUAL(soma.getCentroid(), V3f());
 
-    glm::mat4 matrix = glm::translate(glm::mat4(1.f), V3f(2.f, 0.f, 0.f));
+    const glm::mat4 matrix = glm::translate(glm::mat4(1.f), V3f(2.f, 0.f, 0.f));
     brain::neuron::Morphology transformed(TEST_MORPHOLOGY_URI, matrix);
     BOOST_CHECK_MESSAGE(transformed.getSoma().getCentroid() == V3f(2.f, 0.f, 0.f),
                         transformed.getSoma().getCentroid());
@@ -352,7 +352,7 @@ BOOST_AUTO_TEST_CASE(transform_with_matrix)
     matrix = glm::rotate(glm::mat4(1.f), 
                          static_cast<float>(M_PI) * 0.5f, 
                          glm::vec3(0.f, 0.f, 1.f));
-    matrix *= glm::translate(glm::mat4(1.f), V3f(2.f, 0.f, 0.f));
+    matrix[3] = V4f(2.f, 0.f, 0.f, matrix[3].w);
     brain::neuron::Morphology transformed(TEST_MORPHOLOGY_URI, matrix);
     BOOST_CHECK_EQUAL(transformed.getTransformation(), matrix);
     checkCloseArraysUpToGiven(transformed.getPoints(),

@@ -36,6 +36,16 @@ std::string getValue(const brion::NeuronMatrix& data, const size_t idx,
 {
     return data[idx][lunchbox::getIndexOfLastBit(attr)];
 }
+
+inline bool EqualMatrices4(const glm::mat4& a, const glm::mat4& b,
+                           const float epsilon=std::numeric_limits<float>().epsilon())
+{
+    for(int i = 0; i < 4; ++i)
+        for(int j = 0; j < 4; ++j)
+            if(std::abs(a[i][j] - b[i][j]) > epsilon)
+                return false;
+    return true;
+}
 }
 
 BOOST_AUTO_TEST_CASE(test_invalid_open)
@@ -311,14 +321,14 @@ BOOST_AUTO_TEST_CASE(load_global_morphologies)
     glm::mat4 matrix = glm::rotate(glm::mat4(1.f), 
                                    152.927388f * static_cast<float>(M_PI) / 180.0f, 
                                    glm::vec3(0.f, 1.f, 0.f));
-    matrix *= glm::translate(glm::mat4(1.f), glm::vec3(28.758332f, 1393.556264f, 98.258210f));
+    matrix[3] = glm::vec4(28.758332f, 1393.556264f, 98.258210f, matrix[3].w);
     _checkMorphology(*morphologies[1], "R-C270106C.h5", matrix);
 
     // Checking another cell with the same morphology
     glm::mat4 matrix2 = glm::rotate(glm::mat4(1.f), 
                                     76.380744f * static_cast<float>(M_PI) / 180.0f, 
                                     glm::vec3(0.f, 1.f, 0.f));
-    matrix2 *= glm::translate(glm::mat4(1.f), glm::vec3(46.656769f, 1437.640777f, -11.603118f));
+    matrix2[3] = glm::vec4(46.656769f, 1437.640777f, -11.603118f, matrix2[3].w);
     _checkMorphology(*morphologies[5], "R-C270106C.h5", matrix2);
 }
 
@@ -345,24 +355,13 @@ BOOST_AUTO_TEST_CASE(all_mvd3)
                                                         15.3025840000f)),
                       0.000001f);
 
-    glm::quat q;
-    q.x = 0.f;
-    q.y = 0.923706f;
-    q.z = 0.f;
-    q.w = 0.383102;
+    auto m1check = glm::mat4_cast(glm::quat (0.f, 0.923706f, 0.f, 0.383102f));
+    m1check[3] = glm::vec4(30.12771f, 1794.125911f, 19.860587f, 1.0);
+    BOOST_CHECK(EqualMatrices4(transforms[20], m1check, 0.00001f));
 
-    const auto m1check = glm::translate(glm::mat4(1.f), 
-                                        glm::vec3(30.12771f, 1794.125911f, 19.860587f))
-                         * glm::mat4_cast(q);
-
-    BOOST_CHECK(transforms[20] == m1check);
-
-    q.y = -0.992667f;
-    q.w = 0.120884;
-    const auto m2check = glm::translate(glm::mat4(1.f), 
-                                        glm::vec3(48.757924f, 1824.458993f, 15.302584f))
-                         * glm::mat4_cast(q);
-    BOOST_CHECK(transforms[100] == m2check);
+    auto m2check = glm::mat4_cast(glm::quat(0.f, -0.992667f, 0.f, 0.120884f));
+    m2check[3] = glm::vec4(48.757924f, 1824.458993f, 15.302584f, 1.0);
+    BOOST_CHECK(EqualMatrices4(transforms[100], m2check, 0.00001f));
 }
 
 BOOST_AUTO_TEST_CASE(partial_mvd3)
@@ -391,16 +390,14 @@ BOOST_AUTO_TEST_CASE(partial_mvd3)
                       0.000001f);
 
     glm::quat quat1check (0.f, 0.923706f, 0.f, 0.383102f);
-    glm::mat4 check1 = glm::translate(glm::mat4(1.f), 
-                                      glm::vec3(30.12771f, 1794.125911f, 19.860587f)) *
-                       glm::mat4_cast(quat1check);
-    BOOST_CHECK(transforms[1] == check1);
+    glm::mat4 check1 = glm::mat4_cast(quat1check);
+    check1[3] = glm::vec4(30.12771f, 1794.125911f, 19.860587f, check1[3].w);
+    BOOST_CHECK(EqualMatrices4(transforms[1], check1, 0.00001f));
 
     glm::quat quat2check (0.f, -0.992667, 0.f, 0.120884);
-    glm::mat4 check2 = glm::translate(glm::mat4(1.f), 
-                                      glm::vec3(48.757924, 1824.458993, 15.302584)) *
-                       glm::mat4_cast(quat2check);
-    BOOST_CHECK(transforms[2] == check2);
+    glm::mat4 check2 = glm::mat4_cast(quat2check);
+    check2[3] = glm::vec4(48.757924, 1824.458993, 15.302584, check2[3].w);
+    BOOST_CHECK(EqualMatrices4(transforms[2], check2, 0.00001f));
 }
 
 BOOST_AUTO_TEST_CASE(morphology_names_mvd3)

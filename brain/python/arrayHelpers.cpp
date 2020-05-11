@@ -311,7 +311,7 @@ void _copyArrayToMatrix(PyArrayObject* array, glm::mat4& matrix)
 {
     for (size_t i = 0; i != 4; ++i)
         for (size_t j = 0; j != 4; ++j)
-            matrix[i][j] = *static_cast<T*>(PyArray_GETPTR2(array, i, j));
+            matrix[j][i] = *static_cast<T*>(PyArray_GETPTR2(array, i, j));
 }
 }
 
