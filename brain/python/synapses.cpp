@@ -26,8 +26,6 @@
 #include <brain/synapse.h>
 #include <brain/synapses.h>
 
-#include <vmmlib/vector.hpp>
-
 namespace bp = boost::python;
 
 namespace brain

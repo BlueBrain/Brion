@@ -92,7 +92,7 @@ public:
      *        being n = getNumSamples().
      * @return The sample at the given index.
      */
-    BRAIN_API const Vector4f& operator[](int index) const;
+    BRAIN_API const glm::vec4& operator[](int index) const;
 
     /**
      * Return the number of samples of this section.

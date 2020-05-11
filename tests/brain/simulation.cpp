@@ -21,6 +21,8 @@
 #include <brain/brain.h>
 #include <brion/brion.h>
 
+#include <iostream>
+
 #define BOOST_TEST_MODULE Simulation
 #include <boost/filesystem/path.hpp>
 #include <boost/test/unit_test.hpp>

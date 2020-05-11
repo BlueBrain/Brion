@@ -17,6 +17,11 @@
  */
 
 #include <utility>
+#include <memory>
+#include <vector>
+
+#include <boost/shared_ptr.hpp>
+#include <boost/python/object.hpp>
 
 namespace brain_python
 {

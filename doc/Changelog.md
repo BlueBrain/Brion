@@ -1,6 +1,8 @@
 Changelog {#Changelog}
 =========
 
+* [276](https://github.com/BlueBrain/Brion/pull/276):
+  Removed vmmlib library from Brion.
 * [275](https://github.com/BlueBrain/Brion/pull/275):
   Removed Keyv library from Brion. This change also means the end of
   support for BlueBrain's key value map based reports.

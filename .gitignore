@@ -32,7 +32,6 @@
 BBPTestData/
 Lunchbox/
 Servus/
-vmmlib/
 CMakeLists.txt.user*
 Makefile
 build/

@@ -42,10 +42,10 @@ BOOST_AUTO_TEST_CASE(getPositions)
     brion::GIDSet ids = {0, 2, 3, 7};
     const auto postitions = circuit.getPositions(ids);
 
-    BOOST_CHECK_EQUAL(postitions[0], vmml::Vector3f(0, 0, 0.5));
-    BOOST_CHECK_EQUAL(postitions[1], vmml::Vector3f(2, 0, 0.5));
-    BOOST_CHECK_EQUAL(postitions[2], vmml::Vector3f(3, 1, 0.5));
-    BOOST_CHECK_EQUAL(postitions[3], vmml::Vector3f(1, 1, -0.5));
+    BOOST_CHECK_EQUAL(postitions[0], glm::vec3(0.f, 0.f, 0.5f));
+    BOOST_CHECK_EQUAL(postitions[1], glm::vec3(2.f, 0.f, 0.5f));
+    BOOST_CHECK_EQUAL(postitions[2], glm::vec3(3.f, 1.f, 0.5f));
+    BOOST_CHECK_EQUAL(postitions[3], glm::vec3(1.f, 1.f, -0.5f));
 }
 
 BOOST_AUTO_TEST_CASE(getRotations)
@@ -54,53 +54,53 @@ BOOST_AUTO_TEST_CASE(getRotations)
     brion::GIDSet ids = {0, 1, 2, 3, 4, 5, 6, 7, 8, 9};
     const auto rotations = circuit.getRotations(ids);
 
-    const auto x_axis = vmml::Vector3f(1, 0, 0);
-    const auto y_axis = vmml::Vector3f(0, 1, 0);
-    const auto z_axis = vmml::Vector3f(0, 0, 1);
+    const auto x_axis = glm::vec4(1.f, 0.f, 0.f, 1.f);
+    const auto y_axis = glm::vec4(0.f, 1.f, 0.f, 1.f);
+    const auto z_axis = glm::vec4(0.f, 0.f, 1.f, 1.f);
 
     // Rotate 180 degrees around X
-    const auto rot0 = rotations[0].getRotationMatrix();
+    const auto rot0 = glm::mat4_cast(rotations[0]);
     // Rotate 180 degrees around Y
-    const auto rot1 = rotations[1].getRotationMatrix();
+    const auto rot1 = glm::mat4_cast(rotations[1]);
     // Rotate 180 degrees around Z
-    const auto rot2 = rotations[2].getRotationMatrix();
+    const auto rot2 = glm::mat4_cast(rotations[2]);
 
     // Rotate 90 degrees around X
-    const auto rot3 = rotations[3].getRotationMatrix();
+    const auto rot3 = glm::mat4_cast(rotations[3]);
     // Rotate 90 degrees around Y
-    const auto rot4 = rotations[4].getRotationMatrix();
+    const auto rot4 = glm::mat4_cast(rotations[4]);
     // Rotate 90 degrees around Z
-    const auto rot5 = rotations[5].getRotationMatrix();
+    const auto rot5 = glm::mat4_cast(rotations[5]);
 
     // Rotate 360 degrees around X
-    const auto rot6 = rotations[6].getRotationMatrix();
+    const auto rot6 = glm::mat4_cast(rotations[6]);
     // Rotate 360 degrees around Y
-    const auto rot7 = rotations[7].getRotationMatrix();
+    const auto rot7 = glm::mat4_cast(rotations[7]);
     // Rotate 360 degrees around Z
-    const auto rot8 = rotations[8].getRotationMatrix();
+    const auto rot8 = glm::mat4_cast(rotations[8]);
 
     // Rotate 90 degrees around X,Y and Z
-    const auto rot9 = rotations[9].getRotationMatrix();
+    const auto rot9 = glm::mat4_cast(rotations[9]);
 
-    BOOST_CHECK_EQUAL((rot0 * x_axis).x(), 1);
-    BOOST_CHECK_EQUAL((rot1 * y_axis).y(), 1);
-    BOOST_CHECK_EQUAL((rot2 * z_axis).z(), 1);
+    BOOST_CHECK_EQUAL((rot0 * x_axis).x, 1.f);
+    BOOST_CHECK_EQUAL((rot1 * y_axis).y, 1.f);
+    BOOST_CHECK_EQUAL((rot2 * z_axis).z, 1.f);
 
-    BOOST_CHECK_EQUAL((rot0 * y_axis).y(), -1);
-    BOOST_CHECK_EQUAL((rot1 * x_axis).x(), -1);
-    BOOST_CHECK_EQUAL((rot2 * x_axis).x(), -1);
+    BOOST_CHECK_EQUAL((rot0 * y_axis).y, -1.f);
+    BOOST_CHECK_EQUAL((rot1 * x_axis).x, -1.f);
+    BOOST_CHECK_EQUAL((rot2 * x_axis).x, -1.f);
 
-    BOOST_CHECK_CLOSE((rot3 * y_axis).z(), 1, 0.0001);
-    BOOST_CHECK_CLOSE((rot4 * x_axis).z(), -1, 0.0001);
-    BOOST_CHECK_CLOSE((rot5 * x_axis).y(), 1, 0.0001);
+    BOOST_CHECK_CLOSE((rot3 * y_axis).z, 1.f, 0.0001f);
+    BOOST_CHECK_CLOSE((rot4 * x_axis).z, -1.f, 0.0001f);
+    BOOST_CHECK_CLOSE((rot5 * x_axis).y, 1.f, 0.0001f);
 
-    BOOST_CHECK_EQUAL((rot6 * x_axis).x(), 1);
-    BOOST_CHECK_EQUAL((rot7 * y_axis).y(), 1);
-    BOOST_CHECK_EQUAL((rot8 * z_axis).z(), 1);
+    BOOST_CHECK_EQUAL((rot6 * x_axis).x, 1.f);
+    BOOST_CHECK_EQUAL((rot7 * y_axis).y, 1.f);
+    BOOST_CHECK_EQUAL((rot8 * z_axis).z, 1.f);
 
-    BOOST_CHECK_CLOSE((rot9 * x_axis).z(), 1, 0.0001);
-    BOOST_CHECK_CLOSE((rot9 * y_axis).y(), -1, 0.0001);
-    BOOST_CHECK_CLOSE((rot9 * z_axis).x(), 1, 0.0001);
+    BOOST_CHECK_CLOSE((rot9 * x_axis).z, 1.f, 0.0001f);
+    BOOST_CHECK_CLOSE((rot9 * y_axis).y, -1.f, 0.0001f);
+    BOOST_CHECK_CLOSE((rot9 * z_axis).x, 1.f, 0.0001f);
 }
 
 BOOST_AUTO_TEST_CASE(numNeurons)
@@ -130,8 +130,8 @@ BOOST_AUTO_TEST_CASE(recentering)
 {
     brain::Circuit circuit(TEST_SONATA_SIMPLE_NETWORK_URI);
 
-    const auto zero = brion::Vector3f(0, 0, 0);
-    const auto ten = brion::Vector3f(10, 10, 10);
+    const auto zero = glm::vec3(0.f, 0.f, 0.f);
+    const auto ten = glm::vec3(10.f, 10.f, 10.f);
 
     auto morphologies =
         circuit.loadMorphologies({0, 2}, brain::Circuit::Coordinates::local);
@@ -142,10 +142,10 @@ BOOST_AUTO_TEST_CASE(recentering)
     BOOST_CHECK_EQUAL(morphologies[0]->getSoma().getCentroid(), zero);
     BOOST_CHECK_EQUAL(morphologies[1]->getSoma().getCentroid(), ten);
 
-    const auto transform = [](const brain::Matrix4f& m,
-                              const brain::Vector3f& v) {
-        const auto t = m * brion::Vector4f(v[0], v[1], v[2], 1);
-        return t.get_sub_vector<3, 0>();
+    const auto transform = [](const glm::mat4& m,
+                              const glm::vec3& v) {
+        const auto t = m * glm::vec4(v.x, v.y, v.z, 1.f);
+        return glm::vec3(t);
     };
     auto transforms = circuit.getTransforms({0, 2});
     morphologies =
