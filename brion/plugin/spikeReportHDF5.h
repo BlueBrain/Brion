@@ -36,9 +36,9 @@ class BinaryReportMap;
 class SpikeReportHDF5 : public SpikeReportPlugin
 {
 public:
-    explicit SpikeReportHDF5(const SpikeReportInitData& initData);
+    explicit SpikeReportHDF5(const PluginInitData& initData);
 
-    static bool handles(const SpikeReportInitData& initData);
+    static bool handles(const PluginInitData& initData);
     static std::string getDescription();
 
     void close() final {}

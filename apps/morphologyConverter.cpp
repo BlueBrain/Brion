@@ -6,11 +6,7 @@
 #include <brion/brion.h>
 #include <brion/detail/morphologyHDF5.h>
 #include <brion/detail/utilsHDF5.h>
-
-#include <lunchbox/clock.h>
-#include <lunchbox/file.h>
-#include <lunchbox/log.h>
-#include <lunchbox/term.h>
+#include <brion/log.h>
 
 #include <boost/foreach.hpp>
 #include <boost/program_options.hpp>
@@ -20,6 +16,8 @@
 #include <highfive/H5DataSet.hpp>
 #include <highfive/H5File.hpp>
 #include <highfive/H5Group.hpp>
+
+#include <chrono>
 
 namespace HighFive
 {
@@ -36,8 +34,7 @@ void writeMorphology(const brion::Morphology& in, const std::string& output);
 
 int main(int argc, char* argv[])
 {
-    po::options_description options(lunchbox::getFilename(argv[0]),
-                                    lunchbox::term::getSize().first);
+    po::options_description options(argv[0]);
 
     // clang-format off
     options.add_options()("help,h", "Produce help message")(
@@ -64,7 +61,7 @@ int main(int argc, char* argv[])
 
     if (vm.count("help") || vm.count("input") == 0 || vm.count("output") == 0)
     {
-        std::cout << "Usage: " << lunchbox::getFilename(std::string(argv[0]))
+        std::cout << "Usage: " << std::string(argv[0])
                   << " input output" << std::endl
                   << std::endl;
         std::cout << options << std::endl;
@@ -92,17 +89,31 @@ int main(int argc, char* argv[])
     const brion::URI input(vm["input"].as<std::string>());
     const std::string output(vm["output"].as<std::string>());
 
-    lunchbox::Clock clock;
+    const std::chrono::high_resolution_clock::time_point p1
+            = std::chrono::high_resolution_clock::now();
+
     const brion::Morphology in(input);
     in.getPoints(); // sync loading
-    const float readTime = clock.resetTimef();
+
+    const std::chrono::high_resolution_clock::time_point p2
+            = std::chrono::high_resolution_clock::now();
+
+    const std::chrono::duration<float> p1p2
+                    = std::chrono::duration_cast<std::chrono::duration<float>>(p2 - p1);
+    const float readTime = p1p2.count();
 
     writeMorphology(in, output);
-    const float writeTime = clock.resetTimef();
 
-    LBINFO << "Converted " << input << " (" << in.getVersion() << ") => "
-           << output << " in " << readTime << " + " << writeTime << " ms"
-           << std::endl;
+    const std::chrono::high_resolution_clock::time_point p3
+            = std::chrono::high_resolution_clock::now();
+
+    const std::chrono::duration<float> p2p3
+                    = std::chrono::duration_cast<std::chrono::duration<float>>(p3 - p2);
+    const float writeTime = p2p3.count();
+
+    BRION_INFO << "Converted " << input << " (" << in.getVersion() << ") => "
+             << output << " in " << readTime << " + " << writeTime << " ms"
+             << std::endl;
     return EXIT_SUCCESS;
 }
 

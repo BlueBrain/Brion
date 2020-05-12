@@ -21,8 +21,9 @@
 
 #include "../constants.h"
 
-#include <lunchbox/pluginRegisterer.h>
-#include <lunchbox/threadPool.h>
+#include "../log.h"
+#include "../pluginLibrary.h"
+
 #include <zeroeq/client.h>
 #include <zeroeq/uri.h>
 
@@ -34,9 +35,22 @@ namespace plugin
 {
 namespace
 {
-lunchbox::PluginRegisterer<MorphologyZeroEQ> registerer;
+
+class PluginRegisterer
+{
+public:
+    PluginRegisterer()
+    {
+        auto& pluginManager = PluginLibrary::instance().getManager<MorphologyPlugin>();
+        pluginManager.registerFactory<MorphologyZeroEQ>();
+    }
+};
+
+PluginRegisterer registerer;
+
 const std::string SERVER_SESSION("morphologyServer");
-}
+
+} // namespace
 
 class MorphologyZeroEQ::Client // adds thread-safety to zeroeq::Client
 {
@@ -87,7 +101,7 @@ MorphologyZeroEQ::MorphologyZeroEQ(const MorphologyInitData& initData)
     const auto handler = [&](const uint128_t& id, const void* data,
                              const size_t size) {
         if (id == 0)
-            LBWARN << "Server could not load morphology" << std::endl;
+            BRION_WARN << "Server could not load morphology" << std::endl;
         if (data && size)
         {
             _client->unlock();
@@ -100,7 +114,7 @@ MorphologyZeroEQ::MorphologyZeroEQ(const MorphologyInitData& initData)
     if (!client->request(ZEROEQ_GET_MORPHOLOGY, path.data(), path.size(),
                          handler))
     {
-        LBTHROW(std::runtime_error("Failed to request morphology data"));
+        BRION_THROW("Failed to request morphology data")
     }
 }
 
@@ -154,5 +168,5 @@ MorphologyZeroEQ::ClientPtr MorphologyZeroEQ::_getClient()
 
     return client;
 }
-}
-}
+} // namespace plugin
+} // namespace brion

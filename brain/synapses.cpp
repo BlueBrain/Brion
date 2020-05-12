@@ -21,6 +21,7 @@
 #include "synapses.h"
 
 #include "circuit.h"
+#include "log.h"
 #include "synapse.h"
 #include "synapsesIterator.h"
 #include "synapsesStream.h"
@@ -32,8 +33,6 @@
 #include <brion/synapseSummary.h>
 
 #include <bbp/sonata/edges.h>
-
-#include <lunchbox/log.h>
 
 #include <mutex>
 
@@ -50,11 +49,11 @@ void _allocate(T& data, const size_t size)
     void* ptr;
     if (posix_memalign(&ptr, 32, size * sizeof(typename T::element_type)))
     {
-        LBWARN << "Memory alignment failed. Trying normal allocation"
-               << std::endl;
+        BRAIN_WARN << "Memory alignment failed. Trying normal allocation"
+                 << std::endl;
         ptr = calloc(size, sizeof(typename T::element_type));
         if (!ptr)
-            LBTHROW(std::bad_alloc());
+            BRAIN_THROW_IMPL(std::bad_alloc())
     }
     data.reset((typename T::element_type*)ptr);
     // cppcheck-suppress memleak
@@ -358,11 +357,7 @@ struct Synapses::Impl : public Synapses::InternalBaseImpl
         std::lock_guard<std::mutex> lock(_mutex);
 
         if (!_externalSource.empty())
-        {
-            LBTHROW(
-                std::runtime_error("Synapse positions are not available "
-                                   "for external projection synapses"));
-        }
+            BRAIN_THROW("Synapse positions are not available for external projection synapses")
 
         if (_preCenterPositionX)
             return;
@@ -666,11 +661,7 @@ struct Synapses::SonataImpl : public Synapses::InternalBaseImpl
         std::lock_guard<std::mutex> lock(_mutex);
 
         if (!_externalSource.empty())
-        {
-            LBTHROW(
-                std::runtime_error("Synapse positions are not available "
-                                   "for external projection synapses"));
-        }
+            BRAIN_THROW("Synapse positions are not available for external projection synapses")
 
         if (_efficacy)
             return;
@@ -892,7 +883,7 @@ const size_t* Synapses::indices() const
     const Impl& impl = static_cast<const Impl&>(*_impl);
     impl._ensureAttributes();
     if (!impl._index)
-        LBTHROW(std::runtime_error("Synapse index not available"));
+        BRAIN_THROW("Synapse index not available")
     return impl._index.get();
 }
 

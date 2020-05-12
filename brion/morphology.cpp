@@ -19,12 +19,12 @@
 
 #include "morphology.h"
 
+#include "log.h"
 #include "morphologyPlugin.h"
+#include "pluginLibrary.h"
+#include "threadPool.h"
 
-#include <lunchbox/plugin.h>
-#include <lunchbox/pluginFactory.h>
-#include <lunchbox/threadPool.h>
-
+#include <future>
 #include <mutex>
 
 namespace brion
@@ -53,8 +53,7 @@ public:
         : MorphologyPlugin(MorphologyInitData({}))
     {
         if (!fromBinary(data, size))
-            LBTHROW(std::runtime_error(
-                "Failed to construct morphology from binary data"));
+            BRION_THROW("Failed to construct morphology from binary data")
     }
 
     void load() final { /*NOP*/}
@@ -64,17 +63,14 @@ public:
 class Morphology::Impl
 {
 public:
-    typedef lunchbox::PluginFactory<MorphologyPlugin> MorphologyPluginFactory;
-
     explicit Impl(const MorphologyInitData& initData)
-        : plugin(MorphologyPluginFactory::getInstance().create(initData))
+        : plugin(PluginLibrary::instance().create<MorphologyPlugin>(initData))
     {
-        loadFuture = lunchbox::ThreadPool::getInstance().post([&] {
+        loadFuture = ThreadPool::getInstance().post([&] {
             plugin->load();
             if (plugin->getPoints().empty())
-                LBTHROW(std::runtime_error(
-                    "Failed to load morphology " +
-                    std::to_string(plugin->getInitData().getURI())));
+                BRION_THROW("Failed to load morphology "
+                          + std::to_string(plugin->getInitData().getURI()))
         });
     }
 
@@ -96,11 +92,11 @@ public:
         }
         catch (const std::exception& e)
         {
-            LBERROR << e.what() << std::endl;
+            BRION_ERROR << e.what() << std::endl;
         }
         catch (...)
         {
-            LBERROR << "Unknown exception during morphology load" << std::endl;
+            BRION_ERROR << "Unknown exception during morphology load" << std::endl;
         }
     }
 

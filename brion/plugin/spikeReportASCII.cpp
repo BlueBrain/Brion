@@ -20,12 +20,12 @@
 #include "spikeReportASCII.h"
 
 #include "../detail/skipWhiteSpace.h"
+#include "../log.h"
 #include "../pluginInitData.h"
+#include "../pluginLibrary.h"
 
 #include <boost/filesystem.hpp>
 #include <boost/regex.hpp>
-
-#include <lunchbox/pluginRegisterer.h>
 
 #include <cmath>
 #include <fstream>
@@ -34,7 +34,26 @@ namespace brion
 {
 namespace plugin
 {
-SpikeReportASCII::SpikeReportASCII(const SpikeReportInitData& initData)
+/*
+namespace
+{
+
+class PluginRegisterer
+{
+public:
+    PluginRegisterer()
+    {
+        auto& pluginManager = PluginLibrary::instance().getManager<SpikeReportPlugin>();
+        pluginManager.registerFactory<SpikeReportASCII>();
+    }
+};
+
+PluginRegisterer registerer;
+
+} // namespace
+*/
+
+SpikeReportASCII::SpikeReportASCII(const PluginInitData& initData)
     : SpikeReportPlugin(initData)
     , _lastReadPosition(_spikes.begin())
 {
@@ -129,8 +148,7 @@ void SpikeReportASCII::readSeek(const float toTimeStamp)
 void SpikeReportASCII::writeSeek(const float toTimeStamp)
 {
     if (toTimeStamp < _currentTime)
-        LBTHROW(
-            std::runtime_error("Backward seek not supported in write mode"));
+        BRION_THROW("Backward seek not supported in write mode")
 
     _currentTime = toTimeStamp;
 }
@@ -183,8 +201,8 @@ void _parse(Spikes& spikes, const std::string& filename,
                 // Instead of telling the line number, the full line will be
                 // printed. The error should be easy to spot in the file as
                 // it will be found at the first occurence in the file.
-                LBERROR << "Error reading spike times file: " << filename
-                        << ", line: " << lines[i] << std::endl;
+                BRION_ERROR << "Error reading spike times file: " << filename
+                          << ", line: " << lines[i] << std::endl;
             }
         }
     }
@@ -199,9 +217,8 @@ void _parse(Spikes& spikes, const std::string& filename,
         Spike spike;
         if (!parse(line.c_str(), spike))
         {
-            LBTHROW(std::runtime_error("Parsing spike times file " + filename +
-                                       " failed at line " +
-                                       std::to_string(lineNumber)));
+            BRION_THROW("Parsing spike times file " + filename + " failed at line "
+                      + std::to_string(lineNumber)));
         }
         spikes.emplace_back(spike);
 
@@ -210,8 +227,7 @@ void _parse(Spikes& spikes, const std::string& filename,
 #endif
 
     if (file.fail() && !file.eof())
-        LBTHROW(std::runtime_error("IO error reading spike times file: " +
-                                   filename));
+        BRION_THROW("IO error reading spike times file: " + filename)
 }
 }
 
@@ -257,5 +273,5 @@ void SpikeReportASCII::append(const Spike* spikes, const size_t size,
         std::nextafter(lastTimestamp, std::numeric_limits<float>::max());
     _endTime = std::max(_endTime, lastTimestamp);
 }
-}
-}
+} // namespace plugin
+} // namespace brion

@@ -19,24 +19,21 @@
 
 #include "compartmentReport.h"
 #include "compartmentReportPlugin.h"
+#include "pluginLibrary.h"
+#include "threadPool.h"
 
-#include <lunchbox/log.h>
-#include <lunchbox/pluginFactory.h>
-#include <lunchbox/threadPool.h>
+#include "plugin/compartmentReportBinary.h"
+#include "plugin/compartmentReportDummy.h"
+#include "plugin/compartmentReportHDF5.h"
+#include "plugin/compartmentReportLegacyHDF5.h"
 
 namespace brion
 {
 namespace
 {
-using CompartmentPluginFactory =
-    lunchbox::PluginFactory<CompartmentReportPlugin>;
-
-namespace
-{
 inline double _snapTimestamp(double t, double start, double timestep)
 {
     return start + timestep * (size_t)std::floor((t - start) / timestep);
-}
 }
 }
 
@@ -46,7 +43,7 @@ class CompartmentReport
 {
 public:
     explicit CompartmentReport(const CompartmentReportInitData& initData)
-        : plugin(CompartmentPluginFactory::getInstance().create(initData))
+     : plugin(PluginLibrary::instance().create<CompartmentReportPlugin>(initData))
     {
     }
 
@@ -73,7 +70,7 @@ CompartmentReport::~CompartmentReport()
 
 std::string CompartmentReport::getDescriptions()
 {
-    return CompartmentPluginFactory::getInstance().getDescriptions();
+    return PluginLibrary::instance().getManager<CompartmentReportPlugin>().getDescriptions();
 }
 
 size_t CompartmentReport::getCellCount() const
@@ -154,7 +151,7 @@ std::future<Frame> CompartmentReport::loadFrame(const double timestamp) const
         auto t = _snapTimestamp(timestamp, getStartTime(), getTimestep());
         return Frame{t, _impl->plugin->loadFrame(t)};
     };
-    return lunchbox::ThreadPool::getInstance().post(task);
+    return ThreadPool::getInstance().post(task);
 }
 
 std::future<Frames> CompartmentReport::loadFrames(const double start,
@@ -165,7 +162,7 @@ std::future<Frames> CompartmentReport::loadFrames(const double start,
             return Frames();
         return _impl->plugin->loadFrames(start, end);
     };
-    return lunchbox::ThreadPool::getInstance().post(task);
+    return ThreadPool::getInstance().post(task);
 }
 
 size_t CompartmentReport::getNeuronSize(const uint32_t gid) const
@@ -181,7 +178,7 @@ size_t CompartmentReport::getNeuronSize(const uint32_t gid) const
 std::future<floatsPtr> CompartmentReport::loadNeuron(const uint32_t gid) const
 {
     auto task = [gid, this] { return _impl->plugin->loadNeuron(gid); };
-    return lunchbox::ThreadPool::getInstance().post(task);
+    return ThreadPool::getInstance().post(task);
 }
 
 void CompartmentReport::setBufferSize(const size_t size)

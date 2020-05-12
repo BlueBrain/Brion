@@ -21,8 +21,6 @@
 
 #include "compartmentReportCommon.h"
 
-#include <lunchbox/debug.h> // LBUNIMPLEMENTED
-
 namespace brion
 {
 namespace plugin

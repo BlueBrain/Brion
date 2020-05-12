@@ -42,11 +42,11 @@ enum class SectionType
     undefined = brion::enums::SECTION_UNDEFINED
 };
 
-typedef std::shared_ptr<Morphology> MorphologyPtr;
+using MorphologyPtr = std::shared_ptr<Morphology>;
 
-typedef std::vector<MorphologyPtr> Morphologies;
-typedef std::vector<Section> Sections;
-typedef std::vector<SectionType> SectionTypes;
+using Morphologies = std::vector<MorphologyPtr>;
+using Sections     = std::vector<Section>;
+using SectionTypes = std::vector<SectionType>;
 }
 }
 #endif

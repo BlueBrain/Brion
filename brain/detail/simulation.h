@@ -20,13 +20,13 @@
 #include "targets.h"
 #include "util.h"
 
+#include "../log.h"
+
 #include <brion/blueConfig.h>
 #include <brion/simulationConfig.h>
 
 #include <brain/circuit.h>
 #include <brain/simulation.h>
-
-#include <lunchbox/debug.h>
 
 #include <boost/algorithm/string.hpp>
 
@@ -60,9 +60,7 @@ public:
         const brion::Strings& runs =
             _config.getSectionNames(brion::CONFIGSECTION_RUN);
         if (runs.size() != 1)
-            LBTHROW(
-                std::runtime_error("Not exactly one Run section found "
-                                   "in BlueConfig"));
+            BRAIN_THROW("Not exactly one Run section found in BlueConfig")
         _label = runs[0];
 
         _outputPath =
@@ -137,7 +135,7 @@ public:
 
     Strings getTargetNames() const final
     {
-        LBWARN << "Node set processing not supported yet in SONATA";
+        BRAIN_WARN << "Node set processing not supported yet in SONATA";
         return Strings();
     }
     GIDSet getGIDs(const std::string& target, const float fraction,
@@ -151,8 +149,7 @@ public:
             else
                 return randomSet(circuit.getGIDs(), fraction, seed);
         }
-        LBTHROW(
-            std::runtime_error("Target translation not implemented in SONATA"));
+        BRAIN_THROW("Target translation not implemented in SONATA")
     }
 
     Strings getCompartmentReportNames() const final

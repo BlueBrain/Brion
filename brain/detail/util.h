@@ -20,6 +20,9 @@
 #ifndef BRAIN_DETAIL_UTIL
 #define BRAIN_DETAIL_UTIL
 
+#include "../log.h"
+
+#include <algorithm>
 #include <random>
 #include <set>
 
@@ -45,8 +48,8 @@ inline void _shuffle(T& container, const size_t* const seed)
         }
         catch (const std::exception& exc)
         {
-            LBWARN << "Could not set BRAIN_CIRCUIT_SEED to " << seedEnv << ": "
-                   << exc.what() << std::endl;
+            BRAIN_WARN << "Could not set BRAIN_CIRCUIT_SEED to " << seedEnv << ": "
+                     << exc.what() << std::endl;
         }
     }
     std::shuffle(container.begin(), container.end(), randomEngine);

@@ -24,10 +24,9 @@
 #include "../detail/morphologyHDF5.h"
 #include "../detail/utilsHDF5.h"
 
-#include <brion/version.h>
+#include "../pluginLibrary.h"
 
-#include <lunchbox/debug.h>
-#include <lunchbox/pluginRegisterer.h>
+#include <brion/version.h>
 
 #include <highfive/H5DataSet.hpp>
 #include <highfive/H5File.hpp>
@@ -39,8 +38,6 @@ namespace plugin
 {
 namespace
 {
-lunchbox::PluginRegisterer<MorphologyHDF5> registerer;
-
 struct Loader
 {
     Loader(MorphologyPlugin& m)
@@ -391,7 +388,20 @@ private:
         }
     }
 };
-}
+
+class PluginRegisterer
+{
+public:
+    PluginRegisterer()
+    {
+        auto& pluginManager = PluginLibrary::instance().getManager<MorphologyPlugin>();
+        pluginManager.registerFactory<MorphologyHDF5>();
+    }
+};
+
+PluginRegisterer registerer;
+
+} // namespace
 
 MorphologyHDF5::MorphologyHDF5(const MorphologyInitData& initData)
     : MorphologyPlugin(initData)
@@ -426,5 +436,5 @@ std::string MorphologyHDF5::getDescription()
     return "Blue Brain hdf5 morphologies:\n"
            "  [file://]/path/to/morphology.h5";
 }
-}
-}
+} // namespace plugin
+} // namespace brion

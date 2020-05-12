@@ -22,10 +22,9 @@
 
 #include "../detail/skipWhiteSpace.h"
 #include "../pluginInitData.h"
+#include "../pluginLibrary.h"
 
 #include <boost/filesystem.hpp>
-
-#include <lunchbox/pluginRegisterer.h>
 
 #include <cstdio>
 #include <fstream>
@@ -36,11 +35,23 @@ namespace plugin
 {
 namespace
 {
-lunchbox::PluginRegisterer<SpikeReportBluron> registerer;
-const char* const BLURON_REPORT_FILE_EXT = ".dat";
-}
 
-SpikeReportBluron::SpikeReportBluron(const SpikeReportInitData& initData)
+class PluginRegisterer
+{
+public:
+    PluginRegisterer()
+    {
+        auto& pluginManager = PluginLibrary::instance().getManager<SpikeReportPlugin>();
+        pluginManager.registerFactory<SpikeReportBluron>();
+    }
+};
+
+PluginRegisterer registerer;
+
+const char* const BLURON_REPORT_FILE_EXT = ".dat";
+} // namespace
+
+SpikeReportBluron::SpikeReportBluron(const PluginInitData& initData)
     : SpikeReportASCII(initData)
 {
     if (initData.getAccessMode() == MODE_READ)
@@ -58,7 +69,7 @@ SpikeReportBluron::SpikeReportBluron(const SpikeReportInitData& initData)
         _endTime = _spikes.rbegin()->first;
 }
 
-bool SpikeReportBluron::handles(const SpikeReportInitData& initData)
+bool SpikeReportBluron::handles(const PluginInitData& initData)
 {
     const URI& uri = initData.getURI();
     if (!uri.getScheme().empty() && uri.getScheme() != "file")
@@ -86,5 +97,5 @@ void SpikeReportBluron::write(const Spike* spikes, const size_t size)
         file << spike.first << " " << spike.second << "\n";
     });
 }
-}
-}
+} // namespace plugin
+} // namespace brion

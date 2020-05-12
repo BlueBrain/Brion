@@ -23,6 +23,8 @@
 #include "morphology.h"
 #include "morphologyImpl.h"
 
+#include "../log.h"
+
 namespace brain
 {
 namespace neuron
@@ -33,8 +35,8 @@ Section::Section(const uint32_t id, Morphology::ImplPtr morphology)
 {
     SectionRange range = morphology->getSectionRange(id);
     if (range.second <= range.first)
-        LBWARN << "Dereferencing broken morphology section " << _id
-               << std::endl;
+        BRAIN_WARN << "Dereferencing broken morphology section " << _id
+                 << std::endl;
 }
 
 Section::Section(const Section& section)
@@ -119,7 +121,7 @@ Section Section::getParent() const
 {
     const int32_t parent = _morphology->data->getSections()[_id][1];
     if (parent == -1 || uint32_t(parent) == _morphology->somaSection)
-        LBTHROW(std::runtime_error("Cannot access parent section"));
+        BRAIN_THROW("Cannot access parent section");
     return Section(parent, _morphology);
 }
 

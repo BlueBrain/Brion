@@ -18,12 +18,9 @@
  */
 
 #include <brion/brion.h>
+#include <brion/log.h>
 
-#include <lunchbox/clock.h>
-#include <lunchbox/file.h>
-#include <lunchbox/log.h>
-#include <lunchbox/string.h>
-#include <lunchbox/term.h>
+#include <servus/uri.h>
 
 #ifdef BRION_USE_BBPTESTDATA
 #include <BBP/TestDatasets.h>
@@ -32,6 +29,8 @@
 #include <boost/filesystem.hpp>
 #include <boost/program_options.hpp>
 #include <boost/progress.hpp>
+
+#include <chrono>
 
 namespace po = boost::program_options;
 
@@ -77,8 +76,7 @@ void requireEqualCollections(const T& a, const T& b)
 int main(const int argc, char** argv)
 {
     // clang-format off
-    po::options_description options("Options",
-                                    lunchbox::term::getSize().first);
+    po::options_description options("Options");
     options.add_options()
         ("help,h", "Produce help message")
         ("version,v", "Show program name/version banner and exit")
@@ -112,12 +110,11 @@ int main(const int argc, char** argv)
 
     if (vm.count("help") || vm.count("input") == 0)
     {
-        std::cout << "Usage: " << lunchbox::getFilename(std::string(argv[0]))
+        std::cout << "Usage: " << argv[0]
                   << " input-uri [output-uri=dummy://] [options]" << std::endl
                   << std::endl
                   << "Supported input and output URIs:" << std::endl
-                  << lunchbox::string::prepend(
-                         brion::CompartmentReport::getDescriptions(), "    ")
+                  << brion::CompartmentReport::getDescriptions()
                   << std::endl
 #ifdef BRION_USE_BBPTESTDATA
                   << std::endl
@@ -148,7 +145,7 @@ int main(const int argc, char** argv)
 
     if (vm.count("erase"))
     {
-        lunchbox::URI outURI(vm["erase"].as<std::string>());
+        servus::URI outURI(vm["erase"].as<std::string>());
         brion::CompartmentReport report(outURI, brion::MODE_READ);
         if (report.erase())
             return EXIT_SUCCESS;
@@ -175,10 +172,10 @@ int main(const int argc, char** argv)
         return EXIT_FAILURE;
     }
 
-    lunchbox::URI inURI(input);
-    lunchbox::Clock clock;
+    servus::URI inURI(input);
     brion::CompartmentReport in(inURI, brion::MODE_READ);
-    float loadTime = clock.getTimef();
+    const std::chrono::high_resolution_clock::time_point loadTime1 
+                    = std::chrono::high_resolution_clock::now();
 
     const double start = in.getStartTime();
     const double step = in.getTimestep();
@@ -209,7 +206,7 @@ int main(const int argc, char** argv)
     const auto& counts = in.getCompartmentCounts();
     const auto& gids = in.getGIDs();
 
-    lunchbox::URI outURI(vm["output"].as<std::string>());
+    servus::URI outURI(vm["output"].as<std::string>());
     if (outURI.getPath().empty())
     {
         try
@@ -224,7 +221,15 @@ int main(const int argc, char** argv)
         }
     }
 
-    clock.reset();
+    const std::chrono::high_resolution_clock::time_point loadTime2 
+                    = std::chrono::high_resolution_clock::now();
+    const std::chrono::duration<float> loadTimeSpan 
+                    = std::chrono::duration_cast<std::chrono::duration<float>>(loadTime2 - loadTime1);
+    float loadTime = loadTimeSpan.count();
+
+    const std::chrono::high_resolution_clock::time_point writeTime1
+                    = std::chrono::high_resolution_clock::now();
+
     brion::CompartmentReport to(outURI, brion::MODE_OVERWRITE);
     to.writeHeader(start, end, step, in.getDataUnit(), in.getTimeUnit());
     {
@@ -254,7 +259,12 @@ int main(const int argc, char** argv)
         }
     }
 
-    float writeTime = clock.getTimef();
+    const std::chrono::high_resolution_clock::time_point writeTime2 
+                    = std::chrono::high_resolution_clock::now();
+
+    const std::chrono::duration<float> writeTimeSpan 
+                    = std::chrono::duration_cast<std::chrono::duration<float>>(writeTime2 - writeTime1);
+    float writeTime = writeTimeSpan.count();
     // Adding step / 2 to the window to avoid off by 1 errors during truncation
     const size_t nFrames = (end - start + step * 0.5) / step;
     boost::progress_display progress(nFrames);
@@ -264,7 +274,8 @@ int main(const int argc, char** argv)
         // Making the timestamp fall in the middle of the frame
         const double timestamp = start + frameIndex * step + step * 0.5;
 
-        clock.reset();
+        const std::chrono::high_resolution_clock::time_point loadPivot1 
+                    = std::chrono::high_resolution_clock::now();
 
         brion::floatsPtr data;
         try
@@ -273,23 +284,27 @@ int main(const int argc, char** argv)
         }
         catch (...)
         {
-            LBERROR << std::endl
-                    << "Can't load frame at " << timestamp << " ms"
-                    << std::endl;
+            BRION_ERROR << "\nCan't load frame at " << timestamp << " ms" << std::endl;
             ::exit(EXIT_FAILURE);
         }
-        loadTime += clock.getTimef();
+
+        const std::chrono::high_resolution_clock::time_point loadPivot2 
+                    = std::chrono::high_resolution_clock::now();
+        const std::chrono::duration<float> loadPivotSpan 
+                    = std::chrono::duration_cast<std::chrono::duration<float>>(loadPivot2 - loadPivot1);
+        loadTime += loadPivotSpan.count();
+
         if (!data)
         {
-            LBERROR << std::endl
-                    << "Can't load frame at " << timestamp << " ms"
-                    << std::endl;
+            BRION_ERROR << "\nCan't load frame at " << timestamp << " ms" << std::endl;
             ::exit(EXIT_FAILURE);
         }
 
         const brion::floats& values = *data.get();
 
-        clock.reset();
+        const std::chrono::high_resolution_clock::time_point witePivot1 
+            = std::chrono::high_resolution_clock::now();
+
         if (isFrameSorted)
         {
             if (!to.writeFrame(gids, values.data(), sizes, timestamp))
@@ -315,14 +330,23 @@ int main(const int argc, char** argv)
             if (!to.writeFrame(gids, cellValues.get(), sizes, timestamp))
                 return EXIT_FAILURE;
         }
-        writeTime += clock.getTimef();
+
+        const std::chrono::high_resolution_clock::time_point witePivot2 
+            = std::chrono::high_resolution_clock::now();
+        const std::chrono::duration<float> writePivotSpan 
+                    = std::chrono::duration_cast<std::chrono::duration<float>>(witePivot2 - witePivot1);
+        writeTime += writePivotSpan.count();
         ++progress;
     }
 
-    clock.reset();
+    const std::chrono::high_resolution_clock::time_point flushPivot1 
+            = std::chrono::high_resolution_clock::now();
     to.flush();
-
-    writeTime += clock.getTimef();
+    const std::chrono::high_resolution_clock::time_point flushPivot2 
+            = std::chrono::high_resolution_clock::now();
+    const std::chrono::duration<float> flushPivotSpan 
+                    = std::chrono::duration_cast<std::chrono::duration<float>>(flushPivot2 - flushPivot1);
+    writeTime += flushPivotSpan.count();
 
     std::cout << "Converted " << inURI << " to " << outURI << " (in "
               << size_t(loadTime) << " out " << size_t(writeTime) << " ms, "

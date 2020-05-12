@@ -21,6 +21,7 @@
 #define BRAIN_DETAIL_SYNAPSESSTREAM
 
 #include <brain/circuit.h>
+#include <brain/synapses.h>
 
 #include <future>
 

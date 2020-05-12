@@ -18,12 +18,11 @@
  */
 
 #include <brion/detail/hdf5Mutex.h>
+#include <brion/log.h>
 #include <brion/types.h>
 
 #include <highfive/H5File.hpp>
 #include <highfive/H5Utility.hpp>
-
-#include <lunchbox/log.h>
 
 #include <boost/filesystem.hpp>
 
@@ -44,10 +43,8 @@ HighFive::File openFile(const std::string& filepath, const int accessMode,
         namespace fs = boost::filesystem;
         const bool exists = fs::exists(fs::path(filepath));
         if (exists && (accessMode & MODE_OVERWRITE) != MODE_OVERWRITE)
-        {
-            LBTHROW(std::runtime_error(
-                ("Cannot overwrite existing file " + filepath).c_str()));
-        }
+            BRION_THROW("Cannot overwrite existing file " + filepath)
+
         const auto writeFlag =
             exists ? HighFive::File::Truncate : HighFive::File::Excl;
         return HighFive::File(filepath, HighFive::File::Create | writeFlag);

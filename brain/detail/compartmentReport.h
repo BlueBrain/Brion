@@ -23,9 +23,6 @@
 #include "../compartmentReportMapping.h"
 #include "brion/compartmentReport.h"
 
-#include <lunchbox/threadPool.h>
-#include <lunchbox/types.h>
-
 namespace brain
 {
 namespace detail
@@ -90,7 +87,7 @@ void CompartmentReportView::_initIndices()
         for (size_t section = 0; section != compartments.size(); ++section)
         {
             const auto offset = offsets[section];
-            if (offset == LB_UNDEFINED_UINT64)
+            if (offset == std::numeric_limits<uint64_t>().max())
                 continue;
 
             const auto count = compartments[section];

@@ -18,8 +18,12 @@
  * This file is part of Brion <https://github.com/BlueBrain/Brion>
  */
 
+#ifdef BRION_USE_BBPTESTDATA
+
 #include <BBP/TestDatasets.h>
+
 #include <brion/brion.h>
+#include <brion/log.h>
 
 #define BOOST_TEST_MODULE CompartmentReport
 #include <boost/date_time/posix_time/posix_time.hpp>
@@ -27,7 +31,6 @@
 #include <boost/filesystem/path.hpp>
 
 #include <boost/test/unit_test.hpp>
-#include <lunchbox/log.h>
 
 using boost::lexical_cast;
 
@@ -749,3 +752,4 @@ BOOST_AUTO_TEST_CASE(dummy_report)
 
     BOOST_CHECK_NE(report3a.getFrameSize(), report2.getFrameSize());
 }
+#endif

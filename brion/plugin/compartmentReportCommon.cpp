@@ -18,7 +18,8 @@
  */
 
 #include "compartmentReportCommon.h"
-#include <lunchbox/log.h>
+
+#include "../log.h"
 
 namespace brion
 {
@@ -126,16 +127,16 @@ GIDSet CompartmentReportCommon::_computeIntersection(const GIDSet& all,
                           std::inserter(intersection, intersection.begin()));
     if (intersection != subset || intersection.empty())
     {
-        LBWARN << "Requested " << subset.size() << " GIDs [" << *subset.begin()
-               << ":" << *subset.rbegin() << "] are not a subset of the "
-               << all.size() << " GIDs in the report [" << *all.begin() << ":"
-               << *all.rbegin();
+        BRION_WARN << "Requested " << subset.size() << " GIDs [" << *subset.begin()
+                 << ":" << *subset.rbegin() << "] are not a subset of the "
+                 << all.size() << " GIDs in the report [" << *all.begin() << ":"
+                 << *all.rbegin();
         if (intersection.empty())
-            LBWARN << " with no GIDs in common" << std::endl;
+            BRION_WARN << " with no GIDs in common" << std::endl;
         else
-            LBWARN << "], using intersection size " << intersection.size()
-                   << " [" << *intersection.begin() << ":"
-                   << *intersection.rbegin() << "]" << std::endl;
+            BRION_WARN << "], using intersection size " << intersection.size()
+                     << " [" << *intersection.begin() << ":"
+                     << *intersection.rbegin() << "]" << std::endl;
     }
     return intersection;
 }
@@ -179,7 +180,7 @@ CompartmentReportCommon::MappingInfo CompartmentReportCommon::_reduceMapping(
         const auto shift = frameSize - source.cellOffsets[sourceIndex];
         for (auto& offset : offsets)
         {
-            if (offset != LB_UNDEFINED_UINT64)
+            if (offset != std::numeric_limits<uint64_t>().max())
                 offset += shift;
         }
         target.counts[targetIndex] = source.counts[sourceIndex];

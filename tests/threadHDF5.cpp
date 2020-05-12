@@ -20,8 +20,8 @@
 
 #include <BBP/TestDatasets.h>
 #include <brion/brion.h>
-#include <lunchbox/scopedMutex.h>
-#include <lunchbox/spinLock.h>
+
+#include <mutex>
 
 #define BOOST_TEST_MODULE ThreadHDF5
 #include <boost/filesystem/path.hpp>
@@ -29,20 +29,20 @@
 
 // Some helper macros to make Boost::Test thread safe
 // http://thread.gmane.org/gmane.comp.lib.boost.devel/123662/focus=123678
-lunchbox::SpinLock testLock;
+std::mutex _mutex;
 #define TS_BOOST_CHECK_NO_THROW(L)                 \
     {                                              \
-        lunchbox::ScopedFastWrite mutex(testLock); \
+        std::lock_guard<std::mutex> lock(_mutex);  \
         BOOST_CHECK_NO_THROW((L));                 \
     }
 #define TS_BOOST_CHECK(L)                          \
     {                                              \
-        lunchbox::ScopedFastWrite mutex(testLock); \
+        std::lock_guard<std::mutex> lock(_mutex); \
         BOOST_CHECK((L));                          \
     }
 #define TS_BOOST_CHECK_GT(L, R)                    \
     {                                              \
-        lunchbox::ScopedFastWrite mutex(testLock); \
+        std::lock_guard<std::mutex> lock(_mutex); \
         BOOST_CHECK_GT((L), (R));                  \
     }
 

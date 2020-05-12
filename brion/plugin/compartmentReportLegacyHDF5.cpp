@@ -23,6 +23,9 @@
 #include "../detail/hdf5Mutex.h"
 #include "../detail/utilsHDF5.h"
 
+#include "../log.h"
+#include "../pluginLibrary.h"
+
 #include <brion/version.h>
 
 #include <boost/filesystem.hpp>
@@ -30,17 +33,24 @@
 
 #include <highfive/H5Utility.hpp>
 
-#include <lunchbox/debug.h>
-#include <lunchbox/log.h>
-#include <lunchbox/pluginRegisterer.h>
-
 namespace brion
 {
 namespace plugin
 {
+
 namespace
 {
-lunchbox::PluginRegisterer<CompartmentReportLegacyHDF5> registerer;
+class PluginRegisterer
+{
+public:
+    PluginRegisterer()
+    {
+        auto& pluginManager = PluginLibrary::instance().getManager<CompartmentReportPlugin>();
+        pluginManager.registerFactory<CompartmentReportLegacyHDF5>();
+    }
+};
+
+PluginRegisterer registerer;
 }
 
 // Computes compartment counts for a section within a cell inside an ordered
@@ -51,21 +61,21 @@ uint16_t calcCompartmentCounts(SectionOffsets::const_iterator cell,
                                const size_t totalCompartments)
 {
     const uint64_t firstIndex = *section;
-    if (firstIndex == LB_UNDEFINED_UINT64) // Detecting empty sections
+    if (firstIndex == std::numeric_limits<uint64_t>().max()) // Detecting empty sections
         return 0;
 
     // Skipping sections that don't appear in the report. Right now, this is not
     // very bad since we will only have to skip sections when we ask for the
     // second axon section, due to the remaining axon sections not being
     // reported.
-    uint64_t lastIndex = LB_UNDEFINED_UINT64;
-    for (++section; section != cell->end() && lastIndex == LB_UNDEFINED_UINT64;
+    uint64_t lastIndex = std::numeric_limits<uint64_t>().max();
+    for (++section; section != cell->end() && lastIndex == std::numeric_limits<uint64_t>().max();
          ++section)
     {
         lastIndex = *section;
     }
 
-    if (lastIndex == LB_UNDEFINED_UINT64)
+    if (lastIndex == std::numeric_limits<uint64_t>().max())
     {
         // We reached the end of the neuron without finding a section with valid
         // offset. We need to search for the first offset of the next neuron (if
@@ -79,21 +89,21 @@ uint16_t calcCompartmentCounts(SectionOffsets::const_iterator cell,
         {
             for (auto i : *cell)
             {
-                if (i != LB_UNDEFINED_UINT64)
+                if (i != std::numeric_limits<uint64_t>().max())
                 {
                     lastIndex = i;
                     break;
                 }
             }
-            LBASSERT(lastIndex != LB_UNDEFINED_UINT64);
+            BRION_ASSERT(lastIndex != std::numeric_limits<uint64_t>().max());
         }
         else
             // No cell with mapping found after the initial one.
             lastIndex = totalCompartments;
     }
 
-    LBASSERT(lastIndex - firstIndex > 0 &&
-             lastIndex - firstIndex <= std::numeric_limits<size_t>::max());
+    BRION_ASSERT(lastIndex - firstIndex > 0 &&
+               lastIndex - firstIndex <= std::numeric_limits<size_t>::max());
     return uint16_t(lastIndex - firstIndex);
 }
 
@@ -232,9 +242,9 @@ void CompartmentReportLegacyHDF5::writeHeader(const double startTime,
                                               const std::string& dunit,
                                               const std::string& tunit)
 {
-    LBASSERTINFO(endTime - startTime >= timestep,
-                 "Invalid report time " << startTime << ".." << endTime << "/"
-                                        << timestep);
+    BRION_ASSERT_INFO(endTime - startTime >= timestep,
+                    "Invalid report time " + std::to_string(startTime) + ".." 
+                    + std::to_string(endTime) + "/" + std::to_string(timestep));
     if (timestep <= 0.f)
     {
         std::ostringstream msg;
@@ -260,12 +270,12 @@ bool CompartmentReportLegacyHDF5::writeCompartments(const uint32_t gid,
     {
         const size_t compCount =
             std::accumulate(counts.begin(), counts.end(), 0);
-        LBASSERT(!counts.empty());
-        LBASSERTINFO(compCount > 0, "No compartments for GID " << gid);
+        BRION_ASSERT(!counts.empty());
+        BRION_ASSERT_INFO((compCount > 0), "No compartments for GID " + std::to_string(gid));
         HighFive::DataSet dataset = _createDataset(gid, compCount);
 
         const size_t sections = counts.size();
-        LBASSERT(sections > 0);
+        BRION_ASSERT(sections > 0);
         dataset.getAttribute(mappingAttributes[1]).write(sections);
 
         boost::multi_array<float, 2> mapping(boost::extents[1][compCount]);
@@ -279,8 +289,8 @@ bool CompartmentReportLegacyHDF5::writeCompartments(const uint32_t gid,
     }
     catch (const HighFive::Exception& e)
     {
-        LBERROR << "CompartmentReportLegacyHDF5: error writing mapping: "
-                << e.what() << std::endl;
+        BRION_ERROR << "CompartmentReportLegacyHDF5: error writing mapping: "
+                  << e.what() << std::endl;
     }
     return false;
 }
@@ -304,8 +314,8 @@ bool CompartmentReportLegacyHDF5::writeFrame(const uint32_t gid,
     }
     catch (const HighFive::Exception& e)
     {
-        LBERROR << "CompartmentReportLegacyHDF5: error writing frame: "
-                << e.what() << std::endl;
+        BRION_ERROR << "CompartmentReportLegacyHDF5: error writing frame: "
+                  << e.what() << std::endl;
     }
     return false;
 }
@@ -331,18 +341,16 @@ HighFive::DataSet CompartmentReportLegacyHDF5::_openDataset(
         }
         catch (const HighFive::DataSetException&)
         {
-            LBTHROW(std::runtime_error("CompartmentReportLegacyHDF5: Dataset " +
-                                       datasetName + " not found in file: " +
-                                       file.getName()));
+            BRION_THROW("CompartmentReportLegacyHDF5: Dataset " +
+                      datasetName + " not found in file: " +
+                      file.getName())
         }
     }();
 
     if (dataset.getSpace().getNumberDimensions() != 2)
     {
-        LBTHROW(
-            std::runtime_error("CompartmentReportLegacyHDF5: "
-                               "Error, not 2 dimensional array on " +
-                               datasetName));
+        BRION_THROW("CompartmentReportLegacyHDF5: Error, not 2 dimensional array on " 
+                  + datasetName)
     }
 
     return dataset;
@@ -373,19 +381,15 @@ void CompartmentReportLegacyHDF5::_updateMapping(const GIDSet& gids)
             }
             catch (HighFive::DataSetException&)
             {
-                LBTHROW(
-                    std::runtime_error("CompartmentReportLegacyHDF5: Dataset " +
-                                       datasetName + " not found"));
+                BRION_THROW("CompartmentReportLegacyHDF5: Dataset " + datasetName + " not found")
             }
         }();
 
         auto dims = dataset.getSpace().getDimensions();
         if (dims.size() != 2)
         {
-            LBTHROW(
-                std::runtime_error("CompartmentReportLegacyHDF5: "
-                                   "Error, not 2 dimensional array on " +
-                                   datasetName));
+            BRION_THROW("CompartmentReportLegacyHDF5: Error, not 2 dimensional array on " 
+                      + datasetName)
         }
 
         boost::scoped_array<float> buffer(new float[dims[1]]);
@@ -400,9 +404,9 @@ void CompartmentReportLegacyHDF5::_updateMapping(const GIDSet& gids)
         }
 
         uint64_ts& offsets = _offsets[cellIndex];
-        offsets.resize(largestSectionID + 1, LB_UNDEFINED_UINT64);
+        offsets.resize(largestSectionID + 1, std::numeric_limits<uint64_t>().max());
 
-        size_t lastSection = LB_UNDEFINED_UINT16;
+        size_t lastSection = std::numeric_limits<uint16_t>().max();
         for (size_t i = 0; i < dims[1]; ++i, ++nextCompartmentIndex)
         {
             const size_t section = buffer[i];
@@ -451,8 +455,8 @@ void CompartmentReportLegacyHDF5::_updateMapping(const GIDSet& gids)
 HighFive::DataSet CompartmentReportLegacyHDF5::_createDataset(
     const uint32_t gid, const size_t compCount)
 {
-    LBASSERT(compCount > 0);
-    LBASSERT(!_reportName.empty());
+    BRION_ASSERT(compCount > 0);
+    BRION_ASSERT(!_reportName.empty());
 
     std::ostringstream neuronName;
     neuronName << "a" << gid;
@@ -464,7 +468,7 @@ HighFive::DataSet CompartmentReportLegacyHDF5::_createDataset(
     // Adding step / 2 to the window to avoid off by 1 errors during truncation
     // after the division.
     const size_t numSteps = (getEndTime() - getStartTime() + step * 0.5) / step;
-    LBASSERT(numSteps > 0);
+    BRION_ASSERT(numSteps > 0);
 
     HighFive::DataSet mappingDataset =
         reportGroup.createDataSet<float>(mappingDatasetName,
@@ -604,5 +608,6 @@ void CompartmentReportLegacyHDF5::_createDataAttributes(
     detail::addStringAttribute(dataset, dataAttributes[4], _dunit);
     detail::addStringAttribute(dataset, dataAttributes[5], _tunit);
 }
-}
-}
+
+} // namespace plugin
+} // namespace brion

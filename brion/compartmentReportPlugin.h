@@ -79,33 +79,11 @@ private:
 
 /**
  * Base interface for compartment report readers and writers.
- *
- * The following example creates a new report, initializes and registers it:
- * @code
- * class MyReport : CompartmentReportPlugin
- * {
- *     MyReport( const CompartmentReportInitData& pluginInitData );
- *     static bool handles( const CompartmentReportInitData& pluginInitData );
- *     ...
- * };
- * ...
- * // in the .cpp file
- * namespace
- * {
- *     lunchbox::PluginRegisterer< MyReport > registerer;
- * }
- * @endcode
- *
- * @version 1.4
  */
 class CompartmentReportPlugin : public boost::noncopyable
 {
 public:
-    /** @internal Needed by the PluginRegisterer. */
-    typedef CompartmentReportPlugin InterfaceT;
-
-    /** @internal Needed by the PluginRegisterer. */
-    typedef CompartmentReportInitData InitDataT;
+    using DataT = CompartmentReportInitData;
 
     /** @internal */
     virtual ~CompartmentReportPlugin() {}

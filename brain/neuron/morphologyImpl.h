@@ -26,9 +26,8 @@
 #include <brion/morphology.h>
 #include <brion/types.h>
 
-#include <lunchbox/lfVector.h>
-
 #include <mutex>
+#include <vector>
 
 namespace brain
 {
@@ -75,9 +74,10 @@ private:
     // Distances caches. These caches need to be thread-safe to follow the
     // recommendations for C++11 about mutable and const correctness.
     // (http://herbsutter.com/2013/05/24/gotw-6a-const-correctness-part-1-3/)
-    typedef lunchbox::LFVector<float> LFFloats;
-    mutable LFFloats _distancesToSoma;
-    mutable LFFloats _sectionLengths;
+    mutable std::vector<float> _distancesToSoma;
+    mutable std::mutex _distMtx;
+    mutable std::vector<float> _sectionLengths;
+    mutable std::mutex _secLenMtx;
 
     std::vector<uint32_ts> _sectionChildren;
 

@@ -19,8 +19,7 @@
 
 #include "spikeReportHDF5.h"
 
-#include <lunchbox/memoryMap.h>
-#include <lunchbox/pluginRegisterer.h>
+#include "../pluginLibrary.h"
 
 #include <boost/filesystem.hpp>
 #include <boost/filesystem/path.hpp>
@@ -36,11 +35,23 @@ namespace plugin
 {
 namespace
 {
-lunchbox::PluginRegisterer<SpikeReportHDF5> registerer;
-constexpr char HDF_REPORT_FILE_EXT[] = ".h5";
-}
 
-SpikeReportHDF5::SpikeReportHDF5(const SpikeReportInitData& initData)
+class PluginRegisterer
+{
+public:
+    PluginRegisterer()
+    {
+        auto& pluginManager = PluginLibrary::instance().getManager<SpikeReportPlugin>();
+        pluginManager.registerFactory<SpikeReportHDF5>();
+    }
+};
+
+PluginRegisterer registerer;
+
+constexpr char HDF_REPORT_FILE_EXT[] = ".h5";
+} // namespace
+
+SpikeReportHDF5::SpikeReportHDF5(const PluginInitData& initData)
     : SpikeReportPlugin(initData)
     , _file([initData]() {
         // For consistency with the other spike plugins, we convert
@@ -78,7 +89,7 @@ SpikeReportHDF5::SpikeReportHDF5(const SpikeReportInitData& initData)
         _endTime = _spikes.rbegin()->first;
 }
 
-bool SpikeReportHDF5::handles(const SpikeReportInitData& initData)
+bool SpikeReportHDF5::handles(const PluginInitData& initData)
 {
     const URI& uri = initData.getURI();
     if (!uri.getScheme().empty() && uri.getScheme() != "file")
@@ -169,5 +180,5 @@ void SpikeReportHDF5::readSeek(const float toTimeStamp)
         _currentTime = toTimeStamp;
     }
 }
-}
-} // namespaces
+} // namespace plugin
+} // namespace brion

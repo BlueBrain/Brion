@@ -21,7 +21,9 @@
 #include <brion/blueConfig.h>
 #include <brion/target.h>
 
-#include <lunchbox/log.h>
+#include "../types.h"
+
+#include "../log.h"
 
 namespace brain
 {
@@ -69,8 +71,8 @@ private:
                 }
                 catch (const std::runtime_error& exc)
                 {
-                    LBWARN << "Failed to load targets from " << uri.getPath()
-                           << ": " << exc.what() << std::endl;
+                    BRAIN_WARN << "Failed to load targets from " << uri.getPath()
+                             << ": " << exc.what() << std::endl;
                 }
             }
         }

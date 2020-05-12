@@ -22,9 +22,8 @@
 
 #include "../detail/skipWhiteSpace.h"
 
-#include <lunchbox/debug.h>
-#include <lunchbox/log.h>
-#include <lunchbox/pluginRegisterer.h>
+#include "../log.h"
+#include "../pluginLibrary.h"
 
 #include <fstream>
 #include <list>
@@ -99,8 +98,6 @@ bool _isSampleBigger(const Sample* a, const Sample* b)
 using SampleQueue = std::priority_queue<Sample*, std::vector<Sample*>,
                                         decltype(&_isSampleBigger)>;
 
-lunchbox::PluginRegisterer<MorphologySWC> _registerer;
-
 void _correctSampleType(Sample& sample, const Samples& samples)
 {
     SWCSectionType type = sample.type;
@@ -130,6 +127,19 @@ void _correctSampleType(Sample& sample, const Samples& samples)
 
     sample.type = type;
 }
+
+class PluginRegisterer
+{
+public:
+    PluginRegisterer()
+    {
+        auto& pluginManager = PluginLibrary::instance().getManager<MorphologyPlugin>();
+        pluginManager.registerFactory<MorphologySWC>();
+    }
+};
+
+PluginRegisterer registerer;
+
 }
 
 struct MorphologySWC::RawSWCInfo
@@ -202,8 +212,7 @@ void MorphologySWC::_readSamples(RawSWCInfo& info)
 {
     std::ifstream file(info.filename.c_str());
     if (file.fail())
-        LBTHROW(std::runtime_error("Error opening morphology file: " +
-                                   info.filename));
+        BRION_THROW("Error opening morphology file: " + info.filename)
 
     Samples& samples = info.samples;
 
@@ -223,16 +232,15 @@ void MorphologySWC::_readSamples(RawSWCInfo& info)
         const unsigned int id = strtol(line.data(), &data, 10);
         if (*data != ' ' && *data != '\t')
         {
-            LBTHROW(std::runtime_error(
-                "Reading swc morphology file: " + info.filename +
-                ", parse error at line " + std::to_string(lineNumber)));
+            BRION_THROW("Reading swc morphology file: " + info.filename +
+                      ", parse error at line " + std::to_string(lineNumber))
         }
         samples.resize(std::max(samples.size(), size_t(id + 1)));
         if (samples[id].valid)
         {
-            LBWARN << "Reading swc morphology file: " << info.filename
-                   << ", repeated sample id " << id << " at line "
-                   << std::to_string(lineNumber) << std::endl;
+            BRION_WARN << "Reading swc morphology file: " << info.filename
+                     << ", repeated sample id " << id << " at line "
+                     << std::to_string(lineNumber) << std::endl;
         }
         else
         {
@@ -240,9 +248,8 @@ void MorphologySWC::_readSamples(RawSWCInfo& info)
             ++totalSamples;
             if (!samples[id].valid)
             {
-                LBTHROW(std::runtime_error(
-                    "Reading swc morphology file: " + info.filename +
-                    ", parse error at line " + std::to_string(lineNumber)));
+                BRION_THROW("Reading swc morphology file: " + info.filename +
+                          ", parse error at line " + std::to_string(lineNumber))
             }
         }
 
@@ -267,8 +274,8 @@ void MorphologySWC::_buildSampleTree(RawSWCInfo& info)
         visited.push_back(!sample.valid);
 
     if (samples.empty())
-        LBTHROW(std::runtime_error("Reading swc morphology file: " +
-                                   info.filename + ", no soma section found"));
+        BRION_THROW("Reading swc morphology file: " +
+                  info.filename + ", no soma section found")
 
     size_t currentSample = samples.size() - 1;
     size_t currentEndPoint = samples.size() - 1;
@@ -293,9 +300,8 @@ void MorphologySWC::_buildSampleTree(RawSWCInfo& info)
         {
             if (sample.parent == int(currentSample))
             {
-                LBTHROW(std::runtime_error("Reading swc morphology file: " +
-                                           info.filename +
-                                           ", found a sample point to itself"));
+                BRION_THROW("Reading swc morphology file: " + info.filename +
+                          ", found a sample point to itself")
             }
             Sample* parent = &samples[sample.parent];
             if (!parent->valid)
@@ -304,7 +310,7 @@ void MorphologySWC::_buildSampleTree(RawSWCInfo& info)
                 msg << "Reading swc morphology file: " << info.filename
                     << ", broken tree (missing sample  " << sample.parent << ")"
                     << std::endl;
-                LBTHROW(std::runtime_error(msg.str()));
+                BRION_THROW(msg.str())
             }
 
             if (parent->type == SWC_SECTION_SOMA)
@@ -316,9 +322,8 @@ void MorphologySWC::_buildSampleTree(RawSWCInfo& info)
                 {
                     if (parent->nextID != -1)
                     {
-                        LBWARN
-                            << "Reading swc morphology file: " << info.filename
-                            << ", found bifurcation in soma section";
+                        BRION_WARN << "Reading swc morphology file: " << info.filename
+                                 << ", found bifurcation in soma section";
                         sample.siblingID = parent->nextID;
                     }
                     // Linking the parent to this sample.
@@ -336,9 +341,8 @@ void MorphologySWC::_buildSampleTree(RawSWCInfo& info)
             {
                 if (sample.type == SWC_SECTION_SOMA)
                 {
-                    LBTHROW(std::runtime_error(
-                        "Reading swc morphology file: " + info.filename +
-                        ", found soma sample with neurite parent"));
+                    BRION_THROW("Reading swc morphology file: " + info.filename +
+                              ", found soma sample with neurite parent")
                 }
                 if (parent->nextID != -1)
                 {
@@ -363,9 +367,8 @@ void MorphologySWC::_buildSampleTree(RawSWCInfo& info)
                 if (info.roots.size() &&
                     info.roots.top()->type == SWC_SECTION_SOMA)
                 {
-                    LBTHROW(std::runtime_error("Reading swc morphology file: " +
-                                               info.filename +
-                                               ", found two soma sections"));
+                    BRION_THROW("Reading swc morphology file: " + info.filename +
+                              ", found two soma sections")
                 }
                 hasSoma = true;
             }
@@ -405,8 +408,7 @@ void MorphologySWC::_buildSampleTree(RawSWCInfo& info)
         }
     }
     if (!hasSoma)
-        LBTHROW(std::runtime_error("Reading swc morphology file: " +
-                                   info.filename + ", no soma section found"));
+        BRION_THROW("Reading swc morphology file: " + info.filename + ", no soma section found")
 }
 
 void MorphologySWC::_buildStructure(RawSWCInfo& info)

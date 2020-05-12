@@ -90,13 +90,9 @@ public:
 class MorphologyPlugin : public servus::Serializable
 {
 public:
-    /** @internal Needed by the PluginRegisterer. */
-    using InterfaceT = MorphologyPlugin;
+    using DataT = MorphologyInitData;
 
-    /** @internal Needed by the PluginRegisterer. */
-    using InitDataT = MorphologyInitData;
-
-    MorphologyPlugin(const InitDataT& data)
+    MorphologyPlugin(const DataT& data)
         : _data(data)
     {
     }
@@ -108,8 +104,8 @@ public:
     virtual void load() = 0;
 
     /** @internal */
-    InitDataT& getInitData() { return _data; }
-    const InitDataT& getInitData() const { return _data; }
+    DataT& getInitData() { return _data; }
+    const DataT& getInitData() const { return _data; }
     /** @copydoc brion::Morphology::getCellFamily */
     CellFamily getCellFamily() const { return _data.family; }
     /** @internal */
@@ -127,7 +123,7 @@ public:
     floats& getPerimeters() { return _perimeters; }
     const floats& getPerimeters() const { return _perimeters; }
 protected:
-    InitDataT _data;
+    MorphologyInitData _data;
     Vector4fs _points;
     Vector2is _sections;
     SectionTypes _sectionTypes;

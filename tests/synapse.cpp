@@ -22,25 +22,26 @@
 
 #include <BBP/TestDatasets.h>
 #include <brion/brion.h>
+#include <brion/log.h>
 
 #define BOOST_TEST_MODULE Synapse
 #include <boost/date_time/posix_time/posix_time.hpp>
 #include <boost/filesystem/path.hpp>
 #include <boost/test/unit_test.hpp>
-#include <lunchbox/scopedMutex.h>
-#include <lunchbox/spinLock.h>
+
+#include <mutex>
 
 // Some helper macros to make Boost::Test thread safe
 // http://thread.gmane.org/gmane.comp.lib.boost.devel/123662/focus=123678
-lunchbox::SpinLock testLock;
+std::mutex _mutex;
 #define TS_BOOST_CHECK_EQUAL(L, R)                 \
     {                                              \
-        lunchbox::ScopedFastWrite mutex(testLock); \
+        std::lock_guard<std::mutex> lock(_mutex); \
         BOOST_CHECK_EQUAL((L), (R));               \
     }
 #define TS_BOOST_CHECK_GT(L, R)                    \
     {                                              \
-        lunchbox::ScopedFastWrite mutex(testLock); \
+        std::lock_guard<std::mutex> lock(_mutex); \
         BOOST_CHECK_GT((L), (R));                  \
     }
 
@@ -201,25 +202,25 @@ BOOST_AUTO_TEST_CASE(perf)
     bp::ptime startTime = bp::microsec_clock::local_time();
     const size_t numSynapses = synapseFile.getNumSynapses(gids);
     bp::time_duration duration = bp::microsec_clock::local_time() - startTime;
-    LBERROR << "Reading synapse count for " << gids.size()
-            << " cells took: " << duration.total_milliseconds() << " ms."
-            << std::endl;
+    BRION_ERROR << "Reading synapse count for " << gids.size()
+              << " cells took: " << duration.total_milliseconds() << " ms."
+              << std::endl;
 
     startTime = bp::microsec_clock::local_time();
     for (brion::GIDSetCIter i = gids.begin(); i != gids.end(); ++i)
         synapseFile.read(*i, brion::SYNAPSE_DEPRESSION);
     duration = bp::microsec_clock::local_time() - startTime;
-    LBERROR << "Reading one attribute for " << numSynapses << " synapses for "
-            << gids.size() << " cells took: " << duration.total_milliseconds()
-            << " ms." << std::endl;
+    BRION_ERROR << "Reading one attribute for " << numSynapses << " synapses for "
+              << gids.size() << " cells took: " << duration.total_milliseconds()
+              << " ms." << std::endl;
 
     startTime = bp::microsec_clock::local_time();
     for (brion::GIDSetCIter i = gids.begin(); i != gids.end(); ++i)
         synapseFile.read(*i, brion::SYNAPSE_ALL_ATTRIBUTES);
     duration = bp::microsec_clock::local_time() - startTime;
-    LBERROR << "Reading all attributes for " << numSynapses << " synapses for "
-            << gids.size() << " cells took: " << duration.total_milliseconds()
-            << " ms." << std::endl;
+    BRION_ERROR << "Reading all attributes for " << numSynapses << " synapses for "
+              << gids.size() << " cells took: " << duration.total_milliseconds()
+              << " ms." << std::endl;
 
     startTime = bp::microsec_clock::local_time();
     for (brion::GIDSetCIter i = gids.begin(); i != gids.end(); ++i)
@@ -229,10 +230,10 @@ BOOST_AUTO_TEST_CASE(perf)
                                  ~brion::SYNAPSE_DEPRESSION));
     }
     duration = bp::microsec_clock::local_time() - startTime;
-    LBERROR << "Reading almost all attributes for " << numSynapses
-            << " synapses for " << gids.size()
-            << " cells took: " << duration.total_milliseconds() << " ms."
-            << std::endl;
+    BRION_ERROR << "Reading almost all attributes for " << numSynapses
+              << " synapses for " << gids.size()
+              << " cells took: " << duration.total_milliseconds() << " ms."
+              << std::endl;
 }
 
 BOOST_AUTO_TEST_CASE(read_unmerged)

@@ -20,12 +20,13 @@
 
 #include <BBP/TestDatasets.h>
 #include <brion/brion.h>
+#include <brion/log.h>
 
 #define BOOST_TEST_MODULE SynapseSummary
 #include <boost/date_time/posix_time/posix_time.hpp>
 #include <boost/filesystem/path.hpp>
 #include <boost/test/unit_test.hpp>
-#include <lunchbox/log.h>
+
 
 BOOST_AUTO_TEST_CASE(test_invalid_open)
 {
@@ -90,7 +91,7 @@ BOOST_AUTO_TEST_CASE(test_perf)
     const bp::time_duration duration =
         bp::microsec_clock::local_time() - startTime;
 
-    LBERROR << "Reading synapse information for " << gids.size()
-            << " cells took: " << duration.total_milliseconds() << " ms."
-            << std::endl;
+    BRION_ERROR << "Reading synapse information for " << gids.size()
+              << " cells took: " << duration.total_milliseconds() << " ms."
+              << std::endl;
 }

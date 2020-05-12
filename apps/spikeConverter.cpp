@@ -19,13 +19,9 @@
  */
 
 #include <brion/brion.h>
+#include <brion/log.h>
 
-#include <lunchbox/clock.h>
-#include <lunchbox/file.h>
-#include <lunchbox/log.h>
-#include <lunchbox/sleep.h>
-#include <lunchbox/string.h>
-#include <lunchbox/term.h>
+#include <chrono>
 
 #ifdef BRION_USE_BBPTESTDATA
 #include <BBP/TestDatasets.h>
@@ -44,8 +40,7 @@ namespace po = boost::program_options;
 int main(int argc, char* argv[])
 {
     // clang-format off
-    po::options_description options("Options",
-                                    lunchbox::term::getSize().first);
+    po::options_description options("Options");
     options.add_options()
         ( "help,h", "Produce help message" )
         ( "version,v", "Show program name/version banner and exit" );
@@ -72,12 +67,11 @@ int main(int argc, char* argv[])
     if (vm.count("help") || vm.count("input") == 0)
     {
         std::cout
-            << "Usage: " << lunchbox::getFilename(std::string(argv[0]))
+            << "Usage: " << std::string(argv[0])
             << " input-uri [output-uri=spikes.out] [options]" << std::endl
             << std::endl
             << "Supported input and output URIs:" << std::endl
-            << lunchbox::string::prepend(brion::SpikeReport::getDescriptions(),
-                                         "    ")
+            << brion::SpikeReport::getDescriptions()
             << std::endl
 #ifdef BRION_USE_BBPTESTDATA
             << std::endl
@@ -122,25 +116,49 @@ int main(int argc, char* argv[])
 
     try
     {
-        lunchbox::Clock clock;
+        float readTime = 0.f, writeTime = 0.f;
+        const std::chrono::high_resolution_clock::time_point p1
+                = std::chrono::high_resolution_clock::now();
 
-        float readTime = 0.f;
         brion::SpikeReport in(brion::URI(input), brion::MODE_READ);
-        readTime += clock.resetTimef();
 
-        float writeTime = 0.f;
+        const std::chrono::high_resolution_clock::time_point p2
+                = std::chrono::high_resolution_clock::now();
+
+        const std::chrono::duration<float> p1p2
+                        = std::chrono::duration_cast<std::chrono::duration<float>>(p2 - p1);
+        readTime += p1p2.count();
+
         brion::SpikeReport out(brion::URI(vm["output"].as<std::string>()),
                                brion::MODE_WRITE);
-        writeTime += clock.resetTimef();
+
+        const std::chrono::high_resolution_clock::time_point p3
+                = std::chrono::high_resolution_clock::now();
+
+        const std::chrono::duration<float> p2p3
+                        = std::chrono::duration_cast<std::chrono::duration<float>>(p3 - p2);
+        writeTime += p2p3.count();
 
         const float step = 10.f; // ms, arbitrary value
         while (in.getState() == brion::SpikeReport::State::ok)
         {
+            const std::chrono::high_resolution_clock::time_point rl1
+                    = std::chrono::high_resolution_clock::now();
             const auto spikes = in.readUntil(in.getCurrentTime() + step).get();
-            readTime += clock.resetTimef();
+            const std::chrono::high_resolution_clock::time_point rl2
+                    = std::chrono::high_resolution_clock::now();
+            const std::chrono::duration<float> rlspan
+                            = std::chrono::duration_cast<std::chrono::duration<float>>(rl2 - rl1);
+            readTime += rlspan.count();
 
+            const std::chrono::high_resolution_clock::time_point wl1
+                    = std::chrono::high_resolution_clock::now();
             out.write(spikes);
-            writeTime += clock.resetTimef();
+            const std::chrono::high_resolution_clock::time_point wl2
+                    = std::chrono::high_resolution_clock::now();
+            const std::chrono::duration<float> wlspan
+                            = std::chrono::duration_cast<std::chrono::duration<float>>(wl2 - wl1);
+            writeTime += wlspan.count();
         }
 
         std::cout << "Converted " << input << " => "
@@ -149,7 +167,7 @@ int main(int argc, char* argv[])
     }
     catch (const std::exception& exception)
     {
-        LBINFO << "Failed to convert spikes: " << exception.what() << std::endl;
+        BRION_INFO << "Failed to convert spikes: " << exception.what() << std::endl;
         return EXIT_FAILURE;
     }
 

@@ -17,7 +17,7 @@ configure_file(paths.h.in ${PROJECT_BINARY_DIR}/tests/paths.h)
 include_directories(${PROJECT_BINARY_DIR}/tests)
 
 set(TEST_LIBRARIES ${Boost_FILESYSTEM_LIBRARIES} ${Boost_SYSTEM_LIBRARIES}
-  ${Boost_UNIT_TEST_FRAMEWORK_LIBRARY} BBPTestData Brion Brain Lunchbox HighFive)
+  ${Boost_UNIT_TEST_FRAMEWORK_LIBRARY} BBPTestData Brion Brain HighFive)
 
 if(BRION_USE_ZEROEQ AND TARGET ZeroEQ)
   list(APPEND TEST_LIBRARIES BrionPlugins ZeroEQ)

@@ -19,11 +19,11 @@
  */
 
 #include "spikeReportNEST.h"
-
-#include "../pluginInitData.h"
 #include "spikeReportBluron.h"
 
-#include <lunchbox/pluginRegisterer.h>
+#include "../log.h"
+#include "../pluginInitData.h"
+#include "../pluginLibrary.h"
 
 #include <boost/algorithm/string.hpp>
 #include <boost/filesystem.hpp>
@@ -39,9 +39,21 @@ namespace plugin
 {
 namespace
 {
-lunchbox::PluginRegisterer<SpikeReportNEST> registerer;
+
+class PluginRegisterer
+{
+public:
+    PluginRegisterer()
+    {
+        auto& pluginManager = PluginLibrary::instance().getManager<SpikeReportPlugin>();
+        pluginManager.registerFactory<SpikeReportNEST>();
+    }
+};
+
+PluginRegisterer registerer;
+
 const char* const NEST_REPORT_FILE_EXT = ".gdf";
-}
+} // namespace
 
 boost::regex convertToRegex(const std::string& stringWithShellLikeWildcard)
 {
@@ -62,7 +74,7 @@ Strings expandShellWildcard(const std::string& filename)
     const fs::path& parent = filePath.parent_path();
 
     if (!fs::exists(parent) || !fs::is_directory(parent))
-        LBTHROW(std::runtime_error("Not a valid path"));
+        BRION_THROW("Not a valid path")
 
     // Convert the filename with shell-like wildcard into a POSIX regex
     const boost::regex regex = convertToRegex(filename);
@@ -78,7 +90,7 @@ Strings expandShellWildcard(const std::string& filename)
     return expandedFilenames;
 }
 
-SpikeReportNEST::SpikeReportNEST(const SpikeReportInitData& initData)
+SpikeReportNEST::SpikeReportNEST(const PluginInitData& initData)
     : SpikeReportASCII(initData)
 {
     const int accessMode = initData.getAccessMode();
@@ -88,8 +100,7 @@ SpikeReportNEST::SpikeReportNEST(const SpikeReportInitData& initData)
         const Strings& files = expandShellWildcard(_uri.getPath());
 
         if (files.empty())
-            LBTHROW(std::runtime_error("No files to read found in " +
-                                       _uri.getPath()));
+            BRION_THROW("No files to read found in " + _uri.getPath())
 
         _spikes = parse(files, [](const std::string& buffer, Spike& spike) {
             return sscanf(buffer.data(), "%20d%20f", &spike.second,
@@ -102,7 +113,7 @@ SpikeReportNEST::SpikeReportNEST(const SpikeReportInitData& initData)
         _endTime = _spikes.rbegin()->first;
 }
 
-bool SpikeReportNEST::handles(const SpikeReportInitData& initData)
+bool SpikeReportNEST::handles(const PluginInitData& initData)
 {
     const URI& uri = initData.getURI();
 
@@ -131,5 +142,5 @@ void SpikeReportNEST::write(const Spike* spikes, const size_t size)
         file << spike.second << " " << spike.first << '\n';
     });
 }
-}
-} // namespaces
+} // namespace plugin
+} // namespace brion

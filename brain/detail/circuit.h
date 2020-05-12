@@ -23,6 +23,9 @@
 #include "targets.h"
 #include "util.h"
 
+#include "../circuit.h"
+#include "../log.h"
+
 #include <brain/neuron/morphology.h>
 #include <brion/blueConfig.h>
 #include <brion/circuit.h>
@@ -35,11 +38,6 @@
 #include <brion/synapseSummary.h>
 #include <brion/target.h>
 
-#include <lunchbox/debug.h>
-#include <lunchbox/lockable.h>
-#include <lunchbox/log.h>
-#include <lunchbox/scopedMutex.h>
-
 #ifdef BRAIN_USE_MVD3
 #include <highfive/H5Utility.hpp>
 #include <mvd/mvd3.hpp>
@@ -50,8 +48,12 @@
 
 #include <future>
 #include <memory>
+#include <mutex>
 #include <unordered_map>
 #include <unordered_set>
+
+#include <highfive/H5Exception.hpp>
+#include <highfive/H5Utility.hpp>
 
 namespace fs = boost::filesystem;
 using boost::lexical_cast;
@@ -170,9 +172,8 @@ public:
                          const size_t* seed = nullptr) const
     {
         if (fraction < 0.f || fraction > 1.f)
-            LBTHROW(
-                std::runtime_error("Fraction for getRandomGIDs() must be "
-                                   "in the range [0,1]"));
+            BRAIN_THROW("Fraction for getRandomGIDs() must be in the range [0,1]")
+
         return randomSet(target.empty() ? getGIDs() : getGIDs(target), fraction,
                          seed);
     }
@@ -236,17 +237,11 @@ public:
         nodes.reset(new brion::Nodes(URI(node.elements)));
 
         if (subnetworks.size() > 1)
-        {
-            LBWARN << "More than one subnetwork found, ignoring extra ones."
-                   << std::endl;
-        }
+            BRAIN_WARN << "More than one subnetwork found, ignoring extra ones." << std::endl;
 
         const auto populations = nodes->getPopulationNames();
         if (populations.size() > 1)
-        {
-            LBWARN << "More than one population found, ignoring extra ones."
-                   << std::endl;
-        }
+            BRAIN_WARN << "More than one population found, ignoring extra ones." << std::endl;
 
         population = populations.front();
         const auto nodeGroupIDs = nodes->getNodeGroupIDs(population);
@@ -259,8 +254,7 @@ public:
         {
             if (nodeGroupIDs[i] != 0)
             {
-                LBWARN << "More than one group ID found, ignoring extra ones."
-                       << std::endl;
+                BRAIN_WARN << "More than one group ID found, ignoring extra ones." << std::endl;
                 break;
             }
         }
@@ -276,10 +270,8 @@ public:
 
             if (expectedIdx != nodeGroupIndex)
             {
-                LBTHROW(
-                    std::runtime_error("Expected node group index '" +
-                                       std::to_string(expectedIdx) + "' got '" +
-                                       std::to_string(nodeGroupIndex) + "'"));
+                BRAIN_THROW("Expected node group index '" + std::to_string(expectedIdx) + "' got '"
+                          + std::to_string(nodeGroupIndex) + "'")
             }
             expectedIdx++;
             nodeTypeIDs.push_back(originalNodeTypeIDs[i]);
@@ -309,7 +301,7 @@ public:
 
     GIDSet getGIDs(const std::string& /*target*/) const final
     {
-        LBTHROW(std::runtime_error("Unimplemented"));
+        BRAIN_THROW("Unimplemented")
     }
 
     Vector3fs getPositions(const GIDSet& gids) const final
@@ -340,19 +332,19 @@ public:
     }
     size_ts getMTypes(const GIDSet& /*gids*/) const final
     {
-        LBTHROW(std::runtime_error("Unimplemented"));
+        BRAIN_THROW("Unimplemented")
     }
     Strings getMorphologyTypeNames() const final
     {
-        LBTHROW(std::runtime_error("Unimplemented"));
+        BRAIN_THROW("Unimplemented")
     }
     size_ts getETypes(const GIDSet& /*gids*/) const final
     {
-        LBTHROW(std::runtime_error("Unimplemented"));
+        BRAIN_THROW("Unimplemented")
     }
     Strings getElectrophysiologyTypeNames() const final
     {
-        LBTHROW(std::runtime_error("Unimplemented"));
+        BRAIN_THROW("Unimplemented")
     }
     Quaternionfs getRotations(const GIDSet& gids) const final
     {
@@ -490,28 +482,28 @@ public:
     std::string getSynapseProjectionSource(const std::string& name) const
     {
         (void)name;
-        LBTHROW(std::runtime_error("Unimplemented"));
+        BRAIN_THROW("Unimplemented")
     }
     const brion::SynapseSummary& getSynapseSummary() const final
     {
-        LBTHROW(std::runtime_error("Unimplemented"));
+        BRAIN_THROW("Unimplemented")
     }
     const brion::Synapse& getSynapseAttributes(const bool) const final
     {
-        LBTHROW(std::runtime_error("Unimplemented"));
+        BRAIN_THROW("Unimplemented")
     }
     const brion::Synapse& getAfferentProjectionAttributes(
         const std::string&) const final
     {
-        LBTHROW(std::runtime_error("Unimplemented"));
+        BRAIN_THROW("Unimplemented")
     }
     const brion::Synapse* getSynapseExtra() const final
     {
-        LBTHROW(std::runtime_error("Unimplemented"));
+        BRAIN_THROW("Unimplemented")
     }
     const brion::Synapse& getSynapsePositions(const bool) const final
     {
-        LBTHROW(std::runtime_error("Unimplemented"));
+        BRAIN_THROW("Unimplemented")
     }
 
     brion::CircuitConfig config;
@@ -585,7 +577,7 @@ public:
     {
         auto it = _afferentProjectionSources.find(name);
         if(it == _afferentProjectionSources.end())
-            LBTHROW(std::runtime_error("Projection " + name + " not found"))
+            BRAIN_THROW("Projection " + name + " not found")
 
         return it->second.getPath();
     }
@@ -599,40 +591,39 @@ public:
 
     const brion::SynapseSummary& getSynapseSummary() const final
     {
-        lunchbox::ScopedWrite mutex(_synapseSummary);
+        std::lock_guard<std::mutex> lock(_synapseSumaryMtx);
 
-        if (!(*_synapseSummary))
-            _synapseSummary->reset(new brion::SynapseSummary(
+        if (!_synapseSummary)
+            _synapseSummary.reset(new brion::SynapseSummary(
                 _synapseSource.getPath() + summaryFilename));
-        return **_synapseSummary;
+        return *_synapseSummary;
     }
 
     const brion::Synapse& getSynapseAttributes(const bool afferent) const final
     {
         const size_t i = afferent ? 0 : 1;
-        lunchbox::ScopedWrite mutex(_synapseAttributes[i]);
+        std::lock_guard<std::mutex> lock(_synapseAttributesMtx[i]);
 
-        if (!(*_synapseAttributes[i]))
-            _synapseAttributes[i]->reset(new brion::Synapse(
+        if (!_synapseAttributes[i])
+            _synapseAttributes[i].reset(new brion::Synapse(
                 _synapseSource.getPath() +
                 (afferent ? afferentFilename : efferentFilename)));
-        return **_synapseAttributes[i];
+        return *_synapseAttributes[i];
     }
 
     const brion::Synapse& getAfferentProjectionAttributes(
         const std::string& name) const final
     {
         auto& lockable = _externalAfferents[name];
-        lunchbox::ScopedWrite mutex(lockable);
-        auto& synapses = *lockable;
+        std::lock_guard<std::mutex> lock(lockable._mtx);
+        auto& synapses = lockable._synapse;
         if (!synapses)
         {
             auto&& source = _afferentProjectionSources.find(name);
             if (source == _afferentProjectionSources.end())
             {
                 _externalAfferents.erase(name);
-                LBTHROW(std::runtime_error(
-                    "Afferent synaptic projection not found: " + name));
+                BRAIN_THROW("Afferent synaptic projection not found: " + name)
             }
             fs::path path(source->second.getPath() + externalAfferentFilename);
             if (fs::exists(path) && fs::is_regular_file(fs::canonical(path)))
@@ -647,13 +638,13 @@ public:
 
     const brion::Synapse* getSynapseExtra() const final
     {
-        lunchbox::ScopedWrite mutex(_synapseExtra);
+        std::lock_guard<std::mutex> lock(_synapseExtraMtx);
 
-        if (!(*_synapseExtra))
+        if (_synapseExtra)
         {
             try
             {
-                _synapseExtra->reset(new brion::Synapse(
+                _synapseExtra.reset(new brion::Synapse(
                     _synapseSource.getPath() + extraFilename));
             }
             catch (...)
@@ -661,15 +652,15 @@ public:
                 return nullptr;
             }
         }
-        return _synapseExtra->get();
+        return _synapseExtra.get();
     }
 
     const brion::Synapse& getSynapsePositions(const bool afferent) const final
     {
         const size_t i = afferent ? 0 : 1;
-        lunchbox::ScopedWrite mutex(_synapsePositions[i]);
+        std::lock_guard<std::mutex> lock(_synapsePositionMtx[i]);
 
-        auto& positions = *_synapsePositions[i];
+        auto& positions = _synapsePositions[i];
         if (!positions)
             positions.reset(
                 new brion::Synapse(_synapseSource.getPath() +
@@ -686,16 +677,24 @@ public:
     mutable MorphologyCache _morphologyCache;
     mutable SynapseCache _synapseCache;
 
-    template <typename T>
-    using LockPtr = lunchbox::Lockable<std::unique_ptr<T>>;
+    mutable std::unique_ptr<brion::SynapseSummary> _synapseSummary;
+    mutable std::mutex _synapseSumaryMtx;
 
-    mutable LockPtr<brion::SynapseSummary> _synapseSummary;
-    mutable LockPtr<brion::Synapse> _synapseAttributes[2];
-    mutable LockPtr<brion::Synapse> _synapseExtra;
-    mutable LockPtr<brion::Synapse> _synapsePositions[2];
+    mutable std::unique_ptr<brion::Synapse> _synapseAttributes[2];
+    mutable std::mutex _synapseAttributesMtx[2];
 
-    mutable std::unordered_map<std::string, LockPtr<brion::Synapse>>
-        _externalAfferents;
+    mutable std::unique_ptr<brion::Synapse> _synapseExtra;
+    mutable std::mutex _synapseExtraMtx;
+
+    mutable std::unique_ptr<brion::Synapse> _synapsePositions[2];
+    mutable std::mutex _synapsePositionMtx[2];
+
+    struct ExternalAfferent
+    {
+        std::unique_ptr<brion::Synapse> _synapse;
+        std::mutex _mtx;
+    };
+    mutable std::unordered_map<std::string, ExternalAfferent> _externalAfferents;
 };
 
 class MVD2 : public BBPCircuit
@@ -732,8 +731,8 @@ public:
             {
                 GIDSet::const_iterator gid = gids.begin();
                 std::advance(gid, i);
-                LBWARN << "Error parsing circuit position for gid " << *gid
-                       << std::endl;
+                BRAIN_WARN << "Error parsing circuit position for gid " << *gid
+                         << std::endl;
             }
         }
         return positions;
@@ -804,8 +803,8 @@ public:
             {
                 GIDSet::const_iterator gid = gids.begin();
                 std::advance(gid, i);
-                LBWARN << "Error parsing circuit orientation for gid " << *gid
-                       << std::endl;
+                BRAIN_WARN << "Error parsing circuit orientation for gid " << *gid
+                         << std::endl;
             }
         }
         return rotations;
@@ -859,8 +858,7 @@ struct MVD3 : public BBPCircuit
         }
         catch (const HighFive::Exception& e)
         {
-            LBTHROW(std::runtime_error("Exception in getPositions(): " +
-                                       std::string(e.what())));
+            BRAIN_THROW("Exception in getPositions(): " + std::string(e.what()))
         }
     }
 
@@ -881,8 +879,7 @@ struct MVD3 : public BBPCircuit
         }
         catch (const HighFive::Exception& e)
         {
-            LBTHROW(std::runtime_error("Exception in getMTypes(): " +
-                                       std::string(e.what())));
+            BRAIN_THROW("Exception in getMTypes(): " + std::string(e.what()))
         }
     }
 
@@ -909,8 +906,7 @@ struct MVD3 : public BBPCircuit
         }
         catch (const HighFive::Exception& e)
         {
-            LBTHROW(std::runtime_error("Exception in getETypes(): " +
-                                       std::string(e.what())));
+            BRAIN_THROW("Exception in getETypes(): " + std::string(e.what()))
         }
     }
 
@@ -937,8 +933,7 @@ struct MVD3 : public BBPCircuit
         }
         catch (const HighFive::Exception& e)
         {
-            LBTHROW(std::runtime_error("Exception in getRotations(): " +
-                                       std::string(e.what())));
+            BRAIN_THROW("Exception in getRotations(): " + std::string(e.what()))
         }
     }
 
@@ -959,8 +954,7 @@ struct MVD3 : public BBPCircuit
         }
         catch (const HighFive::Exception& e)
         {
-            LBTHROW(std::runtime_error("Exception in getMorphologyNames(): " +
-                                       std::string(e.what())));
+            BRAIN_THROW("Exception in getMorphologyNames(): " + std::string(e.what()))
         }
     }
 

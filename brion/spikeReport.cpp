@@ -18,62 +18,46 @@
  */
 
 #include "spikeReport.h"
-#include "spikeReportPlugin.h"
 
+#include "log.h"
 #include "pluginInitData.h"
+#include "pluginLibrary.h"
+#include "spikeReportPlugin.h"
+#include "threadPool.h"
 
 #include <brion/version.h>
 
-#include <lunchbox/plugin.h>
-#include <lunchbox/pluginFactory.h>
-#include <lunchbox/threadPool.h>
-
 #include <memory>
+#include <queue>
 
 namespace
 {
 const std::string spikePluginDSONamePattern("Brion.*SpikeReport");
+
+template<typename R>
+bool is_ready(std::future<R> const& f)
+{
+    return f.wait_for(std::chrono::seconds(0)) == std::future_status::ready;
+}
 }
 
 using SpikeReportInitData = ::brion::PluginInitData;
 
 namespace brion
 {
-namespace
-{
-using SpikePluginFactory = lunchbox::PluginFactory<SpikeReportPlugin>;
-
-class PluginLoader
-{
-public:
-    PluginLoader()
-    {
-        SpikePluginFactory::getInstance().load(BRION_VERSION_ABI,
-                                               lunchbox::getLibraryPaths(),
-                                               spikePluginDSONamePattern);
-    }
-};
-
-void _loadPlugins()
-{
-    static PluginLoader loader; // Use static class instantion for thread-safety
-}
-}
-
 namespace detail
 {
 class SpikeReport
 {
 public:
     explicit SpikeReport(const SpikeReportInitData& initData)
+     : plugin(PluginLibrary::instance().create<SpikeReportPlugin>(initData))
     {
-        _loadPlugins();
-        plugin.reset(SpikePluginFactory::getInstance().create(initData));
     }
 
     std::unique_ptr<SpikeReportPlugin> plugin;
-    lunchbox::ThreadPool threadPool{1};
-    bool busy = false;
+    ThreadPool threadPool{1};
+    bool busy {false};
 };
 }
 
@@ -99,7 +83,7 @@ SpikeReport::SpikeReport(const URI& uri, int mode)
     case MODE_WRITE:
         break;
     default:
-        LBTHROW(std::runtime_error("Unhandled open mode"));
+        BRION_THROW("Unhandled open mode")
     }
 }
 
@@ -129,8 +113,7 @@ SpikeReport& SpikeReport::operator=(SpikeReport&& from)
 
 std::string SpikeReport::getDescriptions()
 {
-    _loadPlugins();
-    return SpikePluginFactory::getInstance().getDescriptions();
+    return PluginLibrary::instance().getManager<SpikeReportPlugin>().getDescriptions();
 }
 
 void SpikeReport::close()
@@ -145,6 +128,7 @@ void SpikeReport::close()
         // blocks until all the pending jobs are done
         _impl->threadPool.post([] {}).get();
     }
+
     _impl->plugin->close();
     _impl->plugin->_setClosed();
 }
@@ -190,7 +174,7 @@ std::future<Spikes> SpikeReport::read(float min)
     _impl->plugin->_checkStateOk();
 
     if (_impl->busy)
-        LBTHROW(std::runtime_error("Can't read: Pending read operation"));
+        BRION_THROW("Can't read: Pending read operation")
 
     _impl->busy = true;
     return _impl->threadPool.post([&, min] {
@@ -207,19 +191,20 @@ std::future<Spikes> SpikeReport::readUntil(const float max)
 
     if (max <= getCurrentTime())
     {
-        LBTHROW(std::logic_error("Can't read to " + std::to_string(max) +
+        BRION_THROW_IMPL(std::logic_error("Can't read to " + std::to_string(max) +
                                  " with current time " +
                                  std::to_string(getCurrentTime())));
     }
 
     if (_impl->busy)
-        LBTHROW(std::runtime_error("Can't read: Pending read operation"));
+        BRION_THROW("Can't read: Pending read operation")
 
     _impl->busy = true;
     return _impl->threadPool.post([&, max] {
         BusyGuard guard(_impl->busy);
         return _impl->plugin->readUntil(max);
     });
+
 }
 
 std::future<void> SpikeReport::seek(const float toTimeStamp)
@@ -228,7 +213,7 @@ std::future<void> SpikeReport::seek(const float toTimeStamp)
     if (_impl->plugin->getAccessMode() == MODE_READ)
     {
         if (_impl->busy)
-            LBTHROW(std::runtime_error("Can't seek: Pending read operation"));
+            BRION_THROW("Can't seek: Pending read operation")
 
         _impl->busy = true;
         return _impl->threadPool.post([&, toTimeStamp] {
@@ -238,7 +223,7 @@ std::future<void> SpikeReport::seek(const float toTimeStamp)
     }
 
     return _impl->threadPool.post(
-        [&, toTimeStamp] { return _impl->plugin->writeSeek(toTimeStamp); });
+            [&, toTimeStamp] { return _impl->plugin->writeSeek(toTimeStamp); });
 }
 
 void SpikeReport::write(const Spikes& spikes)
@@ -252,15 +237,12 @@ void SpikeReport::write(const Spike* spikes, const size_t size)
     _impl->plugin->_checkNotClosed();
 
     if (_impl->busy)
-        LBTHROW(
-            std::runtime_error("Can't write spikes: Pending seek operation"));
+        BRION_THROW("Can't write spikes: Pending seek operation")
 
     if (size != 0 && spikes[0].first < getCurrentTime())
     {
-        LBTHROW(std::logic_error("Can't write spikes: first spike at " +
-                                 std::to_string(spikes[0].first) +
-                                 " time inferior to current time " +
-                                 std::to_string(getCurrentTime())));
+        BRION_THROW_IMPL(std::logic_error("Can't write spikes: first spike at " + std::to_string(spikes[0].first) +
+                  " time inferior to current time " + std::to_string(getCurrentTime())))
     }
 
     if (size != 0 && !std::is_sorted(spikes, spikes + size,
@@ -268,8 +250,7 @@ void SpikeReport::write(const Spike* spikes, const size_t size)
                                          return x.first < y.first;
                                      }))
     {
-        LBTHROW(
-            std::logic_error("Can't write spikes: Expecting a sorted spikes"));
+        BRION_THROW_IMPL(std::logic_error("Can't write spikes: Expecting a sorted spikes"))
     }
 
     _impl->plugin->write(spikes, size);
