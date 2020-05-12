@@ -25,6 +25,7 @@
 
 #include "synapses.h"
 #include "synapsesStream.h"
+#include "types.h"
 
 #include <bbp/sonata/edges.h>
 
@@ -49,17 +50,22 @@ URIs _getMorphologyURIs(const Circuit::Impl& circuit, const GIDSet& gids)
 
 Matrix4fs _getTransforms(const Circuit::Impl& circuit, const GIDSet& gids)
 {
-    const Vector3fs& positions = circuit.getPositions(gids);
-    const Quaternionfs& rotations = circuit.getRotations(gids);
+    const Vector3fs positions = circuit.getPositions(gids);
+    const Quaternionfs rotations = circuit.getRotations(gids);
     if (positions.size() != rotations.size())
         throw std::runtime_error(
             "Positions not equal rotations for given GIDs");
 
     Matrix4fs transforms(positions.size());
 
-#pragma omp parallel for
+    #pragma omp parallel for
     for (size_t i = 0; i < positions.size(); ++i)
-        transforms[i] = Matrix4f(rotations[i], positions[i]);
+    {
+        transforms[i] = glm::mat4_cast(rotations[i]);
+        transforms[i][3] = glm::vec4(positions[i].x, positions[i].y,
+                                     positions[i].z, 1.0);
+    }
+        
     return transforms;
 }
 
@@ -91,11 +97,8 @@ public:
         // needs recentering or not. This is only the case for local
         // morphologies.
         const Strings keys = _getKeys(gids, uris, coords);
-#ifdef BRION_USE_KEYV
-        CachedMorphologies cached = _loadFromCache(keys);
-#else
+
         CachedMorphologies cached;
-#endif
 
         struct MorphologyUse
         {
@@ -193,11 +196,6 @@ public:
                 morphology.reset(new neuron::Morphology(raw));
             }
 
-#ifdef BRION_USE_KEYV
-            // Saving to the cache.
-            if (_cache)
-                _cache->save(uri.getPath(), key, morphology);
-#endif
             // Assigning the morphology to its entry in the cache
             value = morphology;
             result.push_back(morphology);
@@ -231,22 +229,6 @@ private:
     {
         // < GID, key >
         Strings keys;
-#ifdef BRION_USE_KEYV
-        if (_cache)
-        {
-            // In the case of recentering of morphologies is needed, the keys
-            // already encode that.
-            if (coords == Circuit::Coordinates::global)
-                return _cache->createKeys(uris, gids);
-
-            const auto& recenter =
-                _recenterAll ? std::vector<bool>(uris.size(), true) : _recenter;
-            if (!recenter.empty())
-                return _cache->createKeys(uris, recenter);
-
-            return _cache->createKeys(uris);
-        }
-#endif
         keys.reserve(uris.size());
         if (coords == Circuit::Coordinates::global)
         {
@@ -277,21 +259,6 @@ private:
         return keys;
     }
 
-#ifdef BRION_USE_KEYV
-    /** Loads keys from cache and recenters morphologies when needed.
-        The output morphologies are final. */
-    CachedMorphologies _loadFromCache(const Strings& keys)
-    {
-        if (!_cache)
-            return CachedMorphologies();
-
-        std::set<std::string> keySet;
-        for (const auto& key : keys)
-            keySet.insert(key);
-        return _cache->load(keySet);
-    }
-#endif
-
     void _recenterMorphology(brion::Morphology& morphology)
     {
         auto& points = morphology.getPoints();
@@ -314,13 +281,13 @@ private:
         const size_t end = somaID == sections.size() - 1
                                ? points.size()
                                : sections[somaID + 1][0];
-        Vector3f centroid;
+        glm::vec3 centroid;
         for (size_t i = start; i != end; ++i)
-            centroid += points[i].get_sub_vector<3, 0>();
+            centroid += glm::vec3(points[i]);
         centroid /= float(end - start);
 
         // Translating all points
-        if (centroid.length() < 1e-6)
+        if (glm::length(centroid) < 1e-6)
             return; // Do not recenter is almost there
 #pragma omp parallel for
         for (size_t i = 0; i < points.size(); ++i)

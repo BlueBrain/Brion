@@ -42,10 +42,10 @@ BOOST_AUTO_TEST_CASE(openCircuit)
 
     brion::GIDSet ids = {0, 2, 3, 7};
     const auto postitions = circuit.getPositions(ids);
-    BOOST_CHECK_EQUAL(postitions[0], vmml::Vector3f(0, 0, 0.5));
-    BOOST_CHECK_EQUAL(postitions[1], vmml::Vector3f(2, 0, 0.5));
-    BOOST_CHECK_EQUAL(postitions[2], vmml::Vector3f(3, 1, 0.5));
-    BOOST_CHECK_EQUAL(postitions[3], vmml::Vector3f(1, 1, -0.5));
+    BOOST_CHECK_EQUAL(postitions[0], glm::vec3(0.f, 0.f, 0.5f));
+    BOOST_CHECK_EQUAL(postitions[1], glm::vec3(2.f, 0.f, 0.5f));
+    BOOST_CHECK_EQUAL(postitions[2], glm::vec3(3.f, 1.f, 0.5f));
+    BOOST_CHECK_EQUAL(postitions[3], glm::vec3(1.f, 1.f, -0.5f));
 }
 
 BOOST_AUTO_TEST_CASE(targets)

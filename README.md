@@ -44,8 +44,7 @@ and writing files which store the Blue Brain data model.
   * Spike reports (brion::SpikeReport)
 * Basic [data types](@ref brion/types.h) to work with the loaded data using
   [Boost](http://www.boost.org/doc/libs),
-  [Lunchbox](http://eyescale.github.io/Lunchbox-1.14/index.html),
-  [vmmlib](http://eyescale.github.io/vmmlib-1.12/index.html).
+  [Lunchbox](http://eyescale.github.io/Lunchbox-1.14/index.html)
 
 ### High level library
 

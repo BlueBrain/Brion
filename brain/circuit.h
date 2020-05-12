@@ -26,7 +26,6 @@
 #include <brain/types.h>
 
 #include <memory>
-#include <vmmlib/matrix.hpp> // return value
 
 namespace brain
 {

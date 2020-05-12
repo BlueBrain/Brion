@@ -28,9 +28,6 @@
 #include <brain/neuron/section.h>
 #include <brain/neuron/soma.h>
 
-#include <vmmlib/matrix.hpp>
-#include <vmmlib/vector.hpp>
-
 namespace bp = boost::python;
 
 namespace brain
@@ -71,7 +68,7 @@ bp::object Soma_getProfilePoints(const SomaWrapper& soma)
     return toNumpy(soma.getProfilePoints());
 }
 
-Vector4f Section_getIndex(const SectionWrapper& section, int index)
+glm::vec4 Section_getIndex(const SectionWrapper& section, int index)
 {
     if (index >= int(section.getNumSamples()) ||
         index <= -int(section.getNumSamples()))
@@ -117,7 +114,7 @@ MorphologyPtr Morphology_initFromURIAndTransform(const std::string& uri,
                                                  bp::object transform)
 {
     return MorphologyPtr(
-        new Morphology(URI(uri), fromNumpy<Matrix4f>(transform)));
+        new Morphology(URI(uri), fromNumpy<glm::mat4>(transform)));
 }
 
 #define GET_MORPHOLOGY_ARRAY(Array)                                   \
@@ -242,7 +239,7 @@ bp::class_<Morphology, boost::noncopyable, MorphologyPtr>(
          DOXY_FN(brain::neuron::Morphology::Morphology(const URI&)))
     .def("__init__",
          bp::make_constructor(Morphology_initFromURIAndTransform),
-         DOXY_FN(brain::neuron::Morphology::Morphology(const URI&, const Matrix4f&)))
+         DOXY_FN(brain::neuron::Morphology::Morphology(const URI&, const glm::mat4&)))
     // The following docstrings are given explictly because the return types
     // are special and the original documentation uses @sa, which points
     // nowhere.

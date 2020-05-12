@@ -1,6 +1,14 @@
 Changelog {#Changelog}
 =========
 
+* [276](https://github.com/BlueBrain/Brion/pull/276):
+  Removed vmmlib library from Brion.
+* [275](https://github.com/BlueBrain/Brion/pull/275):
+  Removed Keyv library from Brion. This change also means the end of
+  support for BlueBrain's key value map based reports.
+* [273](https://github.com/BlueBrain/Brion/pull/273):
+  Fixes to improve compilation against libsonata
+
 # Release 3.1.0 (07-01-2020)
 
 * [269](https://github.com/BlueBrain/Brion/pull/269):

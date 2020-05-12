@@ -32,10 +32,8 @@
 BBPTestData/
 Lunchbox/
 Servus/
-vmmlib/
 CMakeLists.txt.user*
 Makefile
 build/
-Keyv/
 MVDTool/
 Pression/

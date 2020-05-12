@@ -63,10 +63,10 @@ public:
     BRAIN_API float getPresynapticDistance() const;
 
     /** @return the presynaptic touch position on the surface of the segment. */
-    BRAIN_API Vector3f getPresynapticSurfacePosition() const;
+    BRAIN_API glm::vec3 getPresynapticSurfacePosition() const;
 
     /** @return the presynaptic touch position in the center of the segment. */
-    BRAIN_API Vector3f getPresynapticCenterPosition() const;
+    BRAIN_API glm::vec3 getPresynapticCenterPosition() const;
     //@}
 
     /** @name Presynaptic topological and geometrical attributes */
@@ -85,10 +85,10 @@ public:
     BRAIN_API float getPostsynapticDistance() const;
 
     /** @return the postsynaptic touch position on the surface of the segment.*/
-    BRAIN_API Vector3f getPostsynapticSurfacePosition() const;
+    BRAIN_API glm::vec3 getPostsynapticSurfacePosition() const;
 
     /** @return the postsynaptic touch position in the center of the segment. */
-    BRAIN_API Vector3f getPostsynapticCenterPosition() const;
+    BRAIN_API glm::vec3 getPostsynapticCenterPosition() const;
     //@}
 
     /** @name Synaptic model attributes */

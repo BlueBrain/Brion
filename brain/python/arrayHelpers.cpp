@@ -24,9 +24,7 @@
 #include "brain/compartmentReport.h"
 #include "brain/compartmentReportMapping.h"
 
-#include <vmmlib/matrix.hpp>
-#include <vmmlib/quaternion.hpp>
-#include <vmmlib/vector.hpp>
+#include <boost/python/object.hpp>
 
 namespace bp = boost::python;
 
@@ -88,11 +86,11 @@ DECLARE_ARRAY_INFO(unsigned long long, NPY_LONG, 1)
 DECLARE_ARRAY_INFO(float, NPY_FLOAT, 1)
 DECLARE_ARRAY_INFO(double, NPY_DOUBLE, 1)
 DECLARE_ARRAY_INFO(brain::neuron::SectionType, NPY_INT, 1)
-DECLARE_ARRAY_INFO(brain::Vector2i, NPY_INT, 2, 2)
-DECLARE_ARRAY_INFO(brain::Vector3f, NPY_FLOAT, 2, 3)
-DECLARE_ARRAY_INFO(brain::Vector4f, NPY_FLOAT, 2, 4)
-DECLARE_ARRAY_INFO(brain::Quaternionf, NPY_FLOAT, 2, 4)
-DECLARE_ARRAY_INFO(brain::Matrix4f, NPY_FLOAT, 3, 4, 4)
+DECLARE_ARRAY_INFO(glm::ivec2, NPY_INT, 2, 2)
+DECLARE_ARRAY_INFO(glm::vec3, NPY_FLOAT, 2, 3)
+DECLARE_ARRAY_INFO(glm::vec4, NPY_FLOAT, 2, 4)
+DECLARE_ARRAY_INFO(glm::quat, NPY_FLOAT, 2, 4)
+DECLARE_ARRAY_INFO(glm::mat4, NPY_FLOAT, 3, 4, 4)
 DECLARE_STRUCTURED_ARRAY_INFO(brain::CompartmentReportMapping::IndexEntry,
                               "u4, u4")
 DECLARE_STRUCTURED_ARRAY_INFO(brain::Spike, "f4, u4")
@@ -207,12 +205,12 @@ void importArray()
     REGISTER_ARRAY_CONVERTER(double);
     REGISTER_ARRAY_CONVERTER(brain::neuron::SectionType);
     REGISTER_ARRAY_CONVERTER(brain::CompartmentReportMapping::IndexEntry);
-    REGISTER_ARRAY_CONVERTER(brain::Matrix4f);
-    REGISTER_ARRAY_CONVERTER(brain::Quaternionf);
+    REGISTER_ARRAY_CONVERTER(glm::mat4);
+    REGISTER_ARRAY_CONVERTER(glm::quat);
     REGISTER_ARRAY_CONVERTER(brain::Spike);
-    REGISTER_ARRAY_CONVERTER(brain::Vector2i);
-    REGISTER_ARRAY_CONVERTER(brain::Vector3f);
-    REGISTER_ARRAY_CONVERTER(brain::Vector4f);
+    REGISTER_ARRAY_CONVERTER(glm::ivec2);
+    REGISTER_ARRAY_CONVERTER(glm::vec3);
+    REGISTER_ARRAY_CONVERTER(glm::vec4);
 
     bp::class_<AbstractCustodian, AbstractCustodianPtr>("_Custodian");
 }
@@ -222,7 +220,7 @@ bool isArray(const bp::object& o)
     return PyArray_Check(o.ptr());
 }
 
-bp::object toNumpy(const brain::Matrix4f& matrix)
+bp::object toNumpy(const glm::mat4& matrix)
 {
     npy_intp dims[2] = {4, 4};
     void* data = malloc(sizeof(float) * 16);
@@ -232,7 +230,7 @@ bp::object toNumpy(const brain::Matrix4f& matrix)
                         "Allocating numpy array for Matrix4f");
         bp::throw_error_already_set();
     }
-    memcpy(data, &matrix, sizeof(brain::Matrix4f));
+    memcpy(data, glm::value_ptr(matrix), sizeof(float) * 16);
     PyObject* array =
         PyArray_New(&PyArray_Type, 2, dims, NPY_FLOAT, 0, data, 0,
                     NPY_ARRAY_OWNDATA | NPY_ARRAY_F_CONTIGUOUS, 0);
@@ -309,11 +307,11 @@ bool _copyGIDs(PyArrayObject* array, brain::uint32_ts& result)
 }
 
 template <typename T>
-void _copyArrayToMatrix(PyArrayObject* array, brain::Matrix4f& matrix)
+void _copyArrayToMatrix(PyArrayObject* array, glm::mat4& matrix)
 {
     for (size_t i = 0; i != 4; ++i)
         for (size_t j = 0; j != 4; ++j)
-            matrix(i, j) = *static_cast<T*>(PyArray_GETPTR2(array, i, j));
+            matrix[j][i] = *static_cast<T*>(PyArray_GETPTR2(array, i, j));
 }
 }
 
@@ -374,7 +372,7 @@ std::pair<const brain::Spike*, size_t> spikesFromNumpy(
 }
 
 template <>
-brain::Matrix4f fromNumpy(const bp::object& o)
+glm::mat4 fromNumpy(const bp::object& o)
 {
     if (!isArray(o))
     {
@@ -391,7 +389,7 @@ brain::Matrix4f fromNumpy(const bp::object& o)
         bp::throw_error_already_set();
     }
 
-    brain::Matrix4f result;
+    glm::mat4 result(1.f);
     switch (PyArray_TYPE(array))
     {
     case NPY_FLOAT:

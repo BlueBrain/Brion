@@ -27,12 +27,12 @@ namespace neuron
 {
 namespace
 {
-Vector3f _computeCentroid(const Vector4fs& points)
+glm::vec3 _computeCentroid(const Vector4fs& points)
 {
-    Vector3f centroid;
+    glm::vec3 centroid;
     for (const auto& point : points)
-        centroid += point.get_sub_vector<3, 0>();
-    centroid /= float(points.size());
+        centroid += glm::vec3(point);
+    centroid /= static_cast<float>(points.size());
     return centroid;
 }
 }
@@ -70,7 +70,7 @@ float Soma::getMeanRadius() const
     const auto centroid = _computeCentroid(points);
     float radius = 0;
     for (const auto point : points)
-        radius += (point.get_sub_vector<3, 0>() - centroid).length();
+        radius += glm::length(glm::vec3(point) - centroid);
     return radius /= float(points.size());
 }
 
@@ -85,13 +85,13 @@ float Soma::getMaxRadius() const
     float max = 0;
     for (const auto& point : points)
     {
-        auto radius = (point.get_sub_vector<3, 0>() - centroid).length();
+        auto radius = glm::length(glm::vec3(point) - centroid);
         max = std::max(max, radius);
     }
     return max;
 }
 
-Vector3f Soma::getCentroid() const
+glm::vec3 Soma::getCentroid() const
 {
     return _computeCentroid(getProfilePoints());
 }

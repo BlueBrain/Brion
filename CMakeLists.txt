@@ -8,6 +8,9 @@ cmake_minimum_required(VERSION 3.1 FATAL_ERROR)
 project(Brion VERSION 3.1.0)
 set(Brion_VERSION_ABI 10)
 
+
+option(BRION_SKIP_LIBSONATA_SUBMODULE "Skip libsonata module" OFF)
+
 list(APPEND CMAKE_MODULE_PATH ${PROJECT_SOURCE_DIR}/CMake
   ${CMAKE_SOURCE_DIR}/CMake/common ${PROJECT_SOURCE_DIR}/Pydoxine/CMake)
 if(NOT EXISTS ${CMAKE_SOURCE_DIR}/CMake/common/Common.cmake)
@@ -28,13 +31,14 @@ set(BRION_PORT_DEPENDS sphinx py-lxml)
 set(COMMON_PROJECT_DOMAIN ch.epfl.bluebrain)
 include(Common)
 
-add_subdirectory(libsonata)
+if(NOT BRION_SKIP_LIBSONATA_SUBMODULE)
+  add_subdirectory(libsonata)
+endif()
 
 common_find_package(BBPTestData)
 common_find_package(Boost REQUIRED COMPONENTS
   date_time filesystem iostreams program_options regex system unit_test_framework)
 common_find_package(Boost COMPONENTS python${USE_BOOST_PYTHON_VERSION})
-common_find_package(Keyv)
 common_find_package(Lunchbox REQUIRED)
 common_find_package(MVDTool)
 common_find_package(NumPy 1.7)
@@ -43,7 +47,6 @@ common_find_package(PythonInterp)
 common_find_package(PythonLibs)
 common_find_package(Servus REQUIRED)
 common_find_package(Sphinx 1.3)
-common_find_package(vmmlib REQUIRED)
 option(BRION_USE_ZEROEQ "Use ZeroEQ for plugin backend and morphologyServer" OFF)
 if(BRION_USE_ZEROEQ)
   git_subproject(ZeroEQ https://github.com/HBPVIS/ZeroEQ.git 1e66ee3)
@@ -51,8 +54,10 @@ if(BRION_USE_ZEROEQ)
 endif()
 common_find_package_post()
 
-list(APPEND BRION_DEPENDENT_LIBRARIES Boost Servus vmmlib)
+list(APPEND BRION_DEPENDENT_LIBRARIES Boost Servus vmmlib glm)
+list(APPEND BRAIN_DEPENDENT_LIBRARIES sonata_shared)
 
+add_subdirectory(deps)
 add_subdirectory(brion)
 add_subdirectory(brain)
 add_subdirectory(apps)
@@ -68,9 +73,12 @@ include(DoxygenRule)
 
 add_subdirectory(doc/python)
 
+if(NOT BRION_SKIP_LIBSONATA_SUBMODULE)
+    add_library(sonata::sonata_shared ALIAS sonata_shared)
+    add_library(sonata::sonata_static ALIAS sonata_static)
+endif()
+
 # fill out setup.py metadata for wheel distribution
 configure_file(packaging/python_wheels/setup.py.in
                ${PROJECT_BINARY_DIR}/packaging/python_wheels/setup.py)
                
-add_library(sonata::sonata_shared ALIAS sonata_shared)
-add_library(sonata::sonata_static ALIAS sonata_static)

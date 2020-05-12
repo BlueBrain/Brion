@@ -40,10 +40,6 @@
 #include <lunchbox/log.h>
 #include <lunchbox/scopedMutex.h>
 
-#ifdef BRION_USE_KEYV
-#include <keyv/Map.h>
-#endif
-
 #ifdef BRAIN_USE_MVD3
 #include <highfive/H5Utility.hpp>
 #include <mvd/mvd3.hpp>
@@ -100,15 +96,18 @@ void _assign(const ::MVD3::Range& range, const GIDSet& gids, SrcArray& src,
         *j++ = assignOp(src[gid - range.offset - 1]);
 }
 
-Vector3f _toVector3f(const ::MVD3::Positions::const_subarray<1>::type& subarray)
+glm::vec3 _toVector3f(const ::MVD3::Positions::const_subarray<1>::type& subarray)
 {
-    return Vector3f(subarray[0], subarray[1], subarray[2]);
+    return glm::vec3(subarray[0], subarray[1], subarray[2]);
 }
 
-Quaternionf _toQuaternion(
+glm::quat _toQuaternion(
     const ::MVD3::Rotations::const_subarray<1>::type& subarray)
 {
-    return Quaternionf(subarray[0], subarray[1], subarray[2], subarray[3]);
+    return glm::quat(static_cast<float>(subarray[0]), 
+                     static_cast<float>(subarray[1]), 
+                     static_cast<float>(subarray[2]), 
+                     static_cast<float>(subarray[3]));
 }
 
 template <typename T>
@@ -145,218 +144,17 @@ using CachedMorphologies =
 using CachedSynapses = std::unordered_map<std::string, brion::SynapseMatrix>;
 } // namespace
 
-#ifdef BRION_USE_KEYV
-class SynapseCache
-{
-public:
-    SynapseCache(const keyv::MapPtr& cache, const URI& synapseSource)
-        : _cache(cache)
-        , _synapsePath(fs::canonical(synapseSource.getPath()).generic_string())
-    {
-    }
-
-    operator bool() const { return _cache != nullptr; }
-    Strings createKeys(const GIDSet& gids, const bool afferent) const
-    {
-        Strings keys;
-        keys.reserve(gids.size());
-
-        std::string prefix = _synapsePath;
-        prefix += afferent ? "_afferent" : "_efferent";
-
-        for (const auto gid : gids)
-            keys.emplace_back(
-                servus::make_uint128(prefix + std::to_string(gid)).getString());
-
-        return keys;
-    }
-
-    void savePositions(const uint32_t gid, const std::string& hash,
-                       const brion::SynapseMatrix& value) const
-    {
-        if (!_cache)
-            return;
-
-        const size_t size = value.num_elements() * sizeof(float);
-        if (!_cache->insert(hash, value.data(), size))
-        {
-            LBWARN << "Failed to insert synapse positions for GID " << gid
-                   << " into cache; item size is " << float(size) / LB_1MB
-                   << " MB" << std::endl;
-        }
-    }
-
-    CachedSynapses loadPositions(const Strings& keys,
-                                 const bool hasSurfacePositions) const
-    {
-        CachedSynapses loaded;
-        if (!_cache)
-            return loaded;
-        LBDEBUG << "Using cache for synapses position loading" << std::endl;
-        typedef std::future<std::pair<std::string, brion::SynapseMatrix>>
-            Future;
-
-        std::vector<Future> futures;
-        futures.reserve(keys.size());
-
-        // 3 columns for afferent, 3 for efferent (x2 if there are surface
-        // positions) plus an extra one for a cell GID.
-        const size_t numColumns = hasSurfacePositions
-                                      ? int(brion::SYNAPSE_POSITION_ALL)
-                                      : int(brion::SYNAPSE_OLD_POSITION_ALL);
-
-        _cache->takeValues(keys, [&futures, numColumns](const std::string& key,
-                                                        char* data,
-                                                        const size_t size) {
-            futures.push_back(std::async([key, data, size, numColumns] {
-                // there is no constructor in multi_array which just accepts the
-                // size in bytes (although there's a getter for it used in
-                // saveSynapsePositionsToCache()), so we reconstruct the row and
-                // column count here.
-                const size_t numRows = size / sizeof(float) / numColumns;
-                brion::SynapseMatrix values(
-                    boost::extents[numRows][numColumns]);
-                ::memmove(values.data(), data, size);
-                std::free(data);
-                return std::make_pair(key, values);
-            }));
-        });
-
-        for (auto& future : futures)
-            loaded.insert(future.get());
-
-        LBDEBUG << "Loaded synapse positions for " << loaded.size()
-                << " out of " << keys.size() << " neurons from cache"
-                << std::endl;
-        return loaded;
-    }
-
-private:
-    keyv::MapPtr _cache;
-    std::string _synapsePath;
-};
-#else
 class SynapseCache
 {
 public:
     operator bool() const { return false; }
 };
-#endif
 
-#ifdef BRION_USE_KEYV
-class MorphologyCache
-{
-public:
-    MorphologyCache(const keyv::MapPtr& cache, const URI& circuitSource)
-        : _cache(cache)
-        , _circuitPath(fs::canonical(circuitSource.getPath()).generic_string())
-    {
-    }
-
-    operator bool() const { return _cache != nullptr; }
-    Strings createKeys(const URIs& uris) const
-    {
-        Strings keys;
-        keys.reserve(uris.size());
-        for (const auto& uri : uris)
-        {
-            keys.emplace_back(
-                servus::make_uint128(uri.getPath() + "v2").getString());
-        }
-        return keys;
-    }
-
-    Strings createKeys(const URIs& uris,
-                       const std::vector<bool>& recenter) const
-    {
-        Strings keys;
-        keys.reserve(uris.size());
-        const char* const tags[] = {"v2", "v2c"};
-        for (size_t i = 0; i != uris.size(); ++i)
-        {
-            const auto& uri = uris[i];
-            const auto tag = tags[recenter[i]];
-            keys.emplace_back(
-                servus::make_uint128(uri.getPath() + tag).getString());
-        }
-        return keys;
-    }
-
-    Strings createKeys(const URIs& uris, const GIDSet& gids) const
-    {
-        assert(uris.size() == gids.size());
-        Strings keys;
-        keys.reserve(uris.size());
-        auto gid = gids.begin();
-        for (const auto& uri : uris)
-        {
-            auto key = uri.getPath() + _circuitPath + std::to_string(*gid);
-            key = servus::make_uint128(key + "v2").getString();
-            keys.emplace_back(std::move(key));
-            ++gid;
-        }
-        return keys;
-    }
-
-    void save(const std::string& uri, const std::string& key,
-              neuron::MorphologyPtr morphology)
-    {
-        if (!_cache)
-            return;
-
-        servus::Serializable::Data data = morphology->toBinary();
-        if (!_cache->insert(key, data.ptr.get(), data.size))
-        {
-            LBWARN << "Failed to insert morphology " << uri
-                   << " into cache; item size is " << float(data.size) / LB_1MB
-                   << " MB" << std::endl;
-        }
-    }
-
-    CachedMorphologies load(const std::set<std::string>& keySet)
-    {
-        CachedMorphologies loaded;
-        if (!_cache)
-            return loaded;
-
-        LBDEBUG << "Using cache for morphology loading" << std::endl;
-        typedef std::future<std::pair<std::string, neuron::MorphologyPtr>>
-            Future;
-        std::vector<Future> futures;
-
-        Strings keys(keySet.begin(), keySet.end());
-        futures.reserve(keys.size());
-
-        _cache->takeValues(keys, [&futures](const std::string& key, char* data,
-                                            const size_t size) {
-            futures.push_back(std::async([key, data, size] {
-                neuron::MorphologyPtr morphology(
-                    new neuron::Morphology(data, size));
-                std::free(data);
-                return std::make_pair(key, morphology);
-            }));
-        });
-
-        for (auto& future : futures)
-            loaded.insert(future.get());
-
-        LBINFO << "Loaded " << loaded.size() << " morphologies from cache, "
-               << "loading " << keySet.size() - loaded.size()
-               << " remaining from file" << std::endl;
-        return loaded;
-    }
-
-private:
-    keyv::MapPtr _cache;
-    const std::string _circuitPath;
-};
-#else
 class MorphologyCache
 {
 public:
     operator bool() const { return false; }
 };
-#endif
 
 class Circuit::Impl
 {
@@ -536,7 +334,7 @@ public:
             const float y = attributeY[gid - startIdx];
             const float z = attributeZ[gid - startIdx];
 
-            output.push_back(Vector3f(x, y, z));
+            output.push_back(glm::vec3(x, y, z));
         }
         return output;
     }
@@ -593,7 +391,7 @@ public:
             // Special case for missing rotation angles.
             if (rX == 0 && rY == 0 && rZ == 0)
             {
-                output.push_back(Quaternionf());
+                output.push_back(glm::quat_cast(glm::mat4(1.f)));
                 continue;
             }
 
@@ -603,8 +401,12 @@ public:
             // These are the values given by multiplying the rotation
             // matrices for R(X)R(Y)R(Z) i.e. extrinsic rotation around Z
             // then Y then X
-            vmml::Matrix3f mtx;
+            glm::mat3 mtx (1.f);
 
+            mtx[0] = glm::vec3(cY * cZ, cZ * sX * sY + cX * sZ, sX * sZ - cX * cZ * sY);
+            mtx[1] = glm::vec3(-cY * sZ, cX * cZ - sX * sY * sZ, cZ * sX + cX * sY * sZ);
+            mtx[2] = glm::vec3(sY, -cY * sX, cX * cY);
+            /*
             mtx(0, 0) = cY * cZ;
             mtx(0, 1) = -cY * sZ;
             mtx(0, 2) = sY;
@@ -614,8 +416,8 @@ public:
             mtx(2, 0) = sX * sZ - cX * cZ * sY;
             mtx(2, 1) = cZ * sX + cX * sY * sZ;
             mtx(2, 2) = cX * cY;
-
-            output.push_back(Quaternionf(mtx));
+            */
+            output.push_back(glm::quat_cast(mtx));
         }
 
         return output;
@@ -743,11 +545,6 @@ public:
         : _morphologySource(config.getMorphologySource())
         , _synapseSource(config.getSynapseSource())
         , _targets(config)
-#ifdef BRION_USE_KEYV
-        , _cache(keyv::Map::createCache())
-        , _morphologyCache(_cache, config.getCircuitSource())
-        , _synapseCache(_cache, _synapseSource)
-#endif
     {
         for (auto&& projection :
              config.getSectionNames(brion::CONFIGSECTION_PROJECTION))
@@ -885,9 +682,7 @@ public:
     const brion::URI _synapseSource;
     std::unordered_map<std::string, brion::URI> _afferentProjectionSources;
     Targets _targets;
-#ifdef BRION_USE_KEYV
-    keyv::MapPtr _cache;
-#endif
+
     mutable MorphologyCache _morphologyCache;
     mutable SynapseCache _synapseCache;
 
@@ -918,7 +713,7 @@ public:
         if (gids.empty())
             return Vector3fs();
 
-        const brion::NeuronMatrix& data =
+        const brion::NeuronMatrix data =
             _circuit.get(gids, brion::NEURON_POSITION_X |
                                    brion::NEURON_POSITION_Y |
                                    brion::NEURON_POSITION_Z);
@@ -929,9 +724,9 @@ public:
         {
             try
             {
-                positions[i] = brion::Vector3f(lexical_cast<float>(data[i][0]),
-                                               lexical_cast<float>(data[i][1]),
-                                               lexical_cast<float>(data[i][2]));
+                positions[i] = glm::vec3(lexical_cast<float>(data[i][0]),
+                                         lexical_cast<float>(data[i][1]),
+                                         lexical_cast<float>(data[i][2]));
             }
             catch (const boost::bad_lexical_cast&)
             {
@@ -949,7 +744,7 @@ public:
         if (gids.empty())
             return size_ts();
 
-        const brion::NeuronMatrix& matrix =
+        const brion::NeuronMatrix matrix =
             _circuit.get(gids, brion::NEURON_MTYPE);
         size_ts result(matrix.shape()[0]);
 
@@ -970,7 +765,7 @@ public:
         if (gids.empty())
             return size_ts();
 
-        const brion::NeuronMatrix& matrix =
+        const brion::NeuronMatrix matrix =
             _circuit.get(gids, brion::NEURON_ETYPE);
         size_ts result(matrix.shape()[0]);
 
@@ -992,7 +787,7 @@ public:
             return Quaternionfs();
 
         const float deg2rad = float(M_PI) / 180.f;
-        const brion::NeuronMatrix& data =
+        const brion::NeuronMatrix data =
             _circuit.get(gids, brion::NEURON_ROTATION);
         Quaternionfs rotations(gids.size());
 
@@ -1003,7 +798,7 @@ public:
             {
                 // transform rotation Y angle in degree into rotation quaternion
                 const float angle = lexical_cast<float>(data[i][0]) * deg2rad;
-                rotations[i] = Quaternionf(angle, Vector3f(0, 1, 0));
+                rotations[i] = glm::angleAxis(angle, glm::vec3(0.f, 1.f, 0.f));
             }
             catch (const boost::bad_lexical_cast&)
             {
@@ -1021,7 +816,7 @@ public:
         if (gids.empty())
             return Strings();
 
-        const brion::NeuronMatrix& matrix =
+        const brion::NeuronMatrix matrix =
             _circuit.get(gids, brion::NEURON_MORPHOLOGY_NAME);
         Strings result;
         result.reserve(matrix.shape()[0]);

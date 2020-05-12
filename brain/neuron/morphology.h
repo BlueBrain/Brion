@@ -69,7 +69,7 @@ public:
      *        Radii will not be affected by this transformation.
      * @throw runtime_error if an inconsistency is detected in the input file.
      */
-    BRAIN_API Morphology(const URI& source, const Matrix4f& transform);
+    BRAIN_API Morphology(const URI& source, const glm::mat4& transform);
 
     /**
      * Create a morphology from a brion::Morphology and load all the data.
@@ -89,7 +89,7 @@ public:
      * @throw runtime_error if an inconsistency is detected in the input file.
      */
     BRAIN_API Morphology(brion::MorphologyPtr morphology,
-                         const Matrix4f& transform);
+                         const glm::mat4& transform);
 
     BRAIN_API ~Morphology();
 
@@ -134,11 +134,11 @@ public:
      *  the transformation that was passed to the constructor or the
      *  identity matrix is no transformation was given.
      */
-    BRAIN_API const Matrix4f& getTransformation() const;
+    BRAIN_API const glm::mat4& getTransformation() const;
 
     /** @return the axis aligned bounding box of this morphology, considering
         also single sample somas. */
-    BRAIN_API void getBoundingBox(Vector3f& min, Vector3f& max) const;
+    BRAIN_API void getBoundingBox(glm::vec3& min, glm::vec3& max) const;
 
 private:
     Morphology(Morphology&&) = default;

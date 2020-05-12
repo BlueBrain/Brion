@@ -36,13 +36,13 @@ Morphology::Morphology(const void* data, const size_t size)
 {
 }
 
-Morphology::Morphology(const URI& source, const Matrix4f& transform)
+Morphology::Morphology(const URI& source, const glm::mat4& transform)
     : _impl(new Impl(source, transform))
 {
 }
 
 Morphology::Morphology(brion::MorphologyPtr morphology,
-                       const Matrix4f& transform)
+                       const glm::mat4& transform)
     : _impl(new Impl(morphology, transform))
 {
 }
@@ -119,12 +119,12 @@ Soma Morphology::getSoma() const
     return Soma(_impl);
 }
 
-const Matrix4f& Morphology::getTransformation() const
+const glm::mat4& Morphology::getTransformation() const
 {
     return _impl->transformation;
 }
 
-void Morphology::getBoundingBox(Vector3f& min, Vector3f& max) const
+void Morphology::getBoundingBox(glm::vec3& min, glm::vec3& max) const
 {
     const auto& aabb = _impl->getBoundingBox();
     min = aabb.getMin();
