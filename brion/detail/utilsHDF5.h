@@ -112,44 +112,44 @@ struct type_of_array<glm::tvec4<T>>
 template <typename T>
 struct data_converter<std::vector<glm::tvec1<T>>>
 {
-    inline data_converter(std::vector<glm::tvec1<T>>&, DataSpace&) {}
-    inline T* transform_read(std::vector<glm::tvec1<T>>& vector)
+    inline data_converter(const DataSpace&) noexcept {}
+    inline T* transform_read(std::vector<glm::tvec1<T>>& vector) const
     {
         _buf = std::vector<T>(vector.size(), T());
         return reinterpret_cast<T*>(_buf.data());
     }
 
-    inline T* transform_write(std::vector<glm::tvec1<T>>& vector)
+    inline const T* transform_write(const std::vector<glm::tvec1<T>>& vector) const
     {
         _buf = std::vector<T>(vector.size(), T());
         //#pragma omp parallel for
         for(size_t i = 0; i < vector.size(); ++i)
             _buf[i] = vector[i].x;
 
-        return reinterpret_cast<T*>(vector.data());
+        return reinterpret_cast<const T*>(vector.data());
     }
 
-    inline void process_result(std::vector<glm::tvec1<T>>& vector)
+    inline void process_result(std::vector<glm::tvec1<T>>& vector) const noexcept
     {
         //#pragma omp parallel for
         for(size_t i = 0; i < vector.size(); ++i)
             vector[i] = glm::tvec1<T>(_buf[i]);
     }
 
-    std::vector<T> _buf;
+    mutable std::vector<T> _buf;
 };
 
 template <typename T>
 struct data_converter<std::vector<glm::tvec2<T>>>
 {
-    inline data_converter(std::vector<glm::tvec2<T>>&, DataSpace&) {}
-    inline T* transform_read(std::vector<glm::tvec2<T>>& vector)
+    inline data_converter(const DataSpace&) noexcept {}
+    inline T* transform_read(std::vector<glm::tvec2<T>>& vector) const
     {
         _buf = std::vector<T>(vector.size() * 2, T());
         return reinterpret_cast<T*>(_buf.data());
     }
 
-    inline T* transform_write(std::vector<glm::tvec2<T>>& vector)
+    inline const T* transform_write(const std::vector<glm::tvec2<T>>& vector) const
     {
         _buf = std::vector<T>(vector.size() * 2, T());
         //#pragma omp parallel for
@@ -159,10 +159,10 @@ struct data_converter<std::vector<glm::tvec2<T>>>
             _buf[idx] = vector[i].x;
             _buf[idx+1] = vector[i].y;
         }
-        return reinterpret_cast<T*>(vector.data());
+        return reinterpret_cast<const T*>(vector.data());
     }
 
-    inline void process_result(std::vector<glm::tvec2<T>>& vector)
+    inline void process_result(std::vector<glm::tvec2<T>>& vector) const noexcept
     {
         //#pragma omp parallel for
         for(size_t i = 0; i < vector.size(); ++i)
@@ -172,20 +172,20 @@ struct data_converter<std::vector<glm::tvec2<T>>>
         }
     }
 
-    std::vector<T> _buf;
+    mutable std::vector<T> _buf;
 };
 
 template <typename T>
 struct data_converter<std::vector<glm::tvec3<T>>>
 {
-    inline data_converter(std::vector<glm::tvec3<T>>&, DataSpace&) {}
-    inline T* transform_read(std::vector<glm::tvec3<T>>& vector)
+    inline data_converter(const DataSpace&) noexcept {}
+    inline T* transform_read(std::vector<glm::tvec3<T>>& vector) const
     {
         _buf = std::vector<T>(vector.size() * 3, T());
         return reinterpret_cast<T*>(_buf.data());
     }
 
-    inline T* transform_write(std::vector<glm::tvec3<T>>& vector)
+    inline const T* transform_write(const std::vector<glm::tvec3<T>>& vector) const
     {
         _buf = std::vector<T>(vector.size() * 3, T());
         //#pragma omp parallel for
@@ -196,10 +196,10 @@ struct data_converter<std::vector<glm::tvec3<T>>>
             _buf[idx+1] = vector[i].y;
             _buf[idx+2] = vector[i].z;
         }
-        return reinterpret_cast<T*>(vector.data());
+        return reinterpret_cast<const T*>(vector.data());
     }
 
-    inline void process_result(std::vector<glm::tvec3<T>>& vector)
+    inline void process_result(std::vector<glm::tvec3<T>>& vector) const noexcept
     {
         //#pragma omp parallel for
         for(size_t i = 0; i < vector.size(); ++i)
@@ -209,20 +209,20 @@ struct data_converter<std::vector<glm::tvec3<T>>>
         }
     }
 
-    std::vector<T> _buf;
+    mutable std::vector<T> _buf;
 };
 
 template <typename T>
 struct data_converter<std::vector<glm::tvec4<T>>>
 {
-    inline data_converter(std::vector<glm::tvec4<T>>&, DataSpace&) {}
-    inline T* transform_read(std::vector<glm::tvec4<T>>& vector)
+    inline data_converter(const DataSpace&) noexcept {}
+    inline T* transform_read(std::vector<glm::tvec4<T>>& vector) const
     {
         _buf = std::vector<T>(vector.size() * 4, T());
         return reinterpret_cast<T*>(_buf.data());
     }
 
-    inline T* transform_write(std::vector<glm::tvec4<T>>& vector)
+    inline const T* transform_write(const std::vector<glm::tvec4<T>>& vector) const
     {
         _buf = std::vector<T>(vector.size() * 4, T());
         //#pragma omp parallel for
@@ -234,10 +234,10 @@ struct data_converter<std::vector<glm::tvec4<T>>>
             _buf[idx+2] = vector[i].z;
             _buf[idx+3] = vector[i].w;
         }
-        return reinterpret_cast<T*>(vector.data());
+        return reinterpret_cast<const T*>(vector.data());
     }
 
-    inline void process_result(std::vector<glm::tvec4<T>>& vector)
+    inline void process_result(std::vector<glm::tvec4<T>>& vector) const noexcept
     {
         //#pragma omp parallel for
         for(size_t i = 0; i < vector.size(); ++i)
@@ -248,7 +248,7 @@ struct data_converter<std::vector<glm::tvec4<T>>>
         }
     }
 
-    std::vector<T> _buf;
+    mutable std::vector<T> _buf;
 };
 
 }// namespace details
@@ -290,7 +290,7 @@ inline AtomicType<glm::vec4>::AtomicType()
     _hid = H5Tcopy(H5T_NATIVE_INT);
 }
 
-}
+} // namespace HighFive
 
 namespace brion
 {
@@ -307,6 +307,6 @@ inline void addStringAttribute(HighFive::AnnotateTraits<T>& object,
                                        HighFive::AtomicType<std::string>());
     attr.write(value);
 }
-}
-}
+} // namespace detail
+} // namespace brion
 #endif
