@@ -21,6 +21,8 @@
 
 #include "synapseSummary.h"
 
+#include "log.h"
+
 #include "detail/hdf5Mutex.h"
 
 #include <highfive/H5DataSet.hpp>
@@ -28,9 +30,6 @@
 #include <highfive/H5Utility.hpp>
 
 #include <boost/lexical_cast.hpp>
-
-#include <lunchbox/debug.h>
-#include <lunchbox/log.h>
 
 #include <memory>
 
@@ -54,9 +53,7 @@ public:
         }
         catch (...)
         {
-            const std::string error =
-                "Could not open summary HDF5 file: '" + source + "'";
-            LBTHROW(std::runtime_error(error));
+           BRION_THROW("Could not open summary HDF5 file: '" + source + "'")
         }
 
         try
@@ -70,8 +67,7 @@ public:
         }
         catch (...)
         {
-            LBTHROW(std::runtime_error(source + " not a valid synapse summary"
-                                                " file"));
+            BRION_THROW(source + " not a valid synapse summary file")
         }
     }
 
@@ -113,8 +109,8 @@ private:
         }
         catch (const HighFive::DataSetException&)
         {
-            LBVERB << "Could not find synapse summary dataset for "
-                   << name.str() << ": " << std::endl;
+            BRION_WARN << "Could not find synapse summary dataset for "
+                     << name.str() << ": " << std::endl;
             return false;
         }
 
@@ -123,19 +119,18 @@ private:
 
         if (_dims.size() != 2)
         {
-            LBERROR << "Synapse summary dataset is not 2 dimensional"
-                    << std::endl;
+            BRION_ERROR << "Synapse summary dataset is not 2 dimensional" << std::endl;
             return false;
         }
         if (_dims[1] != NUMATTRIBUTES)
         {
-            LBERROR << "Synapse summary dataset does not have " << NUMATTRIBUTES
-                    << " attributes" << std::endl;
+            BRION_ERROR << "Synapse summary dataset does not have " << NUMATTRIBUTES
+                      << " attributes" << std::endl;
             return false;
         }
         if (_dims[0] == 0)
         {
-            LBINFO << "No synapse summary for GID " << gid << std::endl;
+            BRION_INFO << "No synapse summary for GID " << gid << std::endl;
             return false;
         }
 

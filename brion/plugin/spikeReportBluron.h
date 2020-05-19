@@ -33,9 +33,9 @@ namespace plugin
 class SpikeReportBluron : public SpikeReportASCII
 {
 public:
-    explicit SpikeReportBluron(const SpikeReportInitData& initData);
+    explicit SpikeReportBluron(const PluginInitData& initData);
 
-    static bool handles(const SpikeReportInitData& initData);
+    static bool handles(const PluginInitData& initData);
     static std::string getDescription();
 
     void close() final;

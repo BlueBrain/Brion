@@ -41,9 +41,9 @@ class BinaryReportMap;
 class SpikeReportBinary : public SpikeReportPlugin
 {
 public:
-    explicit SpikeReportBinary(const SpikeReportInitData& initData);
+    explicit SpikeReportBinary(const PluginInitData& initData);
 
-    static bool handles(const SpikeReportInitData& initData);
+    static bool handles(const PluginInitData& initData);
     static std::string getDescription();
 
     void close() final {}

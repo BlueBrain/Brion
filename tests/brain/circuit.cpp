@@ -27,14 +27,24 @@
 #include <boost/algorithm/string.hpp>
 #include <boost/filesystem/path.hpp>
 #include <boost/test/unit_test.hpp>
-#include <lunchbox/bitOperation.h>
 
 namespace
 {
+inline int32_t getIndexOfLastBit(uint32_t v) noexcept
+{
+    int32_t count = -1;
+    while (v)
+    {
+        ++count;
+        v >>= 1;
+    }
+    return count;
+}
+
 std::string getValue(const brion::NeuronMatrix& data, const size_t idx,
                      const uint32_t attr)
 {
-    return data[idx][lunchbox::getIndexOfLastBit(attr)];
+    return data[idx][getIndexOfLastBit(attr)];
 }
 
 inline bool EqualMatrices4(const glm::mat4& a, const glm::mat4& b,

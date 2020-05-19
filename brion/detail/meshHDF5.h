@@ -24,11 +24,12 @@
 #include "mesh.h"
 #include "utilsHDF5.h"
 
+#include "../log.h"
+
 #include <highfive/H5File.hpp>
 #include <highfive/H5Utility.hpp>
 
 #include <boost/lexical_cast.hpp>
-#include <lunchbox/debug.h>
 
 namespace boost
 {
@@ -71,7 +72,7 @@ public:
         }
         catch (HighFive::DataSetException&)
         {
-            LBTHROW(std::runtime_error(source + " not a valid mesh file"));
+            BRION_THROW(source + " not a valid mesh file")
         }
     }
 
@@ -87,8 +88,7 @@ public:
             }
             catch (const HighFive::FileException& exc)
             {
-                LBTHROW(std::runtime_error("Could not create mesh file " +
-                                           source + ": " + exc.what()));
+                BRION_THROW("Could not create mesh file " + source + ": " + exc.what())
             }
         }())
     {
@@ -179,7 +179,7 @@ public:
         }
         catch (...)
         {
-            LBINFO << "No tristrip in " << _file.getName() << std::endl;
+            BRION_INFO << "No tristrip in " << _file.getName() << std::endl;
         }
         return buffer;
     }
@@ -242,62 +242,69 @@ public:
 
     virtual void writeVertices(const Vector3fs& /*vertices*/)
     {
-        LBUNIMPLEMENTED;
+        BRION_THROW("MeshHDF5::writeVertices not implemented")
     }
 
     virtual void writeVertexSections(const uint16_ts& /*vSections*/)
     {
-        LBUNIMPLEMENTED;
+        BRION_THROW("MeshHDF5::writeVertexSections not implemented")
     }
 
     virtual void writeVertexDistances(const floats& /*vDistances*/)
     {
-        LBUNIMPLEMENTED;
+        BRION_THROW("MeshHDF5::writeVertexDistances not implemented")
     }
 
     virtual void writeTriangles(const uint32_ts& /*triangles*/)
     {
-        LBUNIMPLEMENTED;
+        BRION_THROW("MeshHDF5::writeTriangles not implemented")
     }
 
     virtual void writeTriangleSections(const uint16_ts& /*tSections*/)
     {
-        LBUNIMPLEMENTED;
+        BRION_THROW("MeshHDF5::writeTriangleSections not implemented")
     }
 
     virtual void writeTriangleDistances(const floats& /*tDistances*/)
     {
-        LBUNIMPLEMENTED;
+        BRION_THROW("MeshHDF5::writeTriangleDistances not implemented")
     }
 
     virtual void writeTriStrip(const uint32_ts& /*tristrip*/)
     {
-        LBUNIMPLEMENTED;
+        BRION_THROW("MeshHDF5::writeTriStrip not implemented")
     }
 
-    virtual void writeNormals(const Vector3fs& /*normals*/) { LBUNIMPLEMENTED; }
+    virtual void writeNormals(const Vector3fs& /*normals*/) 
+    { 
+        BRION_THROW("MeshHDF5::writeNormals not implemented") 
+    }
+
     virtual void writeStructureVertices(const Vector3fs& /*vertices*/,
                                         const MeshStructure /*type*/,
                                         const size_t /*index*/)
     {
-        LBUNIMPLEMENTED;
+        BRION_THROW("MeshHDF5::writeStructureVertices not implemented")
     }
 
     virtual void writeStructureTriangles(const uint32_ts& /*triangles*/,
                                          const MeshStructure /*type*/,
                                          const size_t /*index*/)
     {
-        LBUNIMPLEMENTED;
+        BRION_THROW("MeshHDF5::writeStructureTriangles not implemented")
     }
 
     virtual void writeStructureTriStrip(const uint32_ts& /*tristrip*/,
                                         const MeshStructure /*type*/,
                                         const size_t /*index*/)
     {
-        LBUNIMPLEMENTED;
+        BRION_THROW("MeshHDF5::writeStructureTriStrip not implemented")
     }
 
-    virtual void flush() { LBUNIMPLEMENTED; }
+    virtual void flush() 
+    { 
+        BRION_THROW("MeshHDF5::flush not implemented")
+    }
 
 private:
     hsize_t _numElements(const HighFive::DataSet& dataset) const

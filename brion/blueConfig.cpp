@@ -20,6 +20,7 @@
 #include "blueConfig.h"
 
 #include "constants.h"
+#include "log.h"
 #include "target.h"
 
 #include <boost/algorithm/string.hpp>
@@ -27,7 +28,7 @@
 #include <boost/lexical_cast.hpp>
 #include <boost/regex.hpp>
 #include <fstream>
-#include <lunchbox/log.h>
+
 #include <unordered_map>
 
 namespace fs = boost::filesystem;
@@ -90,8 +91,8 @@ public:
     {
         std::ifstream file(source.c_str());
         if (!file.is_open())
-            LBTHROW(
-                std::runtime_error("Cannot open BlueConfig file " + source));
+            BRION_THROW("Cannot open BlueConfig file " + source)
+
         std::stringstream buffer;
         buffer << file.rdbuf();
 
@@ -112,8 +113,8 @@ public:
             const std::string& content = *i++;
             if (content.empty())
             {
-                LBWARN << "Found empty section '" << typeStr << " " << name
-                       << "' in BlueConfig file " << source << std::endl;
+                BRION_WARN << "Found empty section '" << typeStr << " " << name
+                         << "' in BlueConfig file " << source << std::endl;
                 continue;
             }
 
@@ -121,8 +122,8 @@ public:
                 boost::lexical_cast<BlueConfigSection>(typeStr);
             if (type == brion::CONFIGSECTION_UNKNOWN)
             {
-                LBDEBUG << "Found unknown section '" << typeStr
-                        << "' in BlueConfig file " << source << std::endl;
+                BRION_DEBUG << "Found unknown section '" << typeStr
+                          << "' in BlueConfig file " << source << std::endl;
                 continue;
             }
 
@@ -141,8 +142,8 @@ public:
                 const std::string::size_type pos = line.find(' ', 0);
                 if (pos == std::string::npos)
                 {
-                    LBWARN << "Found invalid key-value pair '" << line
-                           << "' in BlueConfig file " << source << std::endl;
+                    BRION_WARN << "Found invalid key-value pair '" << line
+                             << "' in BlueConfig file " << source << std::endl;
                     continue;
                 }
 
@@ -154,8 +155,7 @@ public:
         }
 
         if (table[CONFIGSECTION_RUN].empty())
-            LBTHROW(
-                std::runtime_error(source + " not a valid BlueConfig file"));
+            BRION_THROW(source + " not a valid BlueConfig file")
     }
 
     std::string getRun()
@@ -281,7 +281,7 @@ URI BlueConfig::getProjectionSource(const std::string& name) const
         get(CONFIGSECTION_PROJECTION, name, BLUECONFIG_PROJECTION_PATH_KEY);
     if (path.empty())
     {
-        LBWARN << "Invalid or missing projection  " << name << std::endl;
+        BRION_WARN << "Invalid or missing projection  " << name << std::endl;
         return URI();
     }
     URI uri;
@@ -311,7 +311,7 @@ URI BlueConfig::getReportSource(const std::string& report) const
         get(CONFIGSECTION_REPORT, report, BLUECONFIG_REPORT_FORMAT_KEY);
     if (format.empty())
     {
-        LBWARN << "Invalid or missing report: " << report << std::endl;
+        BRION_WARN << "Invalid or missing report: " << report << std::endl;
         return URI();
     }
 

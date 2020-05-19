@@ -21,11 +21,11 @@
 #include "section.h"
 #include "soma.h"
 
+#include "../log.h"
+
 #include "morphologyImpl.h"
 
 #include <brion/morphology.h>
-
-#include <lunchbox/log.h>
 
 namespace brain
 {
@@ -105,11 +105,10 @@ Section Morphology::getSection(const uint32_t& id) const
 {
     auto& types = _impl->data->getSectionTypes();
     if (getSections().size() <= id || types.size() <= id)
-        LBTHROW(std::runtime_error(std::string("Section ID ") +
-                                   std::to_string(id) + " out of range"));
+        BRAIN_THROW(std::string("Section ID ") + std::to_string(id) + " out of range");
 
     if (types[id] == brion::enums::SECTION_SOMA)
-        LBTHROW(std::runtime_error("The soma cannot be accessed as a Section"));
+        BRAIN_THROW("The soma cannot be accessed as a Section");
 
     return Section(id, _impl);
 }

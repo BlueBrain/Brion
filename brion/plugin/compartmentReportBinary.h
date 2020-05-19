@@ -22,7 +22,7 @@
 
 #include "compartmentReportCommon.h"
 
-#include <lunchbox/bitOperation.h>
+#include <byteswap.h>
 
 #include <boost/iostreams/device/mapped_file.hpp>
 
@@ -109,7 +109,7 @@ private:
 
     GIDSet _gids;
 
-    boost::iostreams::mapped_file_source _file;
+    boost::iostreams::mapped_file _file;
     int _fileDescriptor;
     FILE* _fileHandle;
 
@@ -132,9 +132,28 @@ private:
 }
 }
 
-namespace lunchbox
+inline void byteswap(int& value)
 {
-template <>
+    value = bswap_32(value);
+}
+
+inline void byteswap(unsigned long& value)
+{
+    value = bswap_64(value);
+}
+
+inline void byteswap(float& value)
+{
+    uint32_t swapped = bswap_32(reinterpret_cast<uint32_t&>(value));
+    value = reinterpret_cast<float&>(swapped);
+}
+
+inline void byteswap(double& value)
+{
+    uint64_t swapped = bswap_64(reinterpret_cast<uint64_t&>(value));
+    value = reinterpret_cast<double&>(swapped);
+}
+
 inline void byteswap(brion::plugin::HeaderInfo& value)
 {
     byteswap(value.headerSize);
@@ -144,7 +163,6 @@ inline void byteswap(brion::plugin::HeaderInfo& value)
     byteswap(value.numFrames);
     byteswap(value.mappingSize);
     byteswap(value.identifier);
-}
 }
 
 #endif

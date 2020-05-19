@@ -20,11 +20,14 @@
 
 #include "spikeReportBinary.h"
 
-#include <lunchbox/memoryMap.h>
-#include <lunchbox/pluginRegisterer.h>
+#include "../log.h"
+#include "../pluginLibrary.h"
 
 #include <boost/filesystem.hpp>
 #include <boost/filesystem/path.hpp>
+#include <boost/iostreams/device/mapped_file.hpp>
+
+#include <servus/uri.h>
 
 #include <fstream>
 
@@ -34,9 +37,21 @@ namespace plugin
 {
 namespace
 {
-lunchbox::PluginRegisterer<SpikeReportBinary> registerer;
+
+class PluginRegisterer
+{
+public:
+    PluginRegisterer()
+    {
+        auto& pluginManager = PluginLibrary::instance().getManager<SpikeReportPlugin>();
+        pluginManager.registerFactory<SpikeReportBinary>();
+    }
+};
+
+PluginRegisterer registerer;
+
 const char* const BINARY_REPORT_FILE_EXT = ".spikes";
-}
+} // namespace
 
 namespace fs = boost::filesystem;
 
@@ -54,55 +69,72 @@ class BinaryReportMap
 public:
     // Read-only mapping
     BinaryReportMap(const std::string& path)
-        : _map(path)
+        : _path(path)
+        , _map(path)
     {
-        const size_t totalSize = _map.getSize();
+        const size_t totalSize = _map.size();
         if (totalSize < sizeof(Header) || (totalSize % sizeof(uint32_t)) != 0)
-        {
-            LBTHROW(std::runtime_error("Incompatible binary report: " + path));
-        }
+            BRION_THROW("Incompatible binary report: " + path)
 
-        if (!_map.getAddress<Header>()->isValid())
-        {
-            LBTHROW(std::runtime_error("Invalid binary spike report header: " +
-                                       path));
-        }
+        if (!reinterpret_cast<Header&>(*(_map.data())).isValid())
+            BRION_THROW("Invalid binary spike report header: " + path)
     }
 
     // read-write mapping
     BinaryReportMap(const std::string& path, size_t nSpikes)
-        : _map(path, sizeof(Header) + sizeof(Spike) * nSpikes)
+        : _path(path)
     {
-        *(_map.getAddress<Header>()) = Header();
+        boost::iostreams::mapped_file_params fileParams;
+        fileParams.path = path;
+        fileParams.flags = boost::iostreams::mapped_file::readwrite;
+        if(!boost::filesystem::exists(path))
+            fileParams.new_file_size = sizeof(Header) + sizeof(Spike) * nSpikes;
+        _map.open(fileParams);
+        reinterpret_cast<Header&>(*(_map.data())) = Header();
+    }
+
+    ~BinaryReportMap()
+    {
+        _map.close();
     }
 
     void resize(const size_t nSpikes)
     {
-        _map.resize(sizeof(Header) + sizeof(Spike) * nSpikes);
+        // Save whatever is already on the mapped memory
+        std::vector<char> tempDataBuffer(_map.size());
+        std::memcpy(tempDataBuffer.data(), _map.data(), _map.size() * sizeof(char));
+        // Recreate the mapped file with the new size
+        _map.close();
+        boost::iostreams::mapped_file_params fileParams;
+        fileParams.path = _path;
+        fileParams.flags = boost::iostreams::mapped_file::readwrite;
+        fileParams.new_file_size = sizeof(Header) + sizeof(Spike) * nSpikes;
+        _map = boost::iostreams::mapped_file(fileParams);
+        // Copy back the saed data
+        std::memcpy(_map.data(), tempDataBuffer.data(), tempDataBuffer.size() * sizeof(char));
     }
 
     size_t getNumSpikes() const
     {
-        return (_map.getSize() - sizeof(Header)) / sizeof(Spike);
+        return (_map.size() - sizeof(Header)) / sizeof(Spike);
     }
 
     const Spike* getReadableSpikes() const
     {
-        return reinterpret_cast<const Spike*>(_map.getAddress<uint8_t>() +
-                                              sizeof(Header));
+        return reinterpret_cast<const Spike*>(_map.data() + sizeof(Header));
     }
 
     Spike* getWritableSpikes()
     {
-        return reinterpret_cast<Spike*>(_map.getAddress<uint8_t>() +
-                                        sizeof(Header));
+        return reinterpret_cast<Spike*>(_map.data() + sizeof(Header));
     }
 
 private:
-    lunchbox::MemoryMap _map;
+    std::string _path;
+    boost::iostreams::mapped_file _map;
 };
 
-SpikeReportBinary::SpikeReportBinary(const SpikeReportInitData& initData)
+SpikeReportBinary::SpikeReportBinary(const PluginInitData& initData)
     : SpikeReportPlugin(initData)
 {
     if (_accessMode == MODE_READ)
@@ -116,7 +148,7 @@ SpikeReportBinary::SpikeReportBinary(const SpikeReportInitData& initData)
         _endTime = spikeArray[nElems - 1].first;
 }
 
-bool SpikeReportBinary::handles(const SpikeReportInitData& initData)
+bool SpikeReportBinary::handles(const PluginInitData& initData)
 {
     const URI& uri = initData.getURI();
     if (!uri.getScheme().empty() && uri.getScheme() != "file")
@@ -237,5 +269,5 @@ void SpikeReportBinary::write(const Spike* spikes, const size_t size)
         std::nextafter(lastTimestamp, std::numeric_limits<float>::max());
     _endTime = std::max(_endTime, lastTimestamp);
 }
-}
-} // namespaces
+} // namespace plugin
+} // namespace brion

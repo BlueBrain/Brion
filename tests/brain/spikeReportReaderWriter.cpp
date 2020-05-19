@@ -23,7 +23,6 @@
 
 #include <BBP/TestDatasets.h>
 
-#include <lunchbox/sleep.h>
 #include <servus/uint128_t.h>
 
 #define BOOST_TEST_MODULE SpikeReportReader

@@ -32,7 +32,7 @@ namespace plugin
 class SpikeReportASCII : public SpikeReportPlugin
 {
 public:
-    explicit SpikeReportASCII(const SpikeReportInitData& initData);
+    explicit SpikeReportASCII(const PluginInitData& initData);
 
     Spikes read(float min) final;
     Spikes readUntil(float toTimeStamp) final;

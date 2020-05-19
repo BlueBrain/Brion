@@ -30,10 +30,18 @@
 # Custom
 .tags
 BBPTestData/
-Lunchbox/
 Servus/
 CMakeLists.txt.user*
 Makefile
 build/
 MVDTool/
 Pression/
+
+# QT Creator files
+*.cflags
+*.config
+*.cxxflags
+*.files
+*.includes
+*.creator
+*.creator.user

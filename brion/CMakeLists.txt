@@ -23,6 +23,7 @@ set(BRION_PUBLIC_HEADERS
   morphologyPlugin.h
   morphologyPlugin.ipp
   pluginInitData.h
+  pluginLibrary.h
   simulationConfig.h
   spikeReport.h
   spikeReportPlugin.h
@@ -34,6 +35,7 @@ set(BRION_PUBLIC_HEADERS
   nodeGroup.h
   circuitConfig.h
   csvConfig.h
+  log.h
   )
 
 set(BRION_HEADERS
@@ -47,6 +49,7 @@ set(BRION_HEADERS
   detail/skipWhiteSpace.h
   detail/utils.h
   detail/utilsHDF5.h
+  threadPool.h
   )
 
 set(BRION_SOURCES
@@ -60,6 +63,7 @@ set(BRION_SOURCES
   synapseSummary.cpp
   synapse.cpp
   target.cpp
+  threadPool.cpp
   nodes.cpp
   nodeGroup.cpp
   circuitConfig.cpp
@@ -94,8 +98,7 @@ endif()
 set(BRION_PUBLIC_INCLUDE_DIRECTORIES ${Boost_INCLUDE_DIRS})
 set(BRION_LINK_LIBRARIES
   PUBLIC Servus glm
-  PRIVATE Lunchbox HighFive ${Boost_FILESYSTEM_LIBRARIES}
-          ${Boost_REGEX_LIBRARIES} ${CMAKE_THREADS_LIB_INIT} ${_plugin_lib}
+  PRIVATE HighFive ${Boost_FILESYSTEM_LIBRARIES} ${Boost_REGEX_LIBRARIES} ${CMAKE_THREADS_LIB_INIT} ${_plugin_lib} dl rt
 )
 
 common_library(Brion)

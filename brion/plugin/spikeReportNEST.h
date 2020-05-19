@@ -33,9 +33,9 @@ namespace plugin
 class SpikeReportNEST : public SpikeReportASCII
 {
 public:
-    explicit SpikeReportNEST(const SpikeReportInitData& initData);
+    explicit SpikeReportNEST(const PluginInitData& initData);
 
-    static bool handles(const SpikeReportInitData& initData);
+    static bool handles(const PluginInitData& initData);
     static std::string getDescription();
 
     void close() final;

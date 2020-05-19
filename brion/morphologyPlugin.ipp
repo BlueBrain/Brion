@@ -17,7 +17,11 @@
  * 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
  */
 
+#include <cstdint>
 #include <cstring>
+#include <vector>
+
+#include <servus/serializable.h>
 
 namespace brion
 {

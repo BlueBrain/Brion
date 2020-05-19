@@ -22,10 +22,10 @@
 #include "section.h"
 #include "soma.h"
 
+#include "../log.h"
+
 #include <brion/morphology.h>
 #include <brion/morphologyPlugin.h>
-
-#include <lunchbox/log.h>
 
 #include <bitset>
 
@@ -100,7 +100,10 @@ uint32_ts Morphology::Impl::getSectionIDs(const SectionTypes& requestedTypes,
 float Morphology::Impl::getSectionLength(const uint32_t sectionID) const
 {
     if (_sectionLengths.size() <= sectionID)
+    {
+        std::lock_guard<std::mutex> lock(_secLenMtx);
         _sectionLengths.resize(sectionID + 1);
+    }
 
     float& length = _sectionLengths[sectionID];
     const auto& types = data->getSectionTypes();
@@ -131,7 +134,7 @@ Vector4fs Morphology::Impl::getSectionSamples(const uint32_t sectionID,
     // If the section is the soma return directly the soma position.
     if (types[sectionID] == brion::enums::SECTION_SOMA)
         // This code shouldn't be reached.
-        LBTHROW(std::runtime_error("Invalid method called on soma section"));
+        BRAIN_THROW("Invalid method called on soma section");
 
     // Dealing with the degenerate case of single point sections.
     const auto& points = data->getPoints();
@@ -180,7 +183,10 @@ Vector4fs Morphology::Impl::getSectionSamples(const uint32_t sectionID,
 float Morphology::Impl::getDistanceToSoma(const uint32_t sectionID) const
 {
     if (_distancesToSoma.size() <= sectionID)
-        _distancesToSoma.resize(sectionID + 1);
+    {
+        std::lock_guard<std::mutex> lock(_distMtx);
+        _distancesToSoma.resize(sectionID + 1, 0.f);
+    }
 
     float& distance = _distancesToSoma[sectionID];
     if (distance == 0)
@@ -280,10 +286,9 @@ void Morphology::Impl::_extractInformation()
     // soma
     const uint32_ts ids = getSectionIDs({SectionType::soma}, false);
     if (ids.size() != 1)
-        LBTHROW(std::runtime_error(
-            "Bad input morphology '" +
-            std::to_string(data->getInitData().getURI()) + "': " +
-            std::to_string(ids.size()) + " somas found"));
+        BRAIN_THROW("Bad input morphology '" +
+                  std::to_string(data->getInitData().getURI()) + "': " +
+                  std::to_string(ids.size()) + " somas found");
     somaSection = ids[0];
 }
 

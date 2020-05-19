@@ -21,6 +21,9 @@
  */
 
 #include "synapse.h"
+
+#include "log.h"
+
 #include "detail/hdf5Mutex.h"
 
 #include <highfive/H5DataSet.hpp>
@@ -30,8 +33,6 @@
 #include <boost/filesystem.hpp>
 #include <boost/lexical_cast.hpp>
 #include <boost/regex.hpp>
-
-#include <lunchbox/log.h>
 
 #include <bitset>
 #include <fstream>
@@ -59,8 +60,7 @@ bool _openDataset(const HighFive::File& file, const std::string& name,
     }
     catch (const HighFive::DataSetException&)
     {
-        LBVERB << "Could not find synapse dataset for " << name << ": "
-               << std::endl;
+        BRION_WARN << "Could not find synapse dataset for " << name << ": " << std::endl;
         return false;
     }
 
@@ -68,7 +68,7 @@ bool _openDataset(const HighFive::File& file, const std::string& name,
 
     if (dims.size() != 2)
     {
-        LBERROR << "Synapse dataset is not 2 dimensional" << std::endl;
+        BRION_ERROR << "Synapse dataset is not 2 dimensional" << std::endl;
         return false;
     }
     dataset.dims = std::make_pair(dims[0], dims[1]);
@@ -93,24 +93,20 @@ public:
         }
         catch (const HighFive::FileException& exc)
         {
-            LBTHROW(std::runtime_error("Could not open synapse file " + source +
-                                       ": " + exc.what()));
+            BRION_THROW("Could not open synapse file " + source + ": " + exc.what())
         }
 
         Dataset dataset;
         const std::string& datasetName = _file->getObjectName(0);
         if (!detail::_openDataset(*_file, datasetName, dataset))
-            LBTHROW(std::runtime_error("Cannot open dataset " + datasetName +
-                                       " in synapse file " + source));
+            BRION_THROW("Cannot open dataset " + datasetName + " in synapse file " + source)
 
         _numAttributes = dataset.dims.second;
         if (_numAttributes != SYNAPSE_ALL &&
             _numAttributes != SYNAPSE_POSITION_ALL &&
             _numAttributes != SYNAPSE_OLD_POSITION_ALL &&
             _numAttributes != 1 /* nrn_extra */)
-        {
-            LBTHROW(std::runtime_error(source + " not a valid synapse file"));
-        }
+            BRION_THROW(source + " not a valid synapse file")
     }
 
     ~SynapseFile()
@@ -181,9 +177,9 @@ public:
             // nrn_extra
             return read<1>(gid, 1);
         default:
-            LBERROR << "Synapse file " << _file->getName()
-                    << " has unknown number of attributes: " << _numAttributes
-                    << std::endl;
+            BRION_ERROR << "Synapse file " << _file->getName()
+                      << " has unknown number of attributes: " << _numAttributes
+                      << std::endl;
             return SynapseMatrix();
         }
     }
@@ -220,9 +216,9 @@ public:
                     "No merged or unmerged synapse file found: " + source);
             }
 
-            LBWARN << "Only unmerged synapse files found for " << source
-                   << "; consider using merged files for better performance."
-                   << std::endl;
+            BRION_WARN << "Only unmerged synapse files found for " << source
+                     << "; consider using merged files for better performance."
+                     << std::endl;
 
             _findCandidateFiles(dir, filename);
             _createIndex(dir, filename);
@@ -267,14 +263,12 @@ public:
             HighFive::File file(filename, H5F_ACC_RDONLY);
             Dataset dataset;
             if (!_openDataset(file, file.getObjectName(0), dataset))
-                LBTHROW(std::runtime_error(
-                    "Cannot open dataset in synapse file " + filename));
+                BRION_THROW("Cannot open dataset in synapse file " + filename)
             return dataset.dims.second;
         }
         catch (const HighFive::FileException& exc)
         {
-            LBTHROW(std::runtime_error("Could not open synapse file " +
-                                       filename + ": " + exc.what()));
+            BRION_THROW("Could not open synapse file " + filename + ": " + exc.what())
         }
     }
 
@@ -295,9 +289,9 @@ private:
         const std::ifstream mergeFile(merge_nrn.generic_string().c_str());
         if (!mergeFile.is_open())
         {
-            LBWARN << "No merged file found in " << dir
-                   << " to build lookup index; loading data will be very slow"
-                   << std::endl;
+            BRION_WARN << "No merged file found in " << dir
+                     << " to build lookup index; loading data will be very slow"
+                     << std::endl;
             return;
         }
 
@@ -345,10 +339,7 @@ private:
         }
 
         if (_fileNames.empty())
-        {
-            LBTHROW(std::runtime_error("Could not find synapse files " +
-                                       dir.string() + "/" + filename));
-        }
+            BRION_THROW("Could not find synapse files " + dir.string() + "/" + filename)
     }
 
     bool _findFile(const uint32_t gid) const

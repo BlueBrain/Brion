@@ -23,6 +23,9 @@
 #include "../detail/hdf5Mutex.h"
 #include "../detail/utilsHDF5.h"
 
+#include "../log.h"
+#include "../pluginLibrary.h"
+
 #include <brion/types.h>
 #include <brion/version.h>
 
@@ -33,8 +36,7 @@
 
 #include <highfive/H5DataType.hpp>
 
-#include <lunchbox/debug.h>
-#include <lunchbox/pluginRegisterer.h>
+#include <limits>
 
 namespace brion
 {
@@ -42,8 +44,20 @@ namespace plugin
 {
 namespace
 {
-constexpr uint32_t _sonataMagic = 0x0A7A;
-constexpr uint32_t _currentVersion[] = {0, 1};
+class PluginRegisterer
+{
+public:
+    PluginRegisterer()
+    {
+        auto& pluginManager = PluginLibrary::instance().getManager<CompartmentReportPlugin>();
+        pluginManager.registerFactory<CompartmentReportHDF5>();
+    }
+};
+
+PluginRegisterer registerer;
+
+//constexpr uint32_t _sonataMagic = 0x0A7A;
+//constexpr uint32_t _currentVersion[] = {0, 1};
 
 constexpr size_t _autoCacheSize = std::numeric_limits<size_t>::max();
 
@@ -110,8 +124,7 @@ size_t _parseCacheSizeOption(const URI& uri)
     return _parseSizeOption(value, "cache_size");
 }
 
-lunchbox::PluginRegisterer<CompartmentReportHDF5> registerer;
-}
+} // namespace
 
 CompartmentReportHDF5::CompartmentReportHDF5(
     const CompartmentReportInitData& initData)
@@ -221,9 +234,10 @@ void CompartmentReportHDF5::writeHeader(const double startTime,
                                         const std::string& dunit,
                                         const std::string& tunit)
 {
-    LBASSERTINFO(endTime - startTime >= timestep,
-                 "Invalid report time " << startTime << ".." << endTime << "/"
-                                        << timestep);
+    std::string assertMessage ("Invalid report time " + std::to_string(startTime) + ".."
+                               + std::to_string(endTime) + "/" + std::to_string(timestep));
+    BRION_ASSERT_INFO(endTime - startTime >= timestep, assertMessage.c_str())
+
     if (timestep <= 0.f)
     {
         std::ostringstream msg;
@@ -274,7 +288,7 @@ bool CompartmentReportHDF5::writeFrame(const uint32_t gid, const float* values,
         const size_t frameNumber = _getFrameNumber(timestamp);
         const auto i = std::lower_bound(_GIDlist.begin(), _GIDlist.end(), gid);
         if (i == _GIDlist.end() || *i != gid)
-            LBTHROW(std::runtime_error("Invalid GID for writing to report"));
+            BRION_THROW("Invalid GID for writing to report")
         const size_t index = i - _GIDlist.begin();
         auto selection =
             _data->select({frameNumber, _targetMapping.cellOffsets[index]},
@@ -284,8 +298,8 @@ bool CompartmentReportHDF5::writeFrame(const uint32_t gid, const float* values,
     }
     catch (const HighFive::Exception& e)
     {
-        LBERROR << "CompartmentReportHDF5: error writing frame: " << e.what()
-                << std::endl;
+        BRION_ERROR << "CompartmentReportHDF5: error writing frame: " << e.what()
+                  << std::endl;
         return false;
     }
     return true;
@@ -326,8 +340,8 @@ bool CompartmentReportHDF5::writeFrame(const GIDSet& gids, const float* values,
     }
     catch (const HighFive::Exception& e)
     {
-        LBERROR << "CompartmentReportHDF5: error writing frame: " << e.what()
-                << std::endl;
+        BRION_ERROR << "CompartmentReportHDF5: error writing frame: " << e.what()
+                  << std::endl;
         return false;
     }
     return true;
@@ -426,17 +440,14 @@ void CompartmentReportHDF5::_readMetaData()
     try
     {
         if(!_file->exist("report"))
-        {
-            LBTHROW(std::runtime_error(
-                "Error opening compartment report: No \"report\" group found"));
-        }
+            BRION_THROW("Error opening compartment report: No \"report\" group found")
 
         const HighFive::Group reportGroup = _file->getGroup("report");
 
         if(!reportGroup.exist("All"))
         {
-            LBTHROW(std::runtime_error(
-                "Error opening compartment report: No \"aLL\" group found within report group"));
+            BRION_THROW("Error opening compartment report: "
+                      "No \"All\" group found within report group")
         }
 
         const HighFive::Group allGroup = reportGroup.getGroup("All");
@@ -466,10 +477,8 @@ void CompartmentReportHDF5::_readMetaData()
         std::vector<double> timeData;
         time.read(timeData);
         if (timeData.size() != 3)
-        {
-            LBTHROW(std::runtime_error(
-                "Error opening compartment report: Bad time metadata"));
-        }
+            BRION_THROW("Error opening compartment report: Bad time metadata")
+
         _startTime = timeData[0];
         _endTime = timeData[1];
         _timestep = timeData[2];
@@ -477,14 +486,13 @@ void CompartmentReportHDF5::_readMetaData()
         // Finding the total compartment count
         const auto& dims = _data->getSpace().getDimensions();
         if (dims.size() != 2)
-            LBTHROW(
-                std::runtime_error("Bad report: data is not 2-dimensional"));
+            BRION_THROW("Bad report: data is not 2-dimensional")
+
         _sourceMapping.frameSize = dims[1];
     }
     catch (std::exception& e)
     {
-        throw std::runtime_error(
-            std::string("Error opening compartment report: ") + e.what());
+        BRION_THROW(std::string("Error opening compartment report: ") + std::string(e.what()));
     }
 }
 
@@ -503,7 +511,7 @@ void CompartmentReportHDF5::_parseBasicCellInfo()
     mapping.getDataSet("index_pointers").read(offsets);
     if ((gids.size() != offsets.size() && gids.size() + 1 != offsets.size()) ||
         gids.empty())
-        LBTHROW(std::runtime_error("Bad report metadata"));
+        BRION_THROW("Bad report metadata")
     int8_t sorted = false;
     try
     {
@@ -520,7 +528,7 @@ void CompartmentReportHDF5::_parseBasicCellInfo()
         // reports.
         (offsets.size() == gids.size() + 1 &&
          offsets.back() != _sourceMapping.frameSize))
-        LBTHROW(std::runtime_error("Bad report: inconsistent cell offsets"));
+        BRION_THROW("Bad report: inconsistent cell offsets")
 
     auto cellCount = gids.size();
 
@@ -572,9 +580,8 @@ void CompartmentReportHDF5::_processMapping()
     try
     {
         mapping.getDataSet("element_pos");
-        LBWARN << "Unsupported mapping attribute in compartment"
-                  " report: element_pos"
-               << std::endl;
+        BRION_WARN << "Unsupported mapping attribute in compartment "
+                 << "report: element_pos" << std::endl;
     }
     catch (...)
     {
@@ -589,8 +596,8 @@ void CompartmentReportHDF5::_processMapping()
 #pragma omp parallel for num_threads(6) schedule(dynamic)
     for (size_t idx = 0; idx < _sourceGIDs.size(); ++idx)
     {
-        uint32_t current = LB_UNDEFINED_UINT16;
-        uint32_t previous = LB_UNDEFINED_UINT16;
+        uint32_t current = std::numeric_limits<uint16_t>().max();
+        uint32_t previous = std::numeric_limits<uint16_t>().max();
         uint16_t count = 0;
 
         // < sectionID, < frameIndex, numCompartments > >
@@ -611,13 +618,13 @@ void CompartmentReportHDF5::_processMapping()
             {
                 if (offsets.size() <= current)
                 {
-                    offsets.resize(current + 1, LB_UNDEFINED_UINT64);
+                    offsets.resize(current + 1, std::numeric_limits<uint64_t>().max());
                     counts.resize(current + 1, 0);
                 }
 
                 offsets[current] = offset + j;
 
-                if (previous != LB_UNDEFINED_UINT16)
+                if (previous != std::numeric_limits<uint16_t>().max())
                     counts[previous] = count;
 
                 count = 0;
@@ -646,8 +653,7 @@ void CompartmentReportHDF5::_updateMapping(const GIDSet& gids)
     const GIDSet intersection = _computeIntersection(_sourceGIDs, gids);
     if (intersection.empty())
     {
-        LBTHROW(std::runtime_error(
-            "CompartmentReportBinary::updateMapping: GIDs out of range"));
+        BRION_THROW("CompartmentReportBinary::updateMapping: GIDs out of range")
     }
     if (intersection != gids)
     {
@@ -750,7 +756,7 @@ void CompartmentReportHDF5::_allocateDataSet()
     // Adding step / 2 to the window to avoid off by 1 errors during truncation
     // after the division.
     const size_t frames = (getEndTime() - getStartTime() + step * 0.5) / step;
-    LBASSERT(frames > 0);
+    BRION_ASSERT(frames > 0);
 
     HighFive::DataSpace dataspace(
         std::vector<size_t>{frames, _targetMapping.frameSize});
@@ -891,5 +897,6 @@ void CompartmentReportHDF5::_reopenDataSet(size_t cacheSizeHint)
     HighFive::Group allG = reportG.getGroup("All");
     _data.reset(new HighFive::DataSet(allG.getDataSet("data", accessProps)));
 }
-}
-}
+
+} // namespace plugin
+} // namespace brion

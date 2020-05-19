@@ -19,7 +19,7 @@
 
 #include "compartmentReportDummy.h"
 
-#include <lunchbox/pluginRegisterer.h>
+#include "../pluginLibrary.h"
 
 #include <boost/lexical_cast.hpp>
 #include <random>
@@ -28,10 +28,21 @@ namespace brion
 {
 namespace plugin
 {
+
 namespace
 {
-lunchbox::PluginRegisterer<CompartmentReportDummy> registerer;
-}
+class PluginRegisterer
+{
+public:
+    PluginRegisterer()
+    {
+        auto& pluginManager = PluginLibrary::instance().getManager<CompartmentReportPlugin>();
+        pluginManager.registerFactory<CompartmentReportDummy>();
+    }
+};
+
+PluginRegisterer registerer;
+} // namespace
 
 CompartmentReportDummy::CompartmentReportDummy(
     const CompartmentReportInitData& initData)
@@ -165,5 +176,6 @@ bool CompartmentReportDummy::_loadFrame(size_t frameNumber, float* buffer) const
     }
     return true;
 }
-}
-}
+
+} // namespace plugin
+} // namespace brion

@@ -19,8 +19,7 @@
 
 #include "simulationConfig.h"
 #include "detail/utils.h"
-
-#include <lunchbox/log.h>
+#include "log.h"
 
 #include <boost/filesystem/path.hpp>
 
@@ -160,7 +159,7 @@ std::string SimulationConfig::getCompartmentReportFilepath(
 {
     const auto i = _impl->reportFilepaths.find(name);
     if (i == _impl->reportFilepaths.end())
-        LBTHROW(std::runtime_error("Unknown report: " + name));
+        BRION_THROW("Unknown report: " + name)
     return i->second;
 }
 } // namespace brion

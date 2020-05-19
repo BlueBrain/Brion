@@ -19,12 +19,13 @@
  */
 
 #include "circuit.h"
+#include "log.h"
 
 #include <bitset>
 #include <boost/filesystem.hpp>
 #include <boost/tokenizer.hpp>
 #include <fstream>
-#include <lunchbox/log.h>
+
 #include <unordered_map>
 
 namespace brion
@@ -104,7 +105,7 @@ public:
             {
                 std::stringstream msg;
                 msg << "Cell GID out of range: " << gid;
-                LBTHROW(std::runtime_error(msg.str().c_str()));
+                BRION_THROW(msg.str())
             }
             indices.push_back(gid - 1);
         }

@@ -19,11 +19,13 @@
 
 #include "target.h"
 
+#include "log.h"
+
 #include <boost/algorithm/string.hpp>
 #include <boost/lexical_cast.hpp>
 #include <boost/regex.hpp>
+
 #include <fstream>
-#include <lunchbox/log.h>
 #include <unordered_map>
 
 namespace boost
@@ -52,7 +54,7 @@ public:
     {
         std::ifstream file(source.c_str());
         if (!file.is_open())
-            LBTHROW(std::runtime_error("Cannot open target file " + source));
+            BRION_THROW("Cannot open target file " + source)
         std::stringstream buffer;
         buffer << file.rdbuf();
 
@@ -85,7 +87,7 @@ public:
         }
 
         if (_targetNames.empty())
-            LBTHROW(std::runtime_error(source + " not a valid target file"));
+            BRION_THROW(source + " not a valid target file")
     }
 
     const Strings& getTargetNames(const TargetType type) const
@@ -161,7 +163,7 @@ const Strings& Target::get(const std::string& name) const
 GIDSet Target::parse(const Targets& targets, const std::string& root)
 {
     if (root.empty())
-        LBTHROW(std::runtime_error("Empty target name"));
+        BRION_THROW("Empty target name")
 
     GIDSet gids;
     Strings names(1, root);
@@ -194,8 +196,7 @@ GIDSet Target::parse(const Targets& targets, const std::string& root)
             break;
         }
         if (!found)
-            LBTHROW(std::runtime_error("Parse " + root + " failed: " + name +
-                                       " is not a valid or known target"));
+            BRION_THROW("Parse " + root + " failed: " + name + " is not a valid or known target")
     }
 
     return gids;

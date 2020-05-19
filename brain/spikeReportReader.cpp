@@ -19,9 +19,9 @@
 
 #include "spikeReportReader.h"
 
-#include <brion/spikeReport.h>
+#include "log.h"
 
-#include <lunchbox/log.h>
+#include <brion/spikeReport.h>
 
 namespace brain
 {
@@ -59,8 +59,7 @@ SpikeReportReader::~SpikeReportReader() = default;
 Spikes SpikeReportReader::getSpikes(const float startTime, const float endTime)
 {
     if (endTime <= startTime)
-        LBTHROW(std::logic_error(
-            "Start time should be strictly inferior to end time"));
+        BRAIN_THROW_IMPL(std::logic_error("Start time should be strictly inferior to end time"))
 
     if (_impl->_report.supportsBackwardSeek())
     {

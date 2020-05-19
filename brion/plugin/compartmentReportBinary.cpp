@@ -19,13 +19,11 @@
 
 #include "compartmentReportBinary.h"
 
-#include <lunchbox/debug.h>
-#include <lunchbox/intervalSet.h>
-#include <lunchbox/log.h>
-#include <lunchbox/memoryMap.h>
-#include <lunchbox/pluginRegisterer.h>
+#include "../log.h"
+#include "../pluginLibrary.h"
 
 #include <boost/filesystem/path.hpp>
+#include <boost/iostreams/device/mapped_file.hpp>
 
 #include <map>
 
@@ -171,8 +169,7 @@ void _initAIOControlBlock(aiocb& block, const AIOReadData& readData)
 void _readAsync(aiocb** operations, const size_t length)
 {
     if (lio_listio(LIO_WAIT, operations, length, nullptr) == -1)
-        LBTHROW(
-            std::runtime_error("Error in AIO setup: " + getErrorString(errno)));
+        BRION_THROW("Error in AIO setup: " + getErrorString(errno))
     for (size_t i = 0; i != length; ++i)
     {
         const size_t bytesRead = aio_return(operations[i]);
@@ -208,11 +205,8 @@ void _readAsync(const std::vector<AIOReadData>& readData)
 // If AIO is not available always use memory mapped files
 const bool _useMemoryMap = true;
 #endif
-}
+} // namespace
 
-namespace lunchbox
-{
-template <>
 inline void byteswap(CellInfo& value)
 {
     byteswap(value.gid);
@@ -221,7 +215,6 @@ inline void byteswap(CellInfo& value)
     byteswap(value.extraMappingOffset);
     byteswap(value.dataOffset);
 }
-}
 
 namespace brion
 {
@@ -229,8 +222,18 @@ namespace plugin
 {
 namespace
 {
-lunchbox::PluginRegisterer<CompartmentReportBinary> registerer;
-}
+class PluginRegisterer
+{
+public:
+    PluginRegisterer()
+    {
+        auto& pluginManager = PluginLibrary::instance().getManager<CompartmentReportPlugin>();
+        pluginManager.registerFactory<CompartmentReportBinary>();
+    }
+};
+
+PluginRegisterer registerer;
+} // namespace
 
 CompartmentReportBinary::CompartmentReportBinary(
     const CompartmentReportInitData& initData)
@@ -252,8 +255,7 @@ CompartmentReportBinary::CompartmentReportBinary(
 #endif
 
     if (initData.getAccessMode() != MODE_READ)
-        LBTHROW(std::runtime_error(
-            "Writing of binary compartments not implemented"));
+        BRION_THROW("Writing of binary compartments not implemented")
 
     if (_ioAPI == IOapi::posix_aio)
     {
@@ -273,19 +275,19 @@ CompartmentReportBinary::CompartmentReportBinary(
     }
 
     if (!_parseHeader())
-        LBTHROW(std::runtime_error("Parsing header failed"));
+        BRION_THROW("Parsing header failed")
 
     // Remapping the file until the end of the cell mapping if necessary.
     if (_ioAPI == IOapi::posix_aio)
     {
         if (!_remapFile(_dataOffset))
-            LBTHROW(std::runtime_error("Failed to memory map file"));
+            BRION_THROW("Failed to memory map file")
     }
 
     if (initData.initMapping)
     {
         if (!_parseMapping())
-            LBTHROW(std::runtime_error("Parsing mapping failed"));
+            BRION_THROW("Parsing mapping failed")
         updateMapping(initData.getGIDs());
     }
     else
@@ -325,7 +327,7 @@ bool CompartmentReportBinary::_remapFile(const size_t size)
 {
     if (_file.is_open())
         _file.close();
-    _file.open(_path, size);
+    _file.open(_path, std::ios_base::in | std::ios_base::out, size);
     return _file.is_open();
 }
 
@@ -407,7 +409,7 @@ bool CompartmentReportBinary::_loadFrameMemMap(const size_t frameNumber,
         {
 #pragma omp parallel for
             for (auto i = 0u; i < _sourceMapping.frameSize; ++i)
-                lunchbox::byteswap(buffer[i]);
+                byteswap(buffer[i]);
         }
         return true;
     }
@@ -431,7 +433,7 @@ bool CompartmentReportBinary::_loadFrameMemMap(const size_t frameNumber,
     {
 #pragma omp parallel for
         for (ssize_t i = 0; i < ssize_t(_targetMapping.frameSize); ++i)
-            lunchbox::byteswap(buffer[i]);
+            byteswap(buffer[i]);
     }
     return true;
 }
@@ -488,7 +490,7 @@ void CompartmentReportBinary::_loadFramesAIO(const size_t frameNumber,
     {
 #pragma omp parallel for
         for (size_t i = 0; i < readCount; ++i)
-            lunchbox::byteswap(buffer[i]);
+            byteswap(buffer[i]);
     }
 }
 #else
@@ -556,7 +558,7 @@ floatsPtr CompartmentReportBinary::loadNeuron(const uint32_t gid) const
     {
 #pragma omp parallel for
         for (ssize_t i = 0; i < ssize_t(nValues); ++i)
-            lunchbox::byteswap((*buffer)[i]);
+            byteswap((*buffer)[i]);
     }
 
     return buffer;
@@ -565,7 +567,7 @@ floatsPtr CompartmentReportBinary::loadNeuron(const uint32_t gid) const
 void CompartmentReportBinary::updateMapping(const GIDSet& gids)
 {
     if (_sourceMapping.frameSize == 0 && !_parseMapping())
-        LBTHROW(std::runtime_error("Parsing mapping failed"));
+        BRION_THROW("Parsing mapping failed")
 
     if (gids.empty())
     {
@@ -587,8 +589,7 @@ void CompartmentReportBinary::updateMapping(const GIDSet& gids)
     const GIDSet intersection = _computeIntersection(_originalGIDs, _gids);
     if (intersection.empty())
     {
-        LBTHROW(std::runtime_error(
-            "CompartmentReportBinary::updateMapping: GIDs out of range"));
+        BRION_THROW("CompartmentReportBinary::updateMapping: GIDs out of range")
     }
     if (intersection != _gids)
     {
@@ -606,13 +607,13 @@ void CompartmentReportBinary::writeHeader(const double /*startTime*/,
                                           const std::string& /*dunit*/,
                                           const std::string& /*tunit*/)
 {
-    LBUNIMPLEMENTED;
+    BRION_THROW("CompartmentReportBinary::writeHeader not implemented")
 }
 
 bool CompartmentReportBinary::writeCompartments(const uint32_t /*gid*/,
                                                 const uint16_ts& /*counts*/)
 {
-    LBUNIMPLEMENTED;
+    BRION_THROW("CompartmentReportBinary::writeCompartments not implemented")
     return false;
 }
 
@@ -621,19 +622,19 @@ bool CompartmentReportBinary::writeFrame(const uint32_t /*gid*/,
                                          const size_t /*size*/,
                                          const double /*timestamp*/)
 {
-    LBUNIMPLEMENTED;
+    BRION_THROW("CompartmentReportBinary::writeFrame not implemented")
     return false;
 }
 
 bool CompartmentReportBinary::flush()
 {
-    LBUNIMPLEMENTED;
+    BRION_THROW("CompartmentReportBinary::flush not implemented")
     return false;
 }
 
 bool CompartmentReportBinary::_parseHeader()
 {
-    const uint8_t* ptr = reinterpret_cast<const uint8_t*>(_file.data());
+    const uint8_t* ptr = reinterpret_cast<const uint8_t*>(_file.const_data());
     if (!ptr)
         return false;
 
@@ -659,15 +660,14 @@ bool CompartmentReportBinary::_parseHeader()
 
     if (_header.byteswap)
     {
-        lunchbox::byteswap(_header);
-        lunchbox::byteswap(_startTime);
-        lunchbox::byteswap(_endTime);
-        lunchbox::byteswap(_timestep);
-
+        byteswap(_header);
+        byteswap(_startTime);
+        byteswap(_endTime);
+        byteswap(_timestep);
         if (_header.identifier != ARCHITECTURE_IDENTIFIER)
         {
-            LBERROR << "File is corrupt or originated from an unknown "
-                    << "architecture." << std::endl;
+            BRION_ERROR << "File is corrupt or originated from an unknown "
+                      << "architecture." << std::endl;
             return false;
         }
     }
@@ -682,7 +682,7 @@ bool CompartmentReportBinary::_parseHeader()
     // This is needed for remapping the file before reading the GIDs.
     _dataOffset = get<uint64_t>(ptr, DATA_INFO + _header.headerSize);
     if (_header.byteswap)
-        lunchbox::byteswap(_dataOffset);
+        byteswap(_dataOffset);
 
     return true;
 }
@@ -695,7 +695,7 @@ void CompartmentReportBinary::_parseGIDs()
     {
         auto gid = get<int32_t>(ptr, i * SIZE_CELL_INFO_LENGTH);
         if (_header.byteswap)
-            lunchbox::byteswap(gid);
+            byteswap(gid);
         _originalGIDs.insert(gid);
     }
 }
@@ -732,13 +732,13 @@ bool CompartmentReportBinary::_parseMapping()
         cell.dataOffset = get<uint64_t>(ptr, DATA_INFO + offset);
         if (cell.dataOffset < _dataOffset)
         {
-            LBERROR << "Bad offset in report mapping" << std::endl;
+            BRION_ERROR << "Bad offset in report mapping" << std::endl;
             return false;
         }
         offset += SIZE_CELL_INFO_LENGTH;
 
         if (_header.byteswap)
-            lunchbox::byteswap(cell);
+            byteswap(cell);
 
         cell.accumCompartments = totalCompartments;
         totalCompartments += cell.numCompartments;
@@ -761,8 +761,8 @@ bool CompartmentReportBinary::_parseMapping()
     for (size_t idx = 0; idx < cells.size(); ++idx)
     {
         const CellInfo& info = cells[idx];
-        uint16_t current = LB_UNDEFINED_UINT16;
-        uint16_t previous = LB_UNDEFINED_UINT16;
+        uint16_t current = std::numeric_limits<uint16_t>().max();
+        uint16_t previous = std::numeric_limits<uint16_t>().max();
         uint16_t count = 0;
 
         // < sectionID, < frameIndex, numCompartments > >
@@ -780,7 +780,7 @@ bool CompartmentReportBinary::_parseMapping()
                              j * _mappingItemSize * _header.mappingSize);
             float value = get<float>(ptr, pos);
             if (_header.byteswap)
-                lunchbox::byteswap(value);
+                byteswap(value);
             assert(value < 65536);
             current = value;
 
@@ -793,7 +793,7 @@ bool CompartmentReportBinary::_parseMapping()
                 sectionsMapping.push_back(
                     std::make_pair(current, std::make_pair(frameIndex, 0)));
 
-                if (previous != LB_UNDEFINED_UINT16)
+                if (previous != std::numeric_limits<uint16_t>().max())
                     sectionsMapping[sectionsMapping.size() - 2].second.second =
                         count;
 
@@ -810,7 +810,7 @@ bool CompartmentReportBinary::_parseMapping()
 
         // get maximum section id
         const uint16_t maxID = sectionsMapping.rbegin()->first;
-        sectionOffsets.resize(maxID + 1, LB_UNDEFINED_UINT64);
+        sectionOffsets.resize(maxID + 1, std::numeric_limits<uint64_t>().max());
         sectionCompartmentCounts.resize(maxID + 1, 0);
 
         for (auto sectionInfo : sectionsMapping)
@@ -823,5 +823,6 @@ bool CompartmentReportBinary::_parseMapping()
 
     return true;
 }
-}
-}
+
+} // namespace plugin
+} // namespace brion

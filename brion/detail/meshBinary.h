@@ -22,10 +22,11 @@
 
 #include "mesh.h"
 
+#include "../log.h"
+
 #include <fstream>
-#include <lunchbox/debug.h>
-#include <lunchbox/log.h>
-#include <lunchbox/memoryMap.h>
+
+#include <boost/iostreams/device/mapped_file.hpp>
 
 namespace brion
 {
@@ -59,10 +60,10 @@ public:
     explicit MeshBinary(const std::string& source)
         : Mesh(source)
         , _mmap(source)
-        , _ptr(reinterpret_cast<const uint8_t*>(_mmap.getAddress()))
+        , _ptr(reinterpret_cast<const uint8_t*>(_mmap.data()))
     {
         if (!_ptr)
-            LBTHROW(std::runtime_error("Could not open mesh file: " + source));
+            BRION_THROW("Could not open mesh file: " + source)
 
         size_t pos = 0;
         _vertices = get<uint32_t>(_ptr, pos);
@@ -76,7 +77,7 @@ public:
         _tristripSeek = _triangleSeek + _triangles * 3 * sizeof(uint32_t);
 
         // if the version is contained in the current file apply offset
-        if (_mmap.getSize() != _tristripSeek + _tristrip * sizeof(uint32_t))
+        if (_mmap.size() != _tristripSeek + _tristrip * sizeof(uint32_t))
         {
             _version = get<MeshVersion>(_ptr, pos);
 
@@ -103,8 +104,7 @@ public:
         , _tristripSeek(0)
     {
         if (!_file.is_open())
-            LBTHROW(std::runtime_error("Could not open mesh file " + source +
-                                       " for writing "));
+            BRION_THROW("Could not open mesh file " + source + " for writing ")
 
         _vertexSeek = sizeof(uint32_t) * 4;
 
@@ -198,9 +198,8 @@ public:
     virtual void writeVertexSections(const uint16_ts& vSections)
     {
         if (_vertices != vSections.size())
-            LBTHROW(
-                std::runtime_error("Number of vertices does not match "
-                                   "number of vertex sections"));
+            BRION_THROW("Number of vertices does not match number of vertex sections")
+
         _file.seekp(_vSectionSeek);
         _file.write((const char*)vSections.data(),
                     vSections.size() * sizeof(uint16_t));
@@ -209,9 +208,8 @@ public:
     virtual void writeVertexDistances(const floats& vDistances)
     {
         if (_vertices != vDistances.size())
-            LBTHROW(
-                std::runtime_error("Number of vertices does not match "
-                                   "number of vertex distances"));
+            BRION_THROW("Number of vertices does not match number of vertex distances")
+
         _file.seekp(_vDistanceSeek);
         _file.write((const char*)vDistances.data(),
                     vDistances.size() * sizeof(float));
@@ -220,10 +218,9 @@ public:
     virtual void writeTriangles(const uint32_ts& triangles)
     {
         if (_vertices == 0)
-            LBTHROW(
-                std::runtime_error("No vertices written before "
-                                   "triangles"));
-        LBASSERT(triangles.size() % 3 == 0);
+            BRION_THROW("No vertices written before triangles")
+
+        BRION_ASSERT(triangles.size() % 3 == 0)
         _triangles = uint32_t(triangles.size() / 3);
 
         // initialize seek position of triangle strip depending on triangles
@@ -238,24 +235,18 @@ public:
 
     virtual void writeTriangleSections(const uint16_ts& /*tSections*/)
     {
-        LBTHROW(
-            std::runtime_error("No triangle sections support for binary "
-                               "mesh files"));
+        BRION_THROW("No triangle sections support for binary mesh files")
     }
 
     virtual void writeTriangleDistances(const floats& /*tDistances*/)
     {
-        LBTHROW(
-            std::runtime_error("No triangle distances support for binary "
-                               "mesh files"));
+        BRION_THROW("No triangle distances support for binary mesh files")
     }
 
     virtual void writeTriStrip(const uint32_ts& tristrip)
     {
         if (_vertices == 0)
-            LBTHROW(
-                std::runtime_error("No vertices written before "
-                                   "tristrip"));
+            BRION_THROW("No vertices written before tristrip")
 
         _tristrip = uint32_t(tristrip.size());
         _file.seekp(2 * sizeof(uint32_t));
@@ -267,41 +258,33 @@ public:
 
     virtual void writeNormals(const Vector3fs& /*normals*/)
     {
-        LBTHROW(
-            std::runtime_error("No normal support for binary mesh "
-                               "files"));
+        BRION_THROW("No normal support for binary mesh files")
     }
 
     virtual void writeStructureVertices(const Vector3fs& /*vertices*/,
                                         const MeshStructure /*type*/,
                                         const size_t /*index*/)
     {
-        LBTHROW(
-            std::runtime_error("No structural mesh support for binary "
-                               "mesh files"));
+        BRION_THROW("No structural mesh support for binary mesh files")
     }
 
     virtual void writeStructureTriangles(const uint32_ts& /*triangles*/,
                                          const MeshStructure /*type*/,
                                          const size_t /*index*/)
     {
-        LBTHROW(
-            std::runtime_error("No structural mesh support for binary "
-                               "mesh files"));
+        BRION_THROW("No structural mesh support for binary mesh files")
     }
 
     virtual void writeStructureTriStrip(const uint32_ts& /*tristrip*/,
                                         const MeshStructure /*type*/,
                                         const size_t /*index*/)
     {
-        LBTHROW(
-            std::runtime_error("No structural mesh support for binary "
-                               "mesh files"));
+        BRION_THROW("No structural mesh support for binary mesh files")
     }
 
     virtual void flush() { _file.flush(); }
 private:
-    lunchbox::MemoryMap _mmap;
+    boost::iostreams::mapped_file _mmap;
     const uint8_t* const _ptr;
     std::ofstream _file;
 

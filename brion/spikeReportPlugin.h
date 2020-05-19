@@ -32,57 +32,14 @@
 
 namespace brion
 {
-/**
- * Basic plugin init data for SpikeReportPlugin.
- * @version 2.0
- */
-using SpikeReportInitData = PluginInitData;
-
 /** Base interface for spike report readers plugins.
- *
- * The following example creates a new plugin and registers it:
- * @code
- * class MyReport : public SpikeReportPlugin
- * {
- *     MyReport( const SpikeReportInitData& initData );
- *     static bool handles( const SpikeReportInitData& initData );
- *     ...
- * };
- * ...
- * // in the .cpp file
- * namespace
- * {
- *     PluginRegisterer< MyReport > registerer;
- * }
- * @endcode
- *
- * Plugins can also be provided by shared libraries discovered at runtime.
- *
- * In this case, the registration must be occur from an extern C function named
- * LunchboxPluginRegister():
- * @code
- * // in the .cpp file
- * extern "C" int LunchboxPluginGetVersion() { return BRION_VERSION_ABI; }
- * extern "C" bool LunchboxPluginRegister()
- * {
- *     PluginRegisterer< MyReport > registerer;
- *     return true;
- * }
- * @endcode
- *
- * Plugin libraries in the LD_LIBRARY_PATH will be automatically registered if
- * they provide the abovementioned C functions and follow the naming convention:
- * \<lib_prefix\>Brion\<MyReportName\>SpikeReport.\<lib_extension\>
  *
  * @version 2.0
  */
 class SpikeReportPlugin : public boost::noncopyable
 {
 public:
-    /** @internal Needed by the PluginRegisterer. */
-    typedef SpikeReportPlugin InterfaceT;
-    /** @internal Needed by the PluginRegisterer. */
-    typedef PluginInitData InitDataT;
+    using DataT = PluginInitData;
 
     using State = SpikeReport::State;
 
@@ -245,7 +202,7 @@ private:
 
 namespace std
 {
-inline string to_string(const brion::SpikeReportInitData& data)
+inline string to_string(const brion::PluginInitData& data)
 {
     return to_string(data.getURI());
 }

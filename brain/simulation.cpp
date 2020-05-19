@@ -21,6 +21,7 @@
 #include "detail/simulation.h"
 
 #include "compartmentReport.h"
+#include "log.h"
 #include "spikeReportReader.h"
 
 namespace brain
@@ -60,7 +61,7 @@ CompartmentReport Simulation::openCompartmentReport(
 {
     const auto path = _impl->getCompartmentReportSource(name);
     if (path == brain::URI{})
-        throw std::runtime_error("Invalid or missing report: " + name);
+        BRAIN_THROW("Invalid or missing report: " + name)
     return CompartmentReport{path};
 }
 

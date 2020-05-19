@@ -20,6 +20,8 @@
 #include "compartmentReportView.h"
 #include "detail/compartmentReport.h"
 
+#include <brion/threadPool.h>
+
 namespace brain
 {
 namespace
@@ -141,7 +143,7 @@ std::future<brion::Frames> CompartmentReportView::load(double start, double end,
         return frames;
     };
 
-    return lunchbox::ThreadPool::getInstance().post(task);
+    return brion::ThreadPool::getInstance().post(task);
 }
 
 std::future<brion::Frames> CompartmentReportView::loadAll()
