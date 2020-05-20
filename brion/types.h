@@ -21,10 +21,11 @@
 #define BRION_TYPES
 
 #include <brion/enums.h>
+#include <brion/uint128_t.h>
+#include <brion/uri.h>
 
 #include <boost/multi_array.hpp>
 #include <map>
-#include <servus/uri.h>
 #include <set>
 #include <vector>
 
@@ -56,8 +57,6 @@ class SpikeReportPlugin;
 class Synapse;
 class SynapseSummary;
 class Target;
-
-using servus::uint128_t;
 
 using chars         = std::vector<char>;
 using uchars        = std::vector<unsigned char>;
@@ -172,7 +171,6 @@ const float MINIMUM_VOLTAGE BRION_UNUSED = -80.;
 
 using Strings = std::vector<std::string>;
 
-using servus::URI;
 using URIs = std::vector<URI>;
 }
 

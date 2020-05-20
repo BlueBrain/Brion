@@ -218,7 +218,7 @@ void _parse(Spikes& spikes, const std::string& filename,
         if (!parse(line.c_str(), spike))
         {
             BRION_THROW("Parsing spike times file " + filename + " failed at line "
-                      + std::to_string(lineNumber)));
+                      + std::to_string(lineNumber))
         }
         spikes.emplace_back(spike);
 

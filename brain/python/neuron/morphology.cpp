@@ -22,7 +22,7 @@
 
 #include "../arrayHelpers.h"
 #include "../helpers.h"
-#include "docstrings.h"
+#include "../pythonDocumentation.h"
 
 #include <brain/neuron/morphology.h>
 #include <brain/neuron/section.h>
@@ -192,75 +192,50 @@ void export_Morphology()
 
 const auto selfarg = bp::arg("self");
 
-// Do not modify whitespace on DOXY_FN lines
-
 bp::class_<SomaWrapper>(
-    "Soma", DOXY_CLASS(brain::neuron::Soma), bp::no_init)
-    .def("profile_points", Soma_getProfilePoints, (selfarg),
-         DOXY_FN(brain::neuron::Soma::getProfilePoints))
-    .def("mean_radius", &Soma::getMeanRadius, (selfarg),
-         DOXY_FN(brain::neuron::Soma::getMeanRadius))
-    .def("max_radius", &Soma::getMaxRadius, (selfarg),
-         DOXY_FN(brain::neuron::Soma::getMaxRadius))
-    .def("centroid", &Soma::getCentroid, (selfarg),
-         DOXY_FN(brain::neuron::Soma::getCentroid))
-    .def("children", &SomaWrapper::getChildren, (selfarg),
-         DOXY_FN(brain::neuron::Soma::getChildren));
+    "Soma", SOMA_CLASS_DOXY, bp::no_init)
+    .def("profile_points", Soma_getProfilePoints, (selfarg), SOMA_GETPROFILEPOINTS_DOXY)
+    .def("mean_radius", &Soma::getMeanRadius, (selfarg), SOMA_GETMEANRADIUS_DOXY)
+    .def("max_radius", &Soma::getMaxRadius, (selfarg), SOMA_GETMAXRADIUS_DOXY)
+    .def("centroid", &Soma::getCentroid, (selfarg), SOMA_GETCENTROID_DOXY)
+    .def("children", &SomaWrapper::getChildren, (selfarg), SOMA_GETCHILDREN_DOXY);
 
 bp::class_<SectionWrapper>(
-    "Section", DOXY_CLASS(brain::neuron::Section), bp::no_init)
+    "Section", SECTION_CLASS_DOXY, bp::no_init)
     .def(bp::self == bp::self)
-    .def("id", &Section::getID, (selfarg),
-         DOXY_FN(brain::neuron::Section::getID))
+    .def("id", &Section::getID, (selfarg), SECTION_GETID_DOXY)
     .def("__getitem__", Section_getIndex)
-    .def("type", &Section::getType, (selfarg),
-         DOXY_FN(brain::neuron::Section::getType))
-    .def("length", &Section::getLength, (selfarg),
-         DOXY_FN(brain::neuron::Section::getLength))
-    .def("samples", Section_getSamples, (selfarg),
-         DOXY_FN(brain::neuron::Section::getSamples() const))
+    .def("type", &Section::getType, (selfarg), SECTION_GETTYPE_DOXY)
+    .def("length", &Section::getLength, (selfarg), SECTION_GETLENGTH_DOXY)
+    .def("samples", Section_getSamples, (selfarg), SECTION_GETSAMPLES_DOXY)
     .def("samples", Section_getSamplesFromPositions,
-         (selfarg, bp::arg("positions")),
-         DOXY_FN(brain::neuron::Section::getSamples(const floats&) const))
-    .def("num_samples", &Section::getNumSamples, (selfarg),
-         DOXY_FN(brain::neuron::Section::getNumSamples))
+         (selfarg, bp::arg("positions")), SECTION_GETSAMPLES_FLT_DOXY)
+    .def("num_samples", &Section::getNumSamples, (selfarg), SECTION_GETNUMSAMPLES_DOXY)
     .def("distance_to_soma", &Section::getDistanceToSoma, (selfarg),
-         DOXY_FN(brain::neuron::Section::getDistanceToSoma))
+         SECTION_GETDISTANCETOSOMA_DOXY)
     .def("sample_distances_to_soma", Section_getSampleDistancesToSoma, (selfarg),
-         DOXY_FN(brain::neuron::Section::getSampleDistancesToSoma))
-    .def("parent", Section_getParent, (selfarg),
-         DOXY_FN(brain::neuron::Section::getParent))
-    .def("children", &SectionWrapper::getChildren, (selfarg),
-         DOXY_FN(brain::neuron::Section::getChildren));
+         SECTION_GETSAMPLEDISTANCESTOSOMA_DOXY)
+    .def("parent", Section_getParent, (selfarg), SECTION_GETPARENT_DOXY)
+    .def("children", &SectionWrapper::getChildren, (selfarg), SECTION_GETCHILDREN_DOXY);
 
 bp::class_<Morphology, boost::noncopyable, MorphologyPtr>(
-    "Morphology", DOXY_CLASS(brain::neuron::Morphology), bp::no_init)
-    .def("__init__", bp::make_constructor(Morphology_initFromURI),
-         DOXY_FN(brain::neuron::Morphology::Morphology(const URI&)))
+    "Morphology", MORPHOLOGY_CLASS_DOXY, bp::no_init)
+    .def("__init__", bp::make_constructor(Morphology_initFromURI), MORPHOLOGY_CONSTRUCTOR_DOXY)
     .def("__init__",
-         bp::make_constructor(Morphology_initFromURIAndTransform),
-         DOXY_FN(brain::neuron::Morphology::Morphology(const URI&, const glm::mat4&)))
-    // The following docstrings are given explictly because the return types
-    // are special and the original documentation uses @sa, which points
-    // nowhere.
-    .def("points", Morphology_getPoints, (selfarg),
-         "Return a 4xN numpy array with the x,y,z and radius of all the "
-         "points of this morphology.")
-    .def("sections", Morphology_getSections, (selfarg),
-         "Return a 2xN numpy array with the parent ID and first point "
-         "offset of each section.")
-    .def("section_types", Morphology_getSectionTypes, (selfarg),
-         "Return a numpy array with the section types.")
+         bp::make_constructor(Morphology_initFromURIAndTransform), MORPHOLOGY_CTOR_MATRIX_URI_DOXY)
+
+    .def("points", Morphology_getPoints, (selfarg), MORPHOLOGY_GETPOINTS_DOXY)
+    .def("sections", Morphology_getSections, (selfarg), MORPHOLOGY_GETSECTIONS_DOXY)
+    .def("section_types", Morphology_getSectionTypes, (selfarg), MORPHOLOGY_GETSECTIONTYPES_DOXY)
     .def("section_ids", Morphology_getSectionIDs, (selfarg, bp::arg("types")),
-         DOXY_FN(brain::neuron::Morphology::getSectionIDs))
+         MORPHOLOGY_GETSECTIONIDS_DOXY)
     .def("sections", Morphology_getSectionsByType, (selfarg, bp::arg("type")),
-         DOXY_FN(brain::neuron::Morphology::getSections(const SectionTypes&) const))
+         MORPHOLOGY_GETSECTIONS_BYTYPE_DOXY)
     .def("section", Morphology_getSection, (selfarg, bp::arg("id")),
-         DOXY_FN(brain::neuron::Morphology::getSections(SectionType) const))
-    .def("soma", Morphology_getSoma, (selfarg),
-         DOXY_FN(brain::neuron::Morphology::getSoma))
+         MORPHOLOGY_GETSECTIONS_BYTYPE_NC_DOXY)
+    .def("soma", Morphology_getSoma, (selfarg), MORPHOLOGY_GETSOMA_DOXY)
     .def("transformation", Morphology_getTransformation, (selfarg),
-         DOXY_FN(brain::neuron::Morphology::getTransformation));
+         MORPHOLOGY_GETTRANSFORMATION_DOXY);
 }
 // clang-format on
 }

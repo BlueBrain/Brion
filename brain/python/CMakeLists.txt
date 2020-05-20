@@ -1,100 +1,91 @@
 # Copyright (c) 2013-2018, EPFL/Blue Brain Project
 #                          ahmet.bilgili@epfl.ch
 #                          juan.hernando@epfl.ch
+#                          nadir.romanguerrero@epfl.ch
 #
 # This file is part of Brion <https://github.com/BlueBrain/Brion>
 #
 
-if(NOT Boost_PYTHON${USE_BOOST_PYTHON_VERSION}_LIBRARY OR
-   NOT PYTHON_EXECUTABLE OR NOT NUMPY_FOUND)
+# Cannot compile python bindings if no boost python or python interpreter is found
+if(NOT Boost_PYTHON3_LIBRARY OR
+    NOT PYTHON_EXECUTABLE OR NOT NUMPY_FOUND)
 
-  message(STATUS "Not configured brain.py: Boost.Python, Python or Numpy not found")
-  return()
+    message(STATUS "Not configured brain.py: Boost.Python, Python or Numpy not found")
+    return()
 endif()
-
-if(COMMON_LIBRARY_TYPE MATCHES "SHARED" AND NOT PYTHONLIBS_FOUND)
-  message(STATUS "Not configured brain.py: PythonLibs not found")
-  return()
-endif()
-
-include(PythonDocstrings)
 
 set(BRAINPYTHONHELPERS_PUBLIC_HEADERS
-  arrayHelpers.h
-  arrayHelpers.inc
-  helpers.h
-  )
+    arrayHelpers.h
+    arrayHelpers.inc
+    helpers.h
+)
 
 set(BRAINPYTHONHELPERS_SOURCES
-  arrayHelpers.cpp
-  helpers.cpp
-  )
+    arrayHelpers.cpp
+    helpers.cpp
+)
 
-set(BRAINPYTHONHELPERS_INCLUDE_NAME brain/python)
-set(BRAINPYTHONHELPERS_NAMESPACE brain_python)
+set(PYTHON_INCLUDE_DIRS ${PROJECT_SOURCE_DIR}/python)
 
-set(BRAINPYTHONHELPERS_LINK_LIBRARIES PUBLIC Servus glm ${Boost_PYTHON${USE_BOOST_PYTHON_VERSION}_LIBRARY})
+# Create the python type translator helpers library
+add_library(BrainPythonHelpers SHARED ${BRAINPYTHONHELPERS_PUBLIC_HEADERS} ${BRAINPYTHONHELPERS_SOURCES})
+target_include_directories(BrainPythonHelpers PUBLIC
+                                $<BUILD_INTERFACE:${PYTHON_INCLUDE_DIRS}>
+                                $<INSTALL_INTERFACE:include/brain>)
+target_include_directories(BrainPythonHelpers PRIVATE ${PYTHON_INCLUDE_PATH})
+target_link_libraries(BrainPythonHelpers PUBLIC glm)
+target_link_libraries(BrainPythonHelpers PUBLIC ${Boost_PYTHON3_LIBRARY})
+target_link_libraries(BrainPythonHelpers PUBLIC Brain)
 
-common_library(BrainPythonHelpers MODULE ${BRAIN_PYTHON_HELPER_SOURCES})
+set_target_properties(BrainPythonHelpers
+    PROPERTIES
+        VERSION ${BRION_VERSION_STRING}
+        SOVERSION ${BRION_VERSION_MAJOR}.${BRION_VERSION_MINOR}
+)
 
 set(BRAIN_PYTHON_SOURCES
-  brain.cpp
-  circuit.cpp
-  simulation.cpp
-  compartmentReport.cpp
-  spikeReportReader.cpp
-  spikeReportWriter.cpp
-  synapses.cpp
-  neuron/morphology.cpp
+    brain.cpp
+    circuit.cpp
+    simulation.cpp
+    compartmentReport.cpp
+    spikeReportReader.cpp
+    spikeReportWriter.cpp
+    synapses.cpp
+    spikes.cpp
+    submodules.cpp
+    test.cpp
+    neuron/module.cpp
+    neuron/morphology.cpp
 )
-
-docstrings(BRAIN_PYTHON_SOURCES BRAIN_PUBLIC_HEADERS
-  ${PROJECT_BINARY_DIR}/include)
-
-list(APPEND BRAIN_PYTHON_SOURCES
-  spikes.cpp
-  submodules.cpp
-  test.cpp
-  neuron/module.cpp
-  ${PROJECT_BINARY_DIR}/docstrings/cpp/docstrings.cpp
-)
-
-include_directories(${PROJECT_BINARY_DIR}/docstrings/cpp
-                    ${PYTHON_INCLUDE_DIRS}
-                    ${PYTHON_NUMPY_INCLUDE_DIR})
 
 add_library(brain_python MODULE ${BRAIN_PYTHON_SOURCES})
-common_compile_options(brain_python)
+
+# Adds compile options using the custom function from CMake/CompileOptions.cmake
+compile_options(brain_python)
+
+target_include_directories(brain_python PRIVATE ${PYTHON_INCLUDE_PATH})
+target_include_directories(brain_python PUBLIC ${PYTHON_INCLUDE_DIRS})
+target_include_directories(brain_python PUBLIC ${PYTHON_NUMPY_INCLUDE_DIR})
+
+
 if(TARGET ${PROJECT_NAME}-docstrings)
-  add_dependencies(brain_python Brain ${PROJECT_NAME}-docstrings)
-  target_compile_definitions(brain_python PRIVATE BRAIN_HAS_DOCSTRINGS)
+    add_dependencies(brain_python Brain ${PROJECT_NAME}-docstrings)
+    target_compile_definitions(brain_python PRIVATE BRAIN_HAS_DOCSTRINGS)
 endif()
 
-set(_brain_python_libs BrainPythonHelpers Brain ${Boost_PYTHON${USE_BOOST_PYTHON_VERSION}_LIBRARY})
-# this is needed for the python wheel case where we are STATIC and shall not
-# link python libraries.
-if(COMMON_LIBRARY_TYPE MATCHES "SHARED")
-  list(APPEND _brain_python_libs ${PYTHON_LIBRARIES})
-else()
-  if(APPLE)
-    # Do not give error on undefined symbols when linking the Python module.
-    # This is needed when building for a wheel package, as the module must not
-    # link explicitly against any Python runtime library.
-    set_target_properties(brain_python PROPERTIES LINK_FLAGS "-undefined dynamic_lookup")
-  endif()
-endif()
-target_link_libraries(brain_python PRIVATE ${_brain_python_libs})
+target_link_libraries(brain_python PRIVATE BrainPythonHelpers)
+target_link_libraries(brain_python PRIVATE Brain)
+target_link_libraries(brain_python PRIVATE ${PYTHON_LIBRARIES})
+target_link_libraries(brain_python PRIVATE ${Boost_PYTHON3_LIBRARY})
 if(BBPTESTDATA_FOUND)
   target_link_libraries(brain_python PRIVATE BBPTestData)
 endif()
 
 set_target_properties(brain_python PROPERTIES
-  OUTPUT_NAME "_brain" PREFIX ""
-  LIBRARY_OUTPUT_DIRECTORY ${CMAKE_LIBRARY_OUTPUT_DIRECTORY}/brain)
-configure_file(brain/__init__.py.in
-               ${CMAKE_LIBRARY_OUTPUT_DIRECTORY}/brain/__init__.py)
+    OUTPUT_NAME "_brain" PREFIX ""
+    LIBRARY_OUTPUT_DIRECTORY ${CMAKE_LIBRARY_OUTPUT_DIRECTORY}/brain)
 
-add_dependencies(Brion-all brain_python)
+configure_file(brain/__init__.py.in ${CMAKE_LIBRARY_OUTPUT_DIRECTORY}/brain/__init__.py)
 
 macro(COPY_AND_INSTALL_PACKAGE_DIRECTORY DIRECTORY)
     file(COPY brain/${DIRECTORY}

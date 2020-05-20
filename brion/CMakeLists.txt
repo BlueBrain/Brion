@@ -12,7 +12,11 @@ if(CPPCHECK_VERSION VERSION_LESS 1.78)
   list(APPEND CPPCHECK_EXTRA_ARGS --error-exitcode=0)
 endif()
 
+configure_file(version.h.in
+               ${CMAKE_BINARY_DIR}/include/brion/version.h)
+
 set(BRION_PUBLIC_HEADERS
+  api.h
   blueConfig.h
   circuit.h
   compartmentReport.h
@@ -36,6 +40,8 @@ set(BRION_PUBLIC_HEADERS
   circuitConfig.h
   csvConfig.h
   log.h
+  uint128_t.h
+  uri.h
   )
 
 set(BRION_HEADERS
@@ -49,6 +55,21 @@ set(BRION_HEADERS
   detail/skipWhiteSpace.h
   detail/utils.h
   detail/utilsHDF5.h
+  md5/md5.hh
+  plugin/compartmentReportBinary.h
+  plugin/compartmentReportCommon.h
+  plugin/compartmentReportDummy.h
+  plugin/compartmentReportHDF5.h
+  plugin/compartmentReportLegacyHDF5.h
+  plugin/morphologyHDF5.h
+  plugin/morphologySWC.h
+  plugin/spikeReportASCII.h
+  plugin/spikeReportBinary.h
+  plugin/spikeReportBluron.h
+  plugin/spikeReportHDF5.h
+  plugin/spikeReportNEST.h
+  plugin/utilsHDF5.h
+  serializable.h
   threadPool.h
   )
 
@@ -63,42 +84,103 @@ set(BRION_SOURCES
   synapseSummary.cpp
   synapse.cpp
   target.cpp
-  threadPool.cpp
   nodes.cpp
   nodeGroup.cpp
   circuitConfig.cpp
   csvConfig.cpp
   detail/utils.cpp
+  md5/md5.cc
+  plugin/compartmentReportBinary.cpp
+  plugin/compartmentReportCommon.cpp
+  plugin/compartmentReportDummy.cpp
+  plugin/compartmentReportHDF5.cpp
+  plugin/compartmentReportLegacyHDF5.cpp
+  plugin/morphologyHDF5.cpp
+  plugin/morphologySWC.cpp
+  plugin/spikeReportASCII.cpp
+  plugin/spikeReportBinary.cpp
+  plugin/spikeReportBluron.cpp
+  plugin/spikeReportHDF5.cpp
+  plugin/spikeReportNEST.cpp
+  plugin/utilsHDF5.cpp
+  serializable.cpp
+  threadPool.cpp
+  uint128_t.cpp
+  uri.cpp
+  version.cpp
   )
 
+set(BRION_INCLUDE_DIR ${PROJECT_SOURCE_DIR}/brion)
+
+# Create library target
+add_library(Brion SHARED ${BRION_PUBLIC_HEADERS} ${BRION_HEADERS} ${BRION_SOURCES})
+
+# Compile options (CMake/CompileOptions.cmake)
+compile_options(Brion)
+#target_compile_options(Brion PRIVATE -Werror -O3)# -fno-strict-aliasing)
 if(MSVC)
-  add_definitions(/wd4251) # missing dll-interface for H5::Exception
+  target_compile_definitions(Brion PUBLIC /wd4251) # missing dll-interface for H5::Exception
 endif()
 
-add_subdirectory(plugin)
+# Include directories
+# Normal includes
+target_include_directories(Brion PUBLIC
+                            $<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}>
+                            $<INSTALL_INTERFACE:$/include>)
+# Autoconfigured version file
+target_include_directories(Brion PUBLIC
+                            $<BUILD_INTERFACE:${CMAKE_BINARY_DIR}/include>
+                            $<INSTALL_INTERFACE:$/include>)
+target_include_directories(Brion PUBLIC
+                            $<BUILD_INTERFACE:${BRION_INCLUDE_DIR}/plugin>
+                            $<INSTALL_INTERFACE:$/include/Brion>)
+target_include_directories(Brion PUBLIC ${Boost_INCLUDE_DIRS})
 
-set(_plugin_lib BrionPlugins)
-
-# when linking Brion statically, only visible and used symbols from an
-# application or shared library will be linked. Meaning the plugin registerers
-# for simulation reports and morphologies are skipped. This code adds the
-# linker options to include all symbols from BrionPlugins in the final library.
-if(COMMON_LIBRARY_TYPE MATCHES "STATIC" AND
-    (CMAKE_CXX_COMPILER_ID MATCHES "Clang" OR
-      CMAKE_COMPILER_IS_GCC))
-  if(APPLE)
-    set(_plugin_lib -Wl,-force_load BrionPlugins)
-  else()
-    # As --whole-archive serves as a switch, it has to be reset for any
-    # subsequent library.
-    set(_plugin_lib -Wl,--whole-archive BrionPlugins -Wl,--no-whole-archive)
-  endif()
+# Link libraries
+target_link_libraries(Brion PUBLIC glm)
+target_link_libraries(Brion PRIVATE HighFive)
+target_link_libraries(Brion PRIVATE ${Boost_FILESYSTEM_LIBRARIES})
+target_link_libraries(Brion PRIVATE ${Boost_REGEX_LIBRARIES})
+target_link_libraries(Brion PRIVATE ${CMAKE_THREADS_LIB_INIT})
+target_link_libraries(Brion PRIVATE ${CMAKE_THREADS_LIB_INIT})
+target_link_libraries(Brion PRIVATE ${Boost_IOSTREAMS_LIBRARIES})
+target_link_libraries(Brion PRIVATE ${CMAKE_THREADS_LIB_INIT})
+if(UNIX)
+    target_link_libraries(Brion PRIVATE dl)
+    target_link_libraries(Brion PRIVATE rt)
 endif()
 
-set(BRION_PUBLIC_INCLUDE_DIRECTORIES ${Boost_INCLUDE_DIRS})
-set(BRION_LINK_LIBRARIES
-  PUBLIC Servus glm
-  PRIVATE HighFive ${Boost_FILESYSTEM_LIBRARIES} ${Boost_REGEX_LIBRARIES} ${CMAKE_THREADS_LIB_INIT} ${_plugin_lib} dl rt
+set_target_properties(Brion
+    PROPERTIES
+        VERSION ${BRION_VERSION_STRING}
+        SOVERSION ${BRION_VERSION_MAJOR}.${BRION_VERSION_MINOR}
 )
 
-common_library(Brion)
+# Export target
+install(TARGETS Brion
+    EXPORT Brion-targets
+    LIBRARY DESTINATION lib
+    ARCHIVE DESTINATION lib
+    INCLUDES DESTINATION include
+)
+
+install(
+  EXPORT Brion-targets
+  NAMESPACE brion::
+  FILE brionConfig.cmake
+  DESTINATION share/brion/CMake
+)
+
+install(FILES ${CMAKE_BINARY_DIR}/include/brion/version.h
+        DESTINATION include/brion)
+
+install(DIRECTORY ${PROJECT_SOURCE_DIR}/brion
+        DESTINATION include
+        FILES_MATCHING PATTERN "*.h")
+
+export(
+    EXPORT Brion-targets
+    FILE "share/brion/CMake/brionConfig.cmake"
+)
+
+export(PACKAGE brion)

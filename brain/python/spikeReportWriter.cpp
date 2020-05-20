@@ -24,7 +24,7 @@
 #include <brain/types.h>
 
 #include "arrayHelpers.h"
-#include "docstrings.h"
+#include "pythonDocumentation.h"
 
 namespace bp = boost::python;
 
@@ -85,14 +85,10 @@ void export_SpikeReportWriter()
 
 bp::class_<SpikeReportWriter, boost::noncopyable>(
     "SpikeReportWriter", bp::no_init)
-    .def("__init__", bp::make_constructor(_initURI),
-         DOXY_FN(brain::SpikeReportWriter::SpikeReportWriter(const brion::URI&)))
-    .def("close", &SpikeReportWriter::close,
-         DOXY_FN(brain::SpikeReportWriter::close))
+    .def("__init__", bp::make_constructor(_initURI), SPIKEREPORTWRITER_CONSTRUCTOR_DOXY)
+    .def("close", &SpikeReportWriter::close, SPIKEREPORTWRITER_CLOSE_DOXY)
     .def("write_spikes", &SpikeReportWriter_writeSpikes,
-         (bp::arg("self"), bp::arg("spikes")),
-         DOXY_FN(brain::SpikeReportWriter::writeSpikes(const Spikes&)))
-    ;
+         (bp::arg("self"), bp::arg("spikes")), SPIKEREPORTWRITER_WRITESPIKES_DOXY);
 }
 // clang-format on
 }

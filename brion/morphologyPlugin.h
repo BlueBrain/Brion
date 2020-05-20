@@ -23,8 +23,8 @@
 #include <brion/api.h>
 #include <brion/morphology.h>     // Needed by doxygen
 #include <brion/pluginInitData.h> // base class
+#include <brion/serializable.h> // base class
 #include <brion/types.h>
-#include <servus/serializable.h> // base class
 
 namespace brion
 {
@@ -87,7 +87,7 @@ public:
  *
  * @version 1.4
  */
-class MorphologyPlugin : public servus::Serializable
+class MorphologyPlugin : public brion::Serializable
 {
 public:
     using DataT = MorphologyInitData;
@@ -132,7 +132,7 @@ protected:
     // Serializable API
     std::string getTypeName() const final { return "brion::MorphologyPlugin"; }
     bool _fromBinary(const void* data, const size_t size) final;
-    servus::Serializable::Data _toBinary() const final;
+    brion::Serializable::Data _toBinary() const final;
 };
 }
 

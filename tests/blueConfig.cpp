@@ -18,8 +18,6 @@
  * This file is part of Brion <https://github.com/BlueBrain/Brion>
  */
 
-#ifdef BRION_USE_BBPTESTDATA
-
 #include <BBP/TestDatasets.h>
 #include <brion/brion.h>
 
@@ -223,5 +221,3 @@ BOOST_AUTO_TEST_CASE(parse_target)
 
     BOOST_CHECK_THROW(config.parseTarget("unexistent"), std::runtime_error);
 }
-
-#endif

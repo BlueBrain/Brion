@@ -1,13 +1,12 @@
-[submodule "CMake/common"]
-	path = CMake/common
-	url = https://github.com/Eyescale/CMake
-[submodule "Pydoxine"]
-	path = Pydoxine
-	url = https://github.com/BlueBrain/Pydoxine
-[submodule "libsonata"]
-	path = libsonata
-	url = https://github.com/BlueBrain/libsonata.git
-	branch = master
 [submodule "deps/glm"]
 	path = deps/glm
 	url = https://github.com/g-truc/glm
+[submodule "deps/libsonata"]
+	path = deps/libsonata
+	url = https://github.com/BlueBrain/libsonata.git
+[submodule "deps/HighFive"]
+	path = deps/HighFive
+	url = https://github.com/BlueBrain/HighFive.git
+[submodule "deps/MVDTool"]
+	path = deps/MVDTool
+	url = https://github.com/BlueBrain/MVDTool.git

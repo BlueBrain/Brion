@@ -22,9 +22,15 @@
 
 #include "compartmentReportCommon.h"
 
-#include <byteswap.h>
-
 #include <boost/iostreams/device/mapped_file.hpp>
+
+#ifdef __APPLE__
+#include <libkern/OSByteOrder.h>
+#define bswap_32(x) OSSwapInt32(x)
+#define bswap_64(x) OSSwapInt64(x)
+#else
+#include <byteswap.h>
+#endif
 
 namespace brion
 {
@@ -138,6 +144,11 @@ inline void byteswap(int& value)
 }
 
 inline void byteswap(unsigned long& value)
+{
+    value = bswap_64(value);
+}
+
+inline void byteswap(unsigned long long& value)
 {
     value = bswap_64(value);
 }

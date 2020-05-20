@@ -21,7 +21,7 @@
 #include <cstring>
 #include <vector>
 
-#include <servus/serializable.h>
+#include <brion/serializable.h>
 
 namespace brion
 {
@@ -71,9 +71,9 @@ bool _deserializeArray(std::vector<T>& dst, const uint8_t*& src,
 }
 }
 
-servus::Serializable::Data inline MorphologyPlugin::_toBinary() const
+Serializable::Data inline MorphologyPlugin::_toBinary() const
 {
-    servus::Serializable::Data data;
+    Serializable::Data data;
     data.size = sizeof(MorphologyVersion) + sizeof(CellFamily) +
                 _getSerializationSize(_points) +
                 _getSerializationSize(_sections) +

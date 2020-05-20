@@ -19,8 +19,8 @@
  */
 
 #include "arrayHelpers.h"
-#include "docstrings.h"
 #include "helpers.h"
+#include "pythonDocumentation.h"
 
 #include <brain/compartmentReport.h>
 #include <brain/compartmentReportMapping.h>
@@ -184,49 +184,48 @@ const auto selfarg = bp::arg("self");
 bp::class_<CompartmentReport, boost::noncopyable, CompartmentReportPtr>(
     "CompartmentReport", bp::no_init)
     .def("__init__", bp::make_constructor(CompartmentReport_initURI),
-         DOXY_FN(brain::CompartmentReport::CompartmentReport(const URI&)))
+         COMPARTMENTREPORT_CONSTRUCTOR_DOXY)
     .add_property("metadata", CompartmentReport_getMetaData,
-                  DOXY_FN(brain::CompartmentReport::getMetaData))
+                  COMPARTMENTREPORT_GEMETADATA_DOXY)
     .add_property("gids", CompartmentReport_getGids,
-                  DOXY_FN(brain::CompartmentReport::getGIDs))
+                  COMPARTMENTREPORT_GETGIDS_DOXY)
     .add_property("cell_count", &CompartmentReport::getCellCount,
-                  DOXY_FN(brain::CompartmentReport::getCellCount))
+                  COMPARTMENTREPORT_GETCELLCOUNT_DOXY)
     .def("create_view", CompartmentReport_createView,
-         (selfarg, bp::arg("gids")),
-         DOXY_FN(brain::CompartmentReport::createView(const GIDSet&)))
+         (selfarg, bp::arg("gids")), COMPARTMENTREPORT_CREATEVIEW_DOXY)
     .def("create_view", CompartmentReport_createViewEmptyGIDs, (selfarg),
-         DOXY_FN(brain::CompartmentReport::createView()));
+         COMPARTMENTREPORT_CREATEVIEW_EMPTY_DOXY);
 
 bp::class_<CompartmentReportMappingProxy>("CompartmentReportMapping",
                                           bp::no_init)
     .def("num_compartments", &CompartmentReportMappingProxy::getNumCompartments,
-         DOXY_FN(brain::CompartmentReportMapping::getNumCompartments))
+         COMPARTMENTREPORTMAPPINGPROXY_GETNUMCOMPARTMENTS_DOXY)
     .add_property("index", CompartmentReportMapping_getIndex,
-                  DOXY_FN(brain::CompartmentReportMapping::getIndex))
+                  COMPARTMENTREPORTMAPPINGPROXY_GETINDEX_DOXY)
     .add_property("offsets", CompartmentReportMapping_getOffsets,
-                  DOXY_FN(brain::CompartmentReportMapping::getOffsets))
+                  COMPARTMENTREPORTMAPPINGPROXY_GETOFFSETS_DOXY)
     .add_property("frame_size", &CompartmentReportMappingProxy::getFrameSize,
-                  DOXY_FN(brain::CompartmentReportMapping::getFrameSize))
+                  COMPARTMENTREPORTMAPPINGPROXY_GETFRAMESIZE_DOXY)
     .def("compartment_counts",
          CompartmentReportMapping_getCompartmentCounts, (selfarg),
-         DOXY_FN(brain::CompartmentReportMapping::getCompartmentCounts));
+         COMPARTMENTREPORTMAPPINGPROXY_GETCOMPARTMENTCOUNTS_DOXY);
 
 bp::class_<CompartmentReportView, CompartmentReportViewPtr, boost::noncopyable>(
     "CompartmentReportView", bp::no_init)
     .add_property("gids", CompartmentReportView_getGids,
-                  DOXY_FN(brain::CompartmentReportView::getGIDs))
+                  COMPARTMENTREPORTVIEW_GETGIDS_DOXY)
     .add_property("mapping", CompartmentReportView_getMapping,
-                  DOXY_FN(brain::CompartmentReportView::getMapping))
+                  COMPARTEMENTREPORTVIEW_GETMAPPING_DOXY)
     .def("load", CompartmentReportView_loadAt, (selfarg, bp::arg("time")),
-         DOXY_FN(brain::CompartmentReportView::load(double)))
+         COMPARTMENTREPORTVIEW_LOAD_DOXY)
     .def("load", CompartmentReportView_load,
          (selfarg, bp::arg("start"), bp::arg("end")),
-         DOXY_FN(brain::CompartmentReportView::load(double,double)))
+         COMPARTMENTREPORTVIEW_LOAD_DBLDBL_DOXY)
     .def("load", CompartmentReportView_load2,
          (selfarg, bp::arg("start"), bp::arg("end"), bp::arg("stride")),
-         DOXY_FN(brain::CompartmentReportView::load(double,double,double)))
+         COMPARTMENTREPORTVIEW_LOAD_DBLDBLDBL_DOXY)
     .def("load_all", CompartmentReportView_loadAll, (selfarg),
-         DOXY_FN(brain::CompartmentReportView::loadAll));
+         COMPARTMENTREPORTVIEW_LOADALL_DOXY);
 }
 // clang-format on
 }

@@ -1,0 +1,10 @@
+OUTPUT_DIRECTORY       = @PROJECT_BINARY_DIR@/doc/
+INPUT                  = @PROJECT_SOURCE_DIR@/brion/ \
+                         @PROJECT_SOURCE_DIR@/brain/ \
+                         @PROJECT_SOURCE_DIR@/doc \
+                         @CMAKE_INSTALL_PREFIX@/brain/include
+DOXYFILE_ENCODING      = UTF-8
+PROJECT_NAME           = @PROJECT_NAME@
+PROJECT_NUMBER         = @PROJECT_VERSION_MAJOR@.@PROJECT_VERSION_MINOR@.@PROJECT_VERSION_PATCH@
+USE_MDFILE_AS_MAINPAGE = README.md
+PREDEFINED             = "BRAIN_API:="

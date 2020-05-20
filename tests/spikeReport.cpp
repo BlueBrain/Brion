@@ -20,7 +20,6 @@
 
 #include <BBP/TestDatasets.h>
 #include <brion/brion.h>
-#include <servus/uint128_t.h>
 #include <tests/paths.h>
 
 #include <iostream>
@@ -57,7 +56,7 @@ public:
     const std::string tmpFileName;
 
     explicit TemporaryData(const std::string& reportType)
-        : tmpFileName("/tmp/" + servus::make_UUID().getString() + "." +
+        : tmpFileName("/tmp/" + brion::make_UUID().getString() + "." +
                       reportType)
     {
         spikes.push_back({0.1f, 20});

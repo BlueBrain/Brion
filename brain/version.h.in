@@ -1,0 +1,67 @@
+/* Copyright (c) 2020, EPFL/Blue Brain Project
+ *                          Nadir Román Guerrero <nadir.romanguerrero@epfl.ch>
+ *
+ * This file is part of Brion <https://github.com/BlueBrain/Brion>
+ *
+ * This library is free software; you can redistribute it and/or modify it under
+ * the terms of the GNU Lesser General Public License version 3.0 as published
+ * by the Free Software Foundation.
+ *
+ * This library is distributed in the hope that it will be useful, but WITHOUT
+ * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
+ * FOR A PARTICULAR PURPOSE.  See the GNU Lesser General Public License for more
+ * details.
+ *
+ * You should have received a copy of the GNU Lesser General Public License
+ * along with this library; if not, write to the Free Software Foundation, Inc.,
+ * 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
+ */
+
+#ifndef BRAIN_VERSION_H
+#define BRAIN_VERSION_H
+
+#include <brain/api.h>
+#include <string>
+
+namespace brain
+{
+    /** The current major version. */
+#   define BRAIN_VERSION_MAJOR ${BRION_VERSION_MAJOR}
+
+    /** The current minor version. */
+#   define BRAIN_VERSION_MINOR ${BRION_VERSION_MINOR}
+
+    /** The current patch level. */
+#   define BRAIN_VERSION_PATCH ${BRION_VERSION_PATCH}
+
+    /** The current SCM revision. */
+#   define BRAIN_VERSION_REVISION ${BRION_GIT_HASH}
+
+    /** The current major.minor.version as a string. */
+#   define BRAIN_VERSION_STRING "${BRION_VERSION_STRING}"
+
+#   define BRAIN_REV_STRING "${BRION_REV_STRING}"
+
+/** Information about the current Brain version. */
+class BRAIN_API Version
+{
+public:
+    /** @return the current major version of Brain. */
+    static int getMajor();
+
+    /** @return the current minor version of Brain. */
+    static int getMinor();
+
+    /** @return the current patch level of Brain. */
+    static int getPatch();
+
+    /** @return the current Brain version (MM.mm.pp). */
+    static std::string getString();
+
+    /** @return the SCM revision. */
+    static unsigned long long getRevision();
+};
+
+}
+
+#endif

@@ -20,8 +20,6 @@
 #include <brion/brion.h>
 #include <brion/log.h>
 
-#include <servus/uri.h>
-
 #ifdef BRION_USE_BBPTESTDATA
 #include <BBP/TestDatasets.h>
 #endif
@@ -145,7 +143,7 @@ int main(const int argc, char** argv)
 
     if (vm.count("erase"))
     {
-        servus::URI outURI(vm["erase"].as<std::string>());
+        brion::URI outURI(vm["erase"].as<std::string>());
         brion::CompartmentReport report(outURI, brion::MODE_READ);
         if (report.erase())
             return EXIT_SUCCESS;
@@ -172,7 +170,7 @@ int main(const int argc, char** argv)
         return EXIT_FAILURE;
     }
 
-    servus::URI inURI(input);
+    brion::URI inURI(input);
     brion::CompartmentReport in(inURI, brion::MODE_READ);
     const std::chrono::high_resolution_clock::time_point loadTime1 
                     = std::chrono::high_resolution_clock::now();
@@ -206,7 +204,7 @@ int main(const int argc, char** argv)
     const auto& counts = in.getCompartmentCounts();
     const auto& gids = in.getGIDs();
 
-    servus::URI outURI(vm["output"].as<std::string>());
+    brion::URI outURI(vm["output"].as<std::string>());
     if (outURI.getPath().empty())
     {
         try

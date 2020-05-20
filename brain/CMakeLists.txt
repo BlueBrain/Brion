@@ -4,7 +4,12 @@
 # This file is part of Brion <https://github.com/BlueBrain/Brion>
 #
 
+# Generate the version include file
+configure_file(version.h.in
+               ${CMAKE_BINARY_DIR}/include/brain/version.h)
+
 set(BRAIN_PUBLIC_HEADERS
+  api.h
   circuit.h
   compartmentReport.h
   compartmentReportView.h
@@ -47,26 +52,75 @@ set(BRAIN_SOURCES
   synapses.cpp
   synapsesIterator.cpp
   synapsesStream.cpp
+  version.cpp
 )
 
-set(BRAIN_PUBLIC_INCLUDE_DIRECTORIES ${Boost_INCLUDE_DIRS})
-set(BRAIN_LINK_LIBRARIES
-  PUBLIC Brion glm
-  PRIVATE sonata::sonata_shared ${Boost_FILESYSTEM_LIBRARIES} dl rt
+set(BRAIN_INCLUDE_DIR ${PROJECT_SOURCE_DIR}/brain)
+
+# Create library target
+add_library(Brain SHARED ${BRAIN_PUBLIC_HEADERS} ${BRAIN_HEADERS} ${BRAIN_SOURCES})
+
+# Compile options
+#target_compile_options(Brain PRIVATE -Werror -O3)# -fno-strict-aliasing)
+# Calls custom function to add compilation definitions (CMake/CompileOptions.cmake)
+compile_options(Brain)
+
+# Include directories
+target_include_directories(Brain PUBLIC
+                            $<BUILD_INTERFACE:${BRAIN_INCLUDE_DIR}>
+                            $<INSTALL_INTERFACE:include>)
+target_include_directories(Brain PUBLIC
+                            $<BUILD_INTERFACE:${CMAKE_BINARY_DIR}/include>
+                            $<INSTALL_INTERFACE:$/include>)
+target_include_directories(Brain PUBLIC ${Boost_INCLUDE_DIRS})
+
+# Link libraries
+target_link_libraries(Brain PUBLIC Brion)
+target_link_libraries(Brain PUBLIC glm)
+target_link_libraries(Brain PRIVATE sonata::sonata_shared)
+target_link_libraries(Brain PRIVATE HighFive)
+target_link_libraries(Brain PRIVATE ${Boost_FILESYSTEM_LIBRARIES})
+target_link_libraries(Brain PRIVATE MVDTool)
+if(UNIX)
+    target_link_libraries(Brain PRIVATE dl)
+    target_link_libraries(Brain PRIVATE rt)
+endif()
+
+set_target_properties(Brain
+    PROPERTIES
+        VERSION ${BRION_VERSION_STRING}
+        SOVERSION ${BRION_VERSION_MAJOR}.${BRION_VERSION_MINOR}
 )
 
-set(BRAIN_INCLUDE_NAME brain)
-set(BRAIN_NAMESPACE brain)
+# Export target
+install(TARGETS Brain
+    EXPORT Brain-targets
+    LIBRARY DESTINATION lib
+    ARCHIVE DESTINATION lib
+    INCLUDES DESTINATION include
+)
 
-if(TARGET MVDTool)
-  list(APPEND BRAIN_LINK_LIBRARIES PRIVATE MVDTool)
-endif()
+# Install includes
+install(DIRECTORY ${PROJECT_SOURCE_DIR}/brain
+        DESTINATION include
+        FILES_MATCHING PATTERN "*.h")
 
-#set(BRAIN_OMIT_EXPORT ON)
+# Install version.h header file
+install(FILES ${CMAKE_BINARY_DIR}/include/brain/version.h
+        DESTINATION include/brain)
 
-common_library(Brain)
-if(TARGET MVDTool)
-  target_compile_definitions(Brain PUBLIC BRAIN_USE_MVD3)
-endif()
+install(
+  EXPORT Brain-targets
+  NAMESPACE brain::
+  FILE brainConfig.cmake
+  DESTINATION share/brain/CMake
+)
+
+export(
+    EXPORT Brain-targets
+    FILE "share/brain/CMake/brainConfig.cmake"
+)
+
+export(PACKAGE brain)
 
 add_subdirectory(python)

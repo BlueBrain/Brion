@@ -25,8 +25,6 @@
 
 #include "arrayHelpers.h"
 
-#include "docstrings.h"
-
 #include "../compartmentReport.h"
 
 namespace brain
@@ -68,7 +66,7 @@ struct Vector4fToTuple
 
 struct URItoString
 {
-    static PyObject* convert(const servus::URI& uri)
+    static PyObject* convert(const brion::URI& uri)
     {
         boost::python::object result(std::to_string(uri));
         return boost::python::incref(result.ptr());
@@ -77,21 +75,22 @@ struct URItoString
 
 BOOST_PYTHON_MODULE(_brain)
 {
-#ifdef BRAIN_HAS_DOCSTRINGS
     /* Only change the default Boost.Python options for documentation if we
        are going to get docstrings from doxygen. */
     boost::python::docstring_options doc_options(true, true, false);
-#endif
-
-    boost::python::to_python_converter<servus::URI, URItoString>();
+    boost::python::to_python_converter<brion::URI, URItoString>();
     boost::python::to_python_converter<glm::vec3, Vector3fToTuple>();
     boost::python::to_python_converter<glm::vec4, Vector4fToTuple>();
 
     brain_python::importArray();
 
-    boost::python::enum_<brain::SynapsePrefetch>("SynapsePrefetch",
-                                                 DOXY_ENUM(
-                                                     brain::SynapsePrefetch))
+    boost::python::enum_<brain::SynapsePrefetch>(
+                "SynapsePrefetch",
+                "\nLoading of data during reading, otherwise load happens on-demand.\n\n"
+                "*Values:*\n"
+                "*  : \nonly loads pre- and post GIDs \n"
+                "*  : \ntopological information (section, segment, distance) and model attributes \n"
+                "*  : \npre/post surface/center positions \n *  : \nall synapse data \n")
         .value("none", brain::SynapsePrefetch::none)
         .value("attributes", brain::SynapsePrefetch::attributes)
         .value("positions", brain::SynapsePrefetch::positions)

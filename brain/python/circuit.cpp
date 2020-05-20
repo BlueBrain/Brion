@@ -21,13 +21,14 @@
 #include <boost/python/stl_iterator.hpp>
 
 #include "arrayHelpers.h"
-#include "docstrings.h"
 #include "helpers.h"
+#include "pythonDocumentation.h"
 #include "types.h"
 
 #include <brain/circuit.h>
 #include <brain/synapses.h>
 #include <brain/synapsesStream.h>
+
 
 namespace bp = boost::python;
 
@@ -203,7 +204,7 @@ void export_Circuit()
 {
 
 bp::class_<Circuit, boost::noncopyable, CircuitPtr> circuitWrapper(
-    "Circuit", DOXY_CLASS(brain::Circuit), bp::no_init);
+    "Circuit", CIRCUIT_CLASS_DOXY, bp::no_init);
 
 bp::scope circuitScope = circuitWrapper;
 
@@ -213,63 +214,44 @@ bp::enum_<Circuit::Coordinates>("Coordinates")
 
 const auto selfarg = bp::arg("self");
 
-// Do not modify whitespace on DOXY_FN lines
 circuitWrapper
-    .def("__init__", bp::make_constructor(Circuit_initFromURI),
-         DOXY_FN(brain::Circuit::Circuit(const URI&)))
-    .def("source", Circuit_getSource, (selfarg),
-         DOXY_FN(brain::Circuit::getSource))
-    .def("gids", Circuit_getAllGIDs, (selfarg),
-         DOXY_FN(brain::Circuit::getGIDs() const))
-    .def("gids", Circuit_getGIDs, (selfarg, bp::arg("target")),
-         DOXY_FN(brain::Circuit::getGIDs(const std::string&) const))
+    .def("__init__", bp::make_constructor(Circuit_initFromURI), CIRCUIT_CONSTRUCTOR_DOXY)
+    .def("source", Circuit_getSource, (selfarg), CIRCUIT_GETSOURCE_DOXY)
+    .def("gids", Circuit_getAllGIDs, (selfarg), CIRCUIT_GETGIDS_DOXY)
+    .def("gids", Circuit_getGIDs, (selfarg, bp::arg("target")), CIRCUIT_GETGIDS_TARGET_DOXY)
     .def("random_gids", Circuit_getRandomTargetGIDs,
-         (selfarg, bp::arg("fraction"), bp::arg("target")),
-         DOXY_FN(brain::Circuit::getRandomGIDs(float, const std::string&) const))
+         (selfarg, bp::arg("fraction"), bp::arg("target")), CIRCUIT_GETRANDOMGIDS_TARGET_DOXY)
     .def("random_gids", Circuit_getRandomGIDs,
-         (selfarg, bp::arg("fraction")),
-         DOXY_FN(brain::Circuit::getRandomGIDs(float) const))
+         (selfarg, bp::arg("fraction")), CIRCUIT_GETRANDOMGIDS_DOXY)
     .def("morphology_uris", Circuit_getMorphologyURIs,
-         (selfarg, bp::arg("gids")),
-         DOXY_FN(brain::Circuit::getMorphologyURIs))
+         (selfarg, bp::arg("gids")), CIRCUIT_GETMORPHOLOGYURIS_DOXY)
     .def("load_morphologies", Circuit_loadMorphologies,
-         (selfarg, bp::arg("gids"), bp::arg("coords")),
-         DOXY_FN(brain::Circuit::loadMorphologies))
-    .def("positions", Circuit_getPositions, (selfarg, bp::arg("gids")),
-         DOXY_FN(brain::Circuit::getPositions))
+         (selfarg, bp::arg("gids"), bp::arg("coords")), CIRCUIT_LOADMORPHOLOGIES_DOXY)
+    .def("positions", Circuit_getPositions, (selfarg, bp::arg("gids")), CIRCUIT_GETPOSITIONS_DOXY)
     .def("morphology_types", Circuit_getMorphologyTypes,
-         (selfarg, bp::arg("gids")),
-         DOXY_FN(brain::Circuit::getMorphologyTypes))
+         (selfarg, bp::arg("gids")), CIRCUIT_GETMORPHOLOGYTYPES_DOXY)
     .def("morphology_type_names", Circuit_getMorphologyTypeNames, (selfarg),
-         DOXY_FN(brain::Circuit::getMorphologyTypeNames))
+         CIRCUIT_GETMORPHOLOGYTYPENAMES_DOXY)
     .def("electrophysiology_types", Circuit_getElectrophysiologyTypes,
-         (selfarg, bp::arg("gids")),
-         DOXY_FN(brain::Circuit::getElectrophysiologyTypes))
+         (selfarg, bp::arg("gids")), CIRCUIT_GETELECTROPHYSIOLOGYTYPES_DOXY)
     .def("electrophysiology_type_names",
          Circuit_getElectrophysiologyTypeNames, (selfarg),
-         DOXY_FN(brain::Circuit::getElectrophysiologyTypeNames))
+         CIRCUIT_GETELECTROPHYSIOLOGYTYPENAMES_DOXY)
     .def("transforms", Circuit_getTransforms, (selfarg, bp::arg("gids")),
-         DOXY_FN(brain::Circuit::getTransforms))
+         CIRCUIT_GETRANSFORMS_DOXY)
     .def("rotations", Circuit_getRotations, (selfarg, bp::arg("gids")),
-         DOXY_FN(brain::Circuit::getRotations))
-    .def("num_neurons", &Circuit::getNumNeurons, (selfarg),
-         DOXY_FN(brain::Circuit::getNumNeurons))
-    .def("afferent_synapses", Circuit_getAfferentSynapses,
-         (selfarg, bp::arg("gids"),
-          bp::arg("prefetch") = SynapsePrefetch::none),
-         DOXY_FN(brain::Circuit::getAfferentSynapses))
+         CIRCUIT_GETROTATIONS_DOXY)
+    .def("num_neurons", &Circuit::getNumNeurons, (selfarg), CIRCUIT_GETNUMNEURONS_DOXY)
+    .def("afferent_synapses", Circuit_getAfferentSynapses, (selfarg, bp::arg("gids"),
+         bp::arg("prefetch") = SynapsePrefetch::none), CIRCUIT_GETAFFERENTSYNAPSES_DOXY)
     .def("external_afferent_synapses", Circuit_getExternalAfferentSynapses,
-         (selfarg, bp::arg("gids"), bp::arg("source"),
-          bp::arg("prefetch") = SynapsePrefetch::none),
-         DOXY_FN(brain::Circuit::getExternalAfferentSynapses))
-    .def("efferent_synapses", Circuit_getEfferentSynapses,
-         (selfarg, bp::arg("gids"),
-          bp::arg("prefetch") = SynapsePrefetch::none),
-         DOXY_FN(brain::Circuit::getEfferentSynapses))
+         (selfarg, bp::arg("gids"), bp::arg("source"), bp::arg("prefetch")=SynapsePrefetch::none),
+         CIRCUIT_GETEXTERNALAFFERENTSYNAPSES_DOXY)
+    .def("efferent_synapses", Circuit_getEfferentSynapses, (selfarg, bp::arg("gids"),
+         bp::arg("prefetch") = SynapsePrefetch::none), CIRCUIT_GETEFFERENTSYNAPSES_DOXY)
     .def("projected_synapses", Circuit_getProjectedSynapses,
          (selfarg, bp::arg("preGids"), bp::arg("postGIDs"),
-          bp::arg("prefetch") = SynapsePrefetch::none),
-         DOXY_FN(brain::Circuit::getProjectedSynapses));
+          bp::arg("prefetch") = SynapsePrefetch::none), CIRCUIT_GETPROJECTEDSYNAPSES_DOXY);
 }
 // clang-format on
 }

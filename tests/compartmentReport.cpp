@@ -18,8 +18,6 @@
  * This file is part of Brion <https://github.com/BlueBrain/Brion>
  */
 
-#ifdef BRION_USE_BBPTESTDATA
-
 #include <BBP/TestDatasets.h>
 
 #include <brion/brion.h>
@@ -752,4 +750,3 @@ BOOST_AUTO_TEST_CASE(dummy_report)
 
     BOOST_CHECK_NE(report3a.getFrameSize(), report2.getFrameSize());
 }
-#endif
