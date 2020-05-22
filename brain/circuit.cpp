@@ -511,7 +511,7 @@ uint32_ts Circuit::getProjectedEfferentGIDs(
                 uniqueIds.insert(oldId - 1);
         }
 
-        const size_ts nodeIds (uniqueIds.begin(), uniqueIds.end());
+        const std::vector<uint64_t> nodeIds (uniqueIds.begin(), uniqueIds.end());
         uint32_ts result;
         const bbp::sonata::EdgeStorage edgeStorage (projPath);
         for(const auto& name : edgeStorage.populationNames())

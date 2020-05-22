@@ -539,8 +539,8 @@ struct Synapses::SonataImpl : public Synapses::InternalBaseImpl
             const bbp::sonata::Selection s = _afferent? edges.afferentEdges(nodeIds)
                                                       : edges.efferentEdges(nodeIds);
 
-            const size_ts preGidsTemp = edges.sourceNodeIDs(s);
-            const size_ts postGidsTemp = edges.targetNodeIDs(s);
+            const std::vector<uint64_t> preGidsTemp = edges.sourceNodeIDs(s);
+            const std::vector<uint64_t> postGidsTemp = edges.targetNodeIDs(s);
 
             // Result ids must be incremented by one to return in the same
             // range as the input source GIDs
