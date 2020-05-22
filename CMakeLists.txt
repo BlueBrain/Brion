@@ -96,6 +96,17 @@ add_subdirectory(apps)
 add_subdirectory(tests)
 
 # Generate C++ API Documentation
+# General doxygen target to drive all documentation build
+if(NOT TARGET doxygen)
+        add_custom_target(doxygen)
+        set_target_properties(doxygen PROPERTIES EXCLUDE_FROM_DEFAULT_BUILD ON)
+endif()
+# Dummy target for Jenkins
+if(NOT TARGET doxycopy)
+    add_custom_target(doxycopy)
+    set_target_properties(doxycopy PROPERTIES EXCLUDE_FROM_DEFAULT_BUILD ON)
+endif()
+add_dependencies(doxycopy doxygen)
 if(BRION_BUILD_DOC)
     set(DOXYGEN_MAINPAGE_MD README.md)
     set(DOXYGEN_EXPAND_AS_DEFINED "BRAIN_API BRION_API")

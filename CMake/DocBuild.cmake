@@ -11,12 +11,15 @@ if(Doxygen_FOUND)
     configure_file(${DOXYGEN_IN} ${DOXYGEN_OUT} @ONLY)
 
     # note the option ALL which allows to build the docs together with the application
-    add_custom_target( Brion_doxygen ALL
+    add_custom_target( Brion-doxygen ALL
         COMMAND ${DOXYGEN_EXECUTABLE} ${DOXYGEN_OUT}
         WORKING_DIRECTORY ${PROJECT_BINARY_DIR}
         COMMENT "Generating API documentation with Doxygen"
         VERBATIM )
     message(STATUS "Generating documentation with Doxygen")
+    
+    add_dependencies(doxygen Brion-doxygen)
+
 else(Doxygen_FOUND)
   message("Doxygen need to be installed to generate the doxygen documentation")
 endif(Doxygen_FOUND)
