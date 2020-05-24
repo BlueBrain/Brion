@@ -89,11 +89,32 @@ add_subdirectory(deps)
 add_subdirectory(brion)
 add_subdirectory(brain)
 
+# Tests
+# Generate global test targets. Needed even if tests are not built (CI Jobs)
+if(NOT TARGET tests)
+    add_custom_target(tests)
+    set_target_properties(tests PROPERTIES
+        EXCLUDE_FROM_DEFAULT_BUILD ON FOLDER ${PROJECT_BINARY_DIR}/tests)
+endif()
+add_custom_target(Brion-tests)
+set_target_properties(Brion-tests PROPERTIES
+  EXCLUDE_FROM_DEFAULT_BUILD ON FOLDER ${PROJECT_BINARY_DIR}/tests)
+add_dependencies(tests Brion-tests)
+
+if(NOT TARGET smoketests)
+    add_custom_target(smoketests)
+    set_target_properties(smoketests PROPERTIES
+        EXCLUDE_FROM_DEFAULT_BUILD ON FOLDER ${PROJECT_BINARY_DIR}/tests)
+endif()
+add_custom_target(Brion-smoketests)
+set_target_properties(Brion-smoketests PROPERTIES
+  EXCLUDE_FROM_DEFAULT_BUILD ON FOLDER ${PROJECT_BINARY_DIR}/tests)
+add_dependencies(smoketests Brion-smoketests)
+
+add_subdirectory(tests)
+
 # Utilities
 add_subdirectory(apps)
-
-# Tests
-add_subdirectory(tests)
 
 # Generate C++ API Documentation
 # General doxygen target to drive all documentation build

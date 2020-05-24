@@ -6,23 +6,13 @@
 #
 # Change this number when adding tests to force a CMake run: 3
 
+# Generate the target that will drive all the tests
+
 # Tests cannot be run without the test data
 if(NOT BBPTestData_FOUND)
   message(STATUS "Skipping Brion Tests. Test generation requires test data")
   return()
 endif()
-
-if(NOT TARGET tests)
-    add_custom_target(tests PROPERTIES
-        EXCLUDE_FROM_DEFAULT_BUILD ON FOLDER ${PROJECT_BINARY_DIR}/tests)
-endif()
-
-# Generate the target that will drive all the tests
-add_custom_target(Brion-tests)
-set_target_properties(Brion-tests PROPERTIES
-  EXCLUDE_FROM_DEFAULT_BUILD ON FOLDER ${PROJECT_BINARY_DIR}/tests)
-# Make the tests relay on our global test target
-add_dependencies(tests Brion-tests)
 
 # Generate the include file with paths to the test data used by the test
 # executables
