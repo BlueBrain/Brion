@@ -35,14 +35,21 @@ if(NOT sonata_FOUND AND NOT TARGET sonata::sonata_shared)
     # Create external project for linkage
     # Add the dependencies with a different target name
     # in order not to clash with the previously added subidrectory
+    set(EXTCXXFLAGS ${CMAKE_CXX_FLAGS})
+    if(APPLE AND CMAKE_BUILD_TYPE STREQUAL "Debug")
+        set(EXTCXXFLAGS "${EXTCXXFLAGS} -fprofile-instr-generate -fcoverage-mapping")
+    endif()
+
     ExternalProject_Add(libsonataextBrion
         PREFIX "libsonata"
         SOURCE_DIR "${CMAKE_CURRENT_LIST_DIR}/libsonata"
         BUILD_BYPRODUCTS ${CMAKE_BINARY_DIR}/deps/libsonata/lib/libsonata.${LIB_EXTENSION}
+        CMAKE_ARGS "CXXFLAGS=${EXTCXXFLAGS}"
         CMAKE_CACHE_ARGS
             -DCMAKE_BUILD_TYPE:STRING=${CMAKE_BUILD_TYPE}
             -DCMAKE_INSTALL_PREFIX:PATH=${CMAKE_BINARY_DIR}/deps/libsonata
             -DEXTLIB_FROM_SUBMODULES:BOOL=ON
+            
     )
 
     # Gather includes and libs from installed external project
