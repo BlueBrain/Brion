@@ -27,13 +27,18 @@ if(NOT sonata_FOUND AND NOT TARGET sonata::sonata_shared)
     message(STATUS "Gathering sonata from submodules")
     add_subdirectory(libsonata)
 
+    set(LIB_EXTENSION so)
+    if(APPLE)
+        set(LIB_EXTENSION dylib)
+    endif()
+
     # Create external project for linkage
     # Add the dependencies with a different target name
     # in order not to clash with the previously added subidrectory
     ExternalProject_Add(libsonataextBrion
         PREFIX "libsonata"
         SOURCE_DIR "${CMAKE_CURRENT_LIST_DIR}/libsonata"
-        BUILD_BYPRODUCTS ${CMAKE_BINARY_DIR}/deps/libsonata/lib/libsonata.so
+        BUILD_BYPRODUCTS ${CMAKE_BINARY_DIR}/deps/libsonata/lib/libsonata.${LIB_EXTENSION}
         CMAKE_CACHE_ARGS
             -DCMAKE_BUILD_TYPE:STRING=${CMAKE_BUILD_TYPE}
             -DCMAKE_INSTALL_PREFIX:PATH=${CMAKE_BINARY_DIR}/deps/libsonata
@@ -46,7 +51,7 @@ if(NOT sonata_FOUND AND NOT TARGET sonata::sonata_shared)
 
     # Generate imported target
     add_library(sonata::sonata_shared SHARED IMPORTED GLOBAL)
-    set_target_properties(sonata::sonata_shared PROPERTIES IMPORTED_LOCATION ${LIBSONATA_LIB_DIR}/libsonata.so)
+    set_target_properties(sonata::sonata_shared PROPERTIES IMPORTED_LOCATION ${LIBSONATA_LIB_DIR}/libsonata.${LIB_EXTENSION})
     set_target_properties(sonata::sonata_shared PROPERTIES INTERFACE_INCLUDE_DIRECTORIES ${LIBSONATA_INCLUDE_DIR})
 
     # Stablish dependency chain so mydepWrapper is not attemtped to be
