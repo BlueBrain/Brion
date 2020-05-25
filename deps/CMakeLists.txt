@@ -26,44 +26,10 @@ endif()
 if(NOT sonata_FOUND AND NOT TARGET sonata::sonata_shared)
     message(STATUS "Gathering sonata from submodules")
     add_subdirectory(libsonata)
-
-    set(LIB_EXTENSION so)
-    if(APPLE)
-        set(LIB_EXTENSION dylib)
-    endif()
-
-    # Create external project for linkage
-    # Add the dependencies with a different target name
-    # in order not to clash with the previously added subidrectory
-    set(EXTCXXFLAGS ${CMAKE_CXX_FLAGS})
-    if(APPLE AND CMAKE_BUILD_TYPE STREQUAL "Debug")
-        set(EXTCXXFLAGS "${EXTCXXFLAGS} -fprofile-instr-generate -fcoverage-mapping")
-    endif()
-
-    ExternalProject_Add(libsonataextBrion
-        PREFIX "libsonata"
-        SOURCE_DIR "${CMAKE_CURRENT_LIST_DIR}/libsonata"
-        BUILD_BYPRODUCTS ${CMAKE_BINARY_DIR}/deps/libsonata/lib/libsonata.${LIB_EXTENSION}
-        CMAKE_ARGS "CXXFLAGS=${EXTCXXFLAGS}"
-        CMAKE_CACHE_ARGS
-            -DCMAKE_BUILD_TYPE:STRING=${CMAKE_BUILD_TYPE}
-            -DCMAKE_INSTALL_PREFIX:PATH=${CMAKE_BINARY_DIR}/deps/libsonata
-            -DEXTLIB_FROM_SUBMODULES:BOOL=ON
-            
-    )
-
-    # Gather includes and libs from installed external project
-    SET(LIBSONATA_INCLUDE_DIR ${CMAKE_CURRENT_LIST_DIR}/libsonata/include)
-    SET(LIBSONATA_LIB_DIR ${CMAKE_BINARY_DIR}/deps/libsonata/lib)
-
-    # Generate imported target
-    add_library(sonata::sonata_shared SHARED IMPORTED GLOBAL)
-    set_target_properties(sonata::sonata_shared PROPERTIES IMPORTED_LOCATION ${LIBSONATA_LIB_DIR}/libsonata.${LIB_EXTENSION})
-    set_target_properties(sonata::sonata_shared PROPERTIES INTERFACE_INCLUDE_DIRECTORIES ${LIBSONATA_INCLUDE_DIR})
-
-    # Stablish dependency chain so mydepWrapper is not attemtped to be
-    # built before the external one
-    add_dependencies(sonata::sonata_shared libsonataextBrion)
+    add_library(sonatainter INTERFACE)
+    target_include_directories(sonatainter INTERFACE ${CMAKE_CURRENT_LIST_DIR}/libsonata/include)
+    target_link_libraries(sonatainter INTERFACE sonata_shared)
+    add_library(sonata::sonata_shared ALIAS sonatainter)
 endif()
 
 # --------------------------------------------------------------------------------
