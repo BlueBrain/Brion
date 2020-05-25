@@ -25,6 +25,16 @@ endif()
 # --------------------------------------------------------------------------------
 if(NOT sonata_FOUND AND NOT TARGET sonata::sonata_shared)
     message(STATUS "Gathering sonata from submodules")
+    # Sonata links against gcov, but on Apple this library is not included
+    # on the library path
+    if(APPLE)
+        add_library(gcov INTERFACE)
+        # Export target
+        install(TARGETS gcov EXPORT gcov-targets)
+        install(EXPORT gcov-targets DESTINATION share/gcov/CMake)
+        set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -fprofile-instr-generate -fcoverage-mapping")
+        set(CMAKE_C_FLAGS_DEBUG "${CMAKE_C_FLAGS_DEBUG} -fprofile-instr-generate -fcoverage-mapping")
+    endif()
     add_subdirectory(libsonata)
     add_library(sonatainter INTERFACE)
     target_include_directories(sonatainter INTERFACE ${CMAKE_CURRENT_LIST_DIR}/libsonata/include)
