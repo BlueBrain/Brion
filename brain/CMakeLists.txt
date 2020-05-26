@@ -72,7 +72,7 @@ target_include_directories(Brain PUBLIC
 target_include_directories(Brain PUBLIC
                             $<BUILD_INTERFACE:${CMAKE_BINARY_DIR}/include>
                             $<INSTALL_INTERFACE:$/include>)
-target_include_directories(Brain PUBLIC ${Boost_INCLUDE_DIRS})
+target_include_directories(Brain SYSTEM PUBLIC ${Boost_INCLUDE_DIRS})
 
 # Link libraries
 target_link_libraries(Brain PUBLIC Brion)

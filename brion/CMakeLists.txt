@@ -134,7 +134,7 @@ target_include_directories(Brion PUBLIC
 target_include_directories(Brion PUBLIC
                             $<BUILD_INTERFACE:${BRION_INCLUDE_DIR}/plugin>
                             $<INSTALL_INTERFACE:$/include/Brion>)
-target_include_directories(Brion PUBLIC ${Boost_INCLUDE_DIRS})
+target_include_directories(Brion SYSTEM PUBLIC ${Boost_INCLUDE_DIRS})
 
 # Link libraries
 target_link_libraries(Brion PUBLIC glm)
