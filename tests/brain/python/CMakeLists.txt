@@ -38,6 +38,7 @@ foreach(PYTHON_TEST ${PYTHON_TESTS})
     set(NAME python-test-${BASENAME})
 
     # Copy the file to the test directory
+    configure_file(${PYTHON_TEST} ${TEST_FILE} COPYONLY)
     add_custom_command(OUTPUT ${TEST_FILE}
       COMMAND ${CMAKE_COMMAND} -E copy_if_different ${PYTHON_TEST} ${TEST_FILE}
       DEPENDS ${PYTHON_TEST})
@@ -46,15 +47,17 @@ foreach(PYTHON_TEST ${PYTHON_TESTS})
     add_test(NAME ${NAME} COMMAND ${PYTHON_EXECUTABLE} ${TEST_FILE})
 
     # Generate the command to run the test
-    add_custom_target(${NAME}
+    add_custom_target(ctest_${NAME}
       COMMAND ${CMAKE_CTEST_COMMAND} -T test --no-compress-output
         -R '^${NAME}$$' -C $<CONFIGURATION> \${ARGS}
       DEPENDS brain_python ${TEST_FILE}
       WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}
       COMMENT "Running ${NAME} python test")
+    set_target_properties(ctest_${NAME} PROPERTIES
+      EXCLUDE_FROM_DEFAULT_BUILD ON FOLDER "Tests")
 
     # Add the test target to the python test target list
-    set(PYTHON_TEST_TARGETS ${PYTHON_TEST_TARGETS} ${NAME})
+    set(PYTHON_TEST_TARGETS ${PYTHON_TEST_TARGETS} ctest_${NAME})
 
 endforeach()
 

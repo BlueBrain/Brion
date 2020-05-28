@@ -35,10 +35,16 @@ set(BRION_REV_STRING ${PROJECT_VERSION_MAJOR}.${PROJECT_VERSION_MINOR}.${PROJECT
 option(BRION_SKIP_LIBSONATA_SUBMODULE "Skip libsonata module" OFF)
 # Wether to build doxygen documentatin or not
 option(BRION_BUILD_DOC "Build documentation for Brion" OFF)
+# If no cmake install dir specified, initialize to /usr
+if(CMAKE_INSTALL_PREFIX_INITIALIZED_TO_DEFAULT AND NOT MSVC)
+  set(CMAKE_INSTALL_PREFIX "/usr" CACHE PATH
+    "${PROJECT_NAME} install prefix" FORCE)
+endif()
 
 # Include custom cmake modules
 list(APPEND CMAKE_MODULE_PATH ${PROJECT_SOURCE_DIR}/CMake)
 include(CompileOptions)
+include(ChoosePython)
 
 # Configure base directories
 set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/lib)
@@ -78,6 +84,11 @@ find_package(MVDTool QUIET)
 find_package(OpenMP QUIET)
 find_package(Sphinx 1.3 QUIET)
 find_package(BBPTestData QUIET)
+
+# Enable the code depending on the test data
+if(BBPTestData_FOUND)
+    add_definitions(-DBRION_USE_BBPTESTDATA)
+endif()
 
 include(CTest)
 enable_testing()
