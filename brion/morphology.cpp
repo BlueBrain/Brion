@@ -22,6 +22,7 @@
 #include "log.h"
 #include "morphologyPlugin.h"
 #include "pluginLibrary.h"
+#include "serializable.h"
 #include "threadPool.h"
 
 #include <future>
@@ -219,7 +220,7 @@ const MorphologyInitData& Morphology::getInitData() const
     return _impl->plugin->getInitData();
 }
 
-servus::Serializable::Data Morphology::toBinary() const
+Serializable::Data Morphology::toBinary() const
 {
     _impl->finishLoad();
     return _impl->plugin->toBinary();

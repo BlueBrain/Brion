@@ -22,12 +22,11 @@
 
 #include "../log.h"
 #include "../pluginLibrary.h"
+#include "../uri.h"
 
 #include <boost/filesystem.hpp>
 #include <boost/filesystem/path.hpp>
 #include <boost/iostreams/device/mapped_file.hpp>
-
-#include <servus/uri.h>
 
 #include <fstream>
 

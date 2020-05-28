@@ -267,10 +267,8 @@ BOOST_AUTO_TEST_CASE(test_gid_out_of_range)
     std::vector<CircuitPtr> circuits;
     circuits.push_back(
         CircuitPtr(new brain::Circuit{brain::URI{BBP_TEST_BLUECONFIG}}));
-#ifdef BRAIN_USE_MVD3
     circuits.push_back(
         CircuitPtr(new brain::Circuit{brain::URI{BBP_TEST_BLUECONFIG3}}));
-#endif
 
     brion::GIDSet gids;
     gids.insert(10000000);
@@ -341,8 +339,6 @@ BOOST_AUTO_TEST_CASE(load_global_morphologies)
     matrix2[3] = glm::vec4(46.656769f, 1437.640777f, -11.603118f, matrix2[3].w);
     _checkMorphology(*morphologies[5], "R-C270106C.h5", matrix2);
 }
-
-#ifdef BRAIN_USE_MVD3
 
 BOOST_AUTO_TEST_CASE(all_mvd3)
 {
@@ -493,5 +489,3 @@ BOOST_AUTO_TEST_CASE(brain_circuit_random_gids)
     BOOST_CHECK_THROW(circuit.getRandomGIDs(-5.f), std::runtime_error);
     BOOST_CHECK_THROW(circuit.getRandomGIDs(1.1f), std::runtime_error);
 }
-
-#endif // BRAIN_USE_MVD3

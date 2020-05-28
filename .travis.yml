@@ -26,10 +26,10 @@ before_install:
   - brew install cppcheck doxygen ninja
   - brew list hdf5 || brew install hdf5
   - brew install boost-python
+  - brew install lcov
 script:
   - pip install gcovr
   - mkdir $BUILD_TYPE
   - cd $BUILD_TYPE
-  # TODO: "|| exit"  hack to be removed as soon as MVDTool export issue is fixed.
-  - HDF5_ROOT=/usr/local/opt/hdf5 cmake -GNinja -DCLONE_SUBPROJECTS=ON -DCMAKE_INSTALL_PREFIX=$PWD/install -DCMAKE_BUILD_TYPE=$BUILD_TYPE -DEXTLIB_FROM_SUBMODULES=ON .. || exit 0
+  - HDF5_ROOT=/usr/local/opt/hdf5 cmake -GNinja -DCMAKE_INSTALL_PREFIX=$PWD/install -DCMAKE_BUILD_TYPE=$BUILD_TYPE -DEXTLIB_FROM_SUBMODULES=ON .. 
   - ninja all && ninja $PROJECT_NAME-tests && ninja smoketests

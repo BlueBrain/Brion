@@ -30,11 +30,9 @@
 # Custom
 .tags
 BBPTestData/
-Servus/
 CMakeLists.txt.user*
 Makefile
 build/
-MVDTool/
 Pression/
 
 # QT Creator files

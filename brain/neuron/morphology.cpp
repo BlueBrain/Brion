@@ -26,6 +26,7 @@
 #include "morphologyImpl.h"
 
 #include <brion/morphology.h>
+#include <brion/serializable.h>
 
 namespace brain
 {
@@ -130,7 +131,7 @@ void Morphology::getBoundingBox(glm::vec3& min, glm::vec3& max) const
     max = aabb.getMax();
 }
 
-servus::Serializable::Data Morphology::toBinary() const
+brion::Serializable::Data Morphology::toBinary() const
 {
     return _impl->data->toBinary();
 }

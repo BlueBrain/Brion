@@ -1,6 +1,7 @@
 Changelog {#Changelog}
 =========
-
+* [279](https://github.com/BlueBrain/Brion/pull/279):
+  Removed lunchbox library from Brion.
 * [276](https://github.com/BlueBrain/Brion/pull/276):
   Removed vmmlib library from Brion.
 * [275](https://github.com/BlueBrain/Brion/pull/275):

@@ -20,8 +20,8 @@
 #include <boost/python.hpp>
 
 #include "arrayHelpers.h"
-#include "docstrings.h"
 #include "helpers.h"
+#include "pythonDocumentation.h"
 
 #include <brain/spikeReportReader.h>
 #include <brain/types.h>
@@ -60,19 +60,14 @@ const auto selfarg = bp::arg("self");
 
 bp::class_<SpikeReportReader, boost::noncopyable, SpikeReportReaderPtr>(
     "SpikeReportReader", bp::no_init)
-    .def("__init__", bp::make_constructor(_initURI),
-         DOXY_FN(brain::SpikeReportReader::SpikeReportReader(const brion::URI&)))
+    .def("__init__", bp::make_constructor(_initURI), SPIKEREPORTREADER_CONSTRUCTOR_DOXY)
     .def("__init__", bp::make_constructor(_initURIandGIDSet),
-         DOXY_FN(brain::SpikeReportReader::SpikeReportReader(const brion::URI&, const GIDSet&)))
-    .def("close", &SpikeReportReader::close,
-         DOXY_FN(brain::SpikeReportReader::close))
+         SPIKEREPORTREADER_CTOR_URI_GIDSET_DOXY)
+    .def("close", &SpikeReportReader::close, SPIKEREPORTREADER_CLOSE_DOXY)
     .def("get_spikes", SpikeReportReader_getSpikes,
-         (selfarg, bp::arg("start_time"), bp::arg("stop_time")),
-         DOXY_FN(brain::SpikeReportReader::getSpikes))
-    .add_property("end_time", &SpikeReportReader::getEndTime,
-                  DOXY_FN(brain::SpikeReportReader::getEndTime))
-    .add_property("has_ended", &SpikeReportReader::hasEnded,
-                  DOXY_FN(brain::SpikeReportReader::hasEnded));
+         (selfarg, bp::arg("start_time"), bp::arg("stop_time")), SPIKEREPORTREADER_GETSPIKES_DOXY)
+    .add_property("end_time", &SpikeReportReader::getEndTime, SPIKEREPORTREADER_GETENDTIME_DOXY)
+    .add_property("has_ended", &SpikeReportReader::hasEnded, SPIKEREPORTREADER_HASENDED_DOXY);
     // clang-format on
 }
 }

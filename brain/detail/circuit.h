@@ -38,11 +38,11 @@
 #include <brion/synapseSummary.h>
 #include <brion/target.h>
 
-#ifdef BRAIN_USE_MVD3
+#include <highfive/H5Exception.hpp>
 #include <highfive/H5Utility.hpp>
+
 #include <mvd/mvd3.hpp>
 #include <mvd/mvd_generic.hpp>
-#endif
 
 #include <boost/filesystem.hpp>
 
@@ -52,8 +52,7 @@
 #include <unordered_map>
 #include <unordered_set>
 
-#include <highfive/H5Exception.hpp>
-#include <highfive/H5Utility.hpp>
+
 
 namespace fs = boost::filesystem;
 using boost::lexical_cast;
@@ -70,7 +69,6 @@ const std::string extraFilename("/nrn_extra.h5");
 
 namespace
 {
-#ifdef BRAIN_USE_MVD3
 bool _isSequence(const GIDSet& gids)
 {
     return (*gids.rbegin() - *gids.begin() + 1) == gids.size();
@@ -117,7 +115,6 @@ const T& _nop(const T& x)
 {
     return x;
 }
-#endif
 
 template <typename T>
 std::vector<T> _getAttribute(const brion::NodeGroup& nodeGroup,
@@ -831,7 +828,6 @@ private:
     brion::Circuit _circuit;
 };
 
-#ifdef BRAIN_USE_MVD3
 struct MVD3 : public BBPCircuit
 {
     MVD3(const brion::BlueConfig& config)
@@ -961,5 +957,4 @@ struct MVD3 : public BBPCircuit
 private:
     ::MVD3::MVD3File _circuit;
 };
-#endif
 } // namespace brain

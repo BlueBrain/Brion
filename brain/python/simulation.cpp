@@ -19,8 +19,8 @@
 #include <boost/python.hpp>
 
 #include "arrayHelpers.h"
-#include "docstrings.h"
 #include "helpers.h"
+#include "pythonDocumentation.h"
 #include "types.h"
 
 #include <brain/circuit.h>
@@ -94,23 +94,18 @@ void export_Simulation()
 
 const auto self = bp::arg("self");
 bp::class_<Simulation, boost::noncopyable, SimulationPtr>(
-    "Simulation", DOXY_CLASS(brain::Simulation), bp::no_init)
-    .def("__init__", bp::make_constructor(Simulation_initFromURI),
-         DOXY_FN(brain::Simulation::Simulation(const URI&)))
-    .def("open_circuit", Simulation_openCircuit,
-         DOXY_FN(brain::Simulation::openCircuit))
-    .def("open_spike_report", Simulation_openSpikeReport,
-         DOXY_FN(brain::Simulation::openCircuit))
+    "Simulation", SIMULATION_CLASS_DOXY, bp::no_init)
+    .def("__init__", bp::make_constructor(Simulation_initFromURI), SIMULATION_CONSTRUCTOR_DOXY)
+    .def("open_circuit", Simulation_openCircuit, SIMULATION_OPENCIRCUIT_DOXY)
+    .def("open_spike_report", Simulation_openSpikeReport, SIMULATION_OPENCIRCUIT_DOXY)
     .def("open_compartment_report", Simulation_openCompartmentReport,
-         DOXY_FN(brain::Simulation::openCompartmentReport))
-    .def("gids", Simulation_getGIDs1,
-         DOXY_FN(brain::Simulation::getGIDs() const))
+         SIMULATION_OPENCOMPARTMENTREPORT_DOXY)
+    .def("gids", Simulation_getGIDs1, SIMULATION_GETGIDS_DOXY)
     .def("gids", Simulation_getGIDs2, (self, bp::arg("target")),
-         DOXY_FN(brain::Simulation::getGIDs(const std::string&) const))
+         SIMULATION_GETGIDS_TARGET_DOXY)
     .def("compartment_report_names", Simulation_getCompartmentReportNames,
-         DOXY_FN(brain::Simulation::getCompartmentReportNames))
-    .def("target_names", Simulation_getTargetNames,
-         DOXY_FN(brain::Simulation::getTargetNames));
+         SIMULATION_GETCOMPARTMENTREPORTNAMES_DOXY)
+    .def("target_names", Simulation_getTargetNames, SIMULATION_GETTARGETNAMES_DOXY);
 }
 // clang-format on
 }

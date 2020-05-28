@@ -24,7 +24,7 @@
 #include <brain/neuron/types.h>
 #include <brain/types.h>
 
-#include <servus/serializable.h>
+#include <brion/serializable.h>
 
 namespace brain
 {
@@ -150,7 +150,7 @@ private:
     friend class brain::MorphologyCache;
 
     Morphology(const void* data, const size_t size);
-    servus::Serializable::Data toBinary() const;
+    brion::Serializable::Data toBinary() const;
 
     ImplPtr _impl;
 };

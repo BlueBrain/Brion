@@ -21,7 +21,6 @@
 #define BRION_CONSTANTS
 
 #include <brion/types.h>
-#include <servus/uint128_t.h>
 
 namespace brion
 {
@@ -46,10 +45,6 @@ const char* const BLUECONFIG_REPORT_FORMAT_KEY = "Format";
 const char* const BLUECONFIG_DT_KEY = "Dt";
 
 const char* const BLUECONFIG_PROJECTION_PATH_KEY = "Path";
-
-const char* const ZEROEQ_SCHEME = "zeroeq";
-const uint128_t ZEROEQ_GET_MORPHOLOGY =
-    servus::make_uint128("brion::Morphology::get");
 }
 
 #endif

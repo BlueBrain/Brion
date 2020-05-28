@@ -21,8 +21,8 @@
 #define BRION_MORPHOLOGY
 
 #include <brion/api.h>
+#include <brion/serializable.h> // return value
 #include <brion/types.h>
-#include <servus/serializable.h> // return value
 
 namespace brion
 {
@@ -103,7 +103,7 @@ public:
     /** @internal */
     const MorphologyInitData& getInitData() const;
 
-    servus::Serializable::Data toBinary() const; //!< @internal
+    brion::Serializable::Data toBinary() const; //!< @internal
                                                  //@}
 
 private:

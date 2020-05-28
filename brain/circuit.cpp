@@ -29,8 +29,6 @@
 
 #include <bbp/sonata/edges.h>
 
-#include <servus/uint128_t.h>
-
 #include <boost/algorithm/string.hpp>
 
 namespace brain
@@ -307,14 +305,8 @@ Circuit::Impl* newImpl(const brion::BlueConfig& config)
     if (boost::algorithm::ends_with(circuit, ".mvd2"))
         out = new MVD2(config);
     else
-    {
-#ifdef BRAIN_USE_MVD3
-
         out = new MVD3(config);
-#else
-        throw std::runtime_error("MVD3 not supported");
-#endif
-    }
+
     out->_source = brion::URI(config.getSource());
     return out;
 }
@@ -519,7 +511,7 @@ uint32_ts Circuit::getProjectedEfferentGIDs(
                 uniqueIds.insert(oldId - 1);
         }
 
-        const size_ts nodeIds (uniqueIds.begin(), uniqueIds.end());
+        const std::vector<uint64_t> nodeIds (uniqueIds.begin(), uniqueIds.end());
         uint32_ts result;
         const bbp::sonata::EdgeStorage edgeStorage (projPath);
         for(const auto& name : edgeStorage.populationNames())

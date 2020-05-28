@@ -23,8 +23,6 @@
 
 #include <BBP/TestDatasets.h>
 
-#include <servus/uint128_t.h>
-
 #define BOOST_TEST_MODULE SpikeReportReader
 #include <boost/filesystem/operations.hpp>
 #include <boost/filesystem/path.hpp>
@@ -58,7 +56,7 @@ struct TmpFile
     const std::string name;
 
     explicit TmpFile(const std::string& suffix = std::string())
-        : name("/tmp/" + servus::make_UUID().getString() + suffix)
+        : name("/tmp/" + brion::make_UUID().getString() + suffix)
     {
     }
 
