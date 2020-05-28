@@ -361,11 +361,11 @@ BOOST_AUTO_TEST_CASE(all_mvd3)
                                                         15.3025840000f)),
                       0.000001f);
 
-    auto m1check = glm::mat4_cast(glm::quat (0.f, 0.923706f, 0.f, 0.383102f));
+    auto m1check = glm::mat4_cast(glm::quat (0.383102f, 0.f, 0.923706f, 0.f));
     m1check[3] = glm::vec4(30.12771f, 1794.125911f, 19.860587f, 1.0);
     BOOST_CHECK(EqualMatrices4(transforms[20], m1check, 0.00001f));
 
-    auto m2check = glm::mat4_cast(glm::quat(0.f, -0.992667f, 0.f, 0.120884f));
+    auto m2check = glm::mat4_cast(glm::quat(0.120884f, 0.f, -0.992667f, 0.f));
     m2check[3] = glm::vec4(48.757924f, 1824.458993f, 15.302584f, 1.0);
     BOOST_CHECK(EqualMatrices4(transforms[100], m2check, 0.00001f));
 }
@@ -395,12 +395,12 @@ BOOST_AUTO_TEST_CASE(partial_mvd3)
                                                       15.3025840000)),
                       0.000001f);
 
-    glm::quat quat1check (0.f, 0.923706f, 0.f, 0.383102f);
+    glm::quat quat1check (0.383102f, 0.f, 0.923706f, 0.f);
     glm::mat4 check1 = glm::mat4_cast(quat1check);
     check1[3] = glm::vec4(30.12771f, 1794.125911f, 19.860587f, check1[3].w);
     BOOST_CHECK(EqualMatrices4(transforms[1], check1, 0.00001f));
 
-    glm::quat quat2check (0.f, -0.992667, 0.f, 0.120884);
+    glm::quat quat2check (0.120884f, 0.f, -0.992667f, 0.f);
     glm::mat4 check2 = glm::mat4_cast(quat2check);
     check2[3] = glm::vec4(48.757924, 1824.458993, 15.302584, check2[3].w);
     BOOST_CHECK(EqualMatrices4(transforms[2], check2, 0.00001f));

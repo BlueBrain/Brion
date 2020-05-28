@@ -220,6 +220,78 @@ bool isArray(const bp::object& o)
     return PyArray_Check(o.ptr());
 }
 
+bp::object toNumpy(const glm::ivec2& vec)
+{
+    npy_intp dims[1] = {2};
+    void* data = malloc(sizeof(int) * 2);
+    if (!data)
+    {
+        PyErr_SetString(PyExc_MemoryError,
+                        "Allocating numpy array for ivec2");
+        bp::throw_error_already_set();
+    }
+    int vecData[2] = {vec.x, vec.y};
+    memcpy(data, vecData, sizeof(int) * 2);
+    PyObject* array =
+        PyArray_New(&PyArray_Type, 1, dims, NPY_INT, 0, data, 0,
+                    NPY_ARRAY_OWNDATA | NPY_ARRAY_F_CONTIGUOUS, 0);
+    return bp::object(bp::handle<>(array));
+}
+
+bp::object toNumpy(const glm::vec3& vec)
+{
+    npy_intp dims[1] = {3};
+    void* data = malloc(sizeof(float) * 3);
+    if (!data)
+    {
+        PyErr_SetString(PyExc_MemoryError,
+                        "Allocating numpy array for vec3");
+        bp::throw_error_already_set();
+    }
+    float vecData[3] = {vec.x, vec.y, vec.z};
+    memcpy(data, vecData, sizeof(int) * 3);
+    PyObject* array =
+        PyArray_New(&PyArray_Type, 1, dims, NPY_FLOAT, 0, data, 0,
+                    NPY_ARRAY_OWNDATA | NPY_ARRAY_F_CONTIGUOUS, 0);
+    return bp::object(bp::handle<>(array));
+}
+
+bp::object toNumpy(const glm::vec4& vec)
+{
+    npy_intp dims[1] = {4};
+    void* data = malloc(sizeof(float) * 4);
+    if (!data)
+    {
+        PyErr_SetString(PyExc_MemoryError,
+                        "Allocating numpy array for vec4");
+        bp::throw_error_already_set();
+    }
+    float vecData[4] = {vec.x, vec.y, vec.z, vec.w};
+    memcpy(data, vecData, sizeof(int) * 4);
+    PyObject* array =
+        PyArray_New(&PyArray_Type, 1, dims, NPY_FLOAT, 0, data, 0,
+                    NPY_ARRAY_OWNDATA | NPY_ARRAY_F_CONTIGUOUS, 0);
+    return bp::object(bp::handle<>(array));
+}
+
+bp::object toNumpy(const glm::quat& q)
+{
+    npy_intp dims[1] = {4};
+    void* data = malloc(sizeof(float) * 4);
+    if (!data)
+    {
+        PyErr_SetString(PyExc_MemoryError,
+                        "Allocating numpy array for quat");
+        bp::throw_error_already_set();
+    }
+    float vecData[4] = {q.x, q.x, q.z, q.w};
+    memcpy(data, vecData, sizeof(int) * 4);
+    PyObject* array =
+        PyArray_New(&PyArray_Type, 1, dims, NPY_FLOAT, 0, data, 0,
+                    NPY_ARRAY_OWNDATA | NPY_ARRAY_F_CONTIGUOUS, 0);
+    return bp::object(bp::handle<>(array));
+}
+
 bp::object toNumpy(const glm::mat4& matrix)
 {
     npy_intp dims[2] = {4, 4};
@@ -307,6 +379,16 @@ bool _copyGIDs(PyArrayObject* array, brain::uint32_ts& result)
 }
 
 template <typename T>
+void _copyArrayToQuat(PyArrayObject* array, glm::quat& q)
+{
+    q = glm::quat(*static_cast<T*>(PyArray_GETPTR1(array, 3)),
+                  *static_cast<T*>(PyArray_GETPTR1(array, 0)),
+                  *static_cast<T*>(PyArray_GETPTR1(array, 1)),
+                  *static_cast<T*>(PyArray_GETPTR1(array, 2)));
+}
+
+
+template <typename T>
 void _copyArrayToMatrix(PyArrayObject* array, glm::mat4& matrix)
 {
     for (size_t i = 0; i != 4; ++i)
@@ -369,6 +451,54 @@ std::pair<const brain::Spike*, size_t> spikesFromNumpy(
     return std::pair<const brain::Spike*, size_t>(
         static_cast<brain::Spike*>(PyArray_GETPTR1(array, 0)),
         PyArray_DIMS(array)[0]);
+}
+
+template<>
+glm::quat fromNumpy(const bp::object& o)
+{
+    if (!isArray(o))
+    {
+        PyErr_SetString(PyExc_ValueError, "Cannot convert object to quat");
+        bp::throw_error_already_set();
+    }
+    PyArrayObject* array = reinterpret_cast<PyArrayObject*>(o.ptr());
+
+    if (PyArray_NDIM(array) != 1 || PyArray_DIMS(array)[0] != 4)
+    {
+        PyErr_SetString(PyExc_ValueError,
+                        "Cannot convert array to quat, bad dimensions");
+        bp::throw_error_already_set();
+    }
+
+    glm::quat result(0.f, 0.f, 0.f, 0.f);
+    switch (PyArray_TYPE(array))
+    {
+    case NPY_FLOAT:
+        _copyArrayToQuat<float>(array, result);
+        break;
+    case NPY_DOUBLE:
+        _copyArrayToQuat<double>(array, result);
+        break;
+    case NPY_LONG:
+        _copyArrayToQuat<long>(array, result);
+        break;
+    case NPY_INT:
+        _copyArrayToQuat<int>(array, result);
+        break;
+    case NPY_UINT:
+        _copyArrayToQuat<unsigned int>(array, result);
+        break;
+    default:
+    {
+        std::stringstream msg;
+        PyArray_Descr* desc = PyArray_DESCR(array);
+        msg << "Cannot convert numpy array of type " << desc->kind
+            << desc->elsize << " into quat" << std::endl;
+        PyErr_SetString(PyExc_ValueError, msg.str().c_str());
+        bp::throw_error_already_set();
+    }
+    }
+    return result;
 }
 
 template <>

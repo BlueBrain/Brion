@@ -104,10 +104,10 @@ glm::vec3 _toVector3f(const ::MVD3::Positions::const_subarray<1>::type& subarray
 glm::quat _toQuaternion(
     const ::MVD3::Rotations::const_subarray<1>::type& subarray)
 {
-    return glm::quat(static_cast<float>(subarray[0]), 
+    return glm::quat(static_cast<float>(subarray[3]), 
+                     static_cast<float>(subarray[0]), 
                      static_cast<float>(subarray[1]), 
-                     static_cast<float>(subarray[2]), 
-                     static_cast<float>(subarray[3]));
+                     static_cast<float>(subarray[2]));
 }
 
 template <typename T>

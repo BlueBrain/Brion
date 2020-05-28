@@ -77,7 +77,7 @@ target_link_libraries(brain_python PRIVATE BrainPythonHelpers)
 target_link_libraries(brain_python PRIVATE Brain)
 target_link_libraries(brain_python PRIVATE ${PYTHON_LIBRARIES})
 target_link_libraries(brain_python PRIVATE ${Boost_PYTHON3_LIBRARY})
-if(BBPTESTDATA_FOUND)
+if(BBPTestData_FOUND)
   target_link_libraries(brain_python PRIVATE BBPTestData)
 endif()
 
