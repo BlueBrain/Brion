@@ -7,7 +7,7 @@
 
 # Base configuration
 cmake_minimum_required(VERSION 3.10 FATAL_ERROR)
-project(Brion VERSION 3.1.0)
+project(Brion VERSION 3.2.0)
 set(Brion_VERSION_ABI 10)
 
 # Enforce C++14 standard
@@ -19,6 +19,7 @@ set_property(GLOBAL PROPERTY USE_FOLDERS ON)
 
 # Get the last commit hash
 execute_process(COMMAND "/usr/bin/git" "rev-parse" "--short=8" "HEAD"
+                WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
                 RESULT_VARIABLE GIT_CMD_RESULT
                 OUTPUT_VARIABLE GIT_CMD_OUTPUT)
 
