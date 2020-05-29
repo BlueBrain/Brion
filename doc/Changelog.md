@@ -1,14 +1,18 @@
 Changelog {#Changelog}
 =========
+* [281](https://github.com/BlueBrain/Brion/pull/281)
+  Strips Pydoxygen, Servus and CMake/common.
+* [280](https://github.com/BlueBrain/Brion/pull/280)
+  Bumps libsonata submodule.
 * [279](https://github.com/BlueBrain/Brion/pull/279):
   Removed lunchbox library from Brion.
 * [276](https://github.com/BlueBrain/Brion/pull/276):
-  Removed vmmlib library from Brion.
+  Removed vmmlib library from Brion. Replaced with GLM.
 * [275](https://github.com/BlueBrain/Brion/pull/275):
   Removed Keyv library from Brion. This change also means the end of
   support for BlueBrain's key value map based reports.
 * [273](https://github.com/BlueBrain/Brion/pull/273):
-  Fixes to improve compilation against libsonata
+  Fixes to improve compilation against libsonata.
 
 # Release 3.1.0 (07-01-2020)
 
