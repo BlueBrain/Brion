@@ -43,6 +43,14 @@ set_target_properties(BrainPythonHelpers
         SOVERSION ${BRION_VERSION_MAJOR}.${BRION_VERSION_MINOR}
 )
 
+# Export target
+install(TARGETS BrainPythonHelpers
+    EXPORT Brion-targets
+    LIBRARY DESTINATION lib
+    ARCHIVE DESTINATION lib
+    INCLUDES DESTINATION include
+)
+
 set(BRAIN_PYTHON_SOURCES
     brain.cpp
     circuit.cpp

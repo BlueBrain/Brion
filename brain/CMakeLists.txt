@@ -94,7 +94,7 @@ set_target_properties(Brain
 
 # Export target
 install(TARGETS Brain
-    EXPORT Brain-targets
+    EXPORT Brion-targets
     LIBRARY DESTINATION lib
     ARCHIVE DESTINATION lib
     INCLUDES DESTINATION include
@@ -108,19 +108,5 @@ install(DIRECTORY ${PROJECT_SOURCE_DIR}/brain
 # Install version.h header file
 install(FILES ${CMAKE_BINARY_DIR}/include/brain/version.h
         DESTINATION include/brain)
-
-install(
-  EXPORT Brain-targets
-  NAMESPACE brain::
-  FILE brainConfig.cmake
-  DESTINATION share/brain/CMake
-)
-
-export(
-    EXPORT Brain-targets
-    FILE "share/brain/CMake/brainConfig.cmake"
-)
-
-export(PACKAGE brain)
 
 add_subdirectory(python)

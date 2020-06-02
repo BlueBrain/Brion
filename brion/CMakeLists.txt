@@ -162,13 +162,6 @@ install(TARGETS Brion
     INCLUDES DESTINATION include
 )
 
-install(
-  EXPORT Brion-targets
-  NAMESPACE brion::
-  FILE brionConfig.cmake
-  DESTINATION share/brion/CMake
-)
-
 install(FILES ${CMAKE_BINARY_DIR}/include/brion/version.h
         DESTINATION include/brion)
 
@@ -176,9 +169,3 @@ install(DIRECTORY ${PROJECT_SOURCE_DIR}/brion
         DESTINATION include
         FILES_MATCHING PATTERN "*.h")
 
-export(
-    EXPORT Brion-targets
-    FILE "share/brion/CMake/brionConfig.cmake"
-)
-
-export(PACKAGE brion)

@@ -151,6 +151,20 @@ if(BRION_BUILD_DOC)
     add_subdirectory(doc/python)
 endif(BRION_BUILD_DOC)
 
+# Install the export set
+install(
+  EXPORT Brion-targets
+  FILE BrionConfig.cmake
+  DESTINATION share/Brion/CMake
+)
+
+export(
+    EXPORT Brion-targets
+    FILE "share/Brion/CMake/BrionConfig.cmake"
+)
+
+export(PACKAGE Brion)
+
 
 # fill out setup.py metadata for wheel distribution
 configure_file(packaging/python_wheels/setup.py.in
