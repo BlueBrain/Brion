@@ -18,6 +18,7 @@ configure_file(version.h.in
 set(BRION_PUBLIC_HEADERS
   api.h
   blueConfig.h
+  brion.h
   circuit.h
   compartmentReport.h
   compartmentReportPlugin.h
@@ -110,8 +111,6 @@ set(BRION_SOURCES
   version.cpp
   )
 
-set(BRION_INCLUDE_DIR ${PROJECT_SOURCE_DIR}/brion)
-
 # Create library target
 add_library(Brion SHARED ${BRION_PUBLIC_HEADERS} ${BRION_HEADERS} ${BRION_SOURCES})
 
@@ -125,15 +124,8 @@ endif()
 # Include directories
 # Normal includes
 target_include_directories(Brion PUBLIC
-                            $<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}>
-                            $<INSTALL_INTERFACE:$/include>)
-# Autoconfigured version file
-target_include_directories(Brion PUBLIC
-                            $<BUILD_INTERFACE:${CMAKE_BINARY_DIR}/include>
-                            $<INSTALL_INTERFACE:$/include>)
-target_include_directories(Brion PUBLIC
-                            $<BUILD_INTERFACE:${BRION_INCLUDE_DIR}/plugin>
-                            $<INSTALL_INTERFACE:$/include/Brion>)
+                            "$<BUILD_INTERFACE:${PROJECT_SOURCE_DIR};${PROJECT_SOURCE_DIR}/brion/plugin;${CMAKE_BINARY_DIR}/include>"
+                            "$<INSTALL_INTERFACE:include;include/brion>")
 target_include_directories(Brion SYSTEM PUBLIC ${Boost_INCLUDE_DIRS})
 
 # Link libraries
@@ -168,4 +160,8 @@ install(FILES ${CMAKE_BINARY_DIR}/include/brion/version.h
 install(DIRECTORY ${PROJECT_SOURCE_DIR}/brion
         DESTINATION include
         FILES_MATCHING PATTERN "*.h")
+
+install(DIRECTORY ${PROJECT_SOURCE_DIR}/brion
+        DESTINATION include
+        FILES_MATCHING PATTERN "*.ipp")
 
