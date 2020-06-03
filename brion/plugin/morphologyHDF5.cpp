@@ -227,20 +227,6 @@ private:
         }
     }
 
-    HighFive::DataSet _getStructureDataSet(size_t nSections)
-    {
-        try
-        {
-            HighFive::SilenceHDF5 silence;
-            return _file->getDataSet(_d_structure);
-        }
-        catch (const HighFive::DataSetException&)
-        {
-            return _file->createDataSet<int>(_d_structure, HighFive::DataSpace(
-                                                               {nSections, 3}));
-        }
-    }
-
     void _readPoints()
     {
         auto& points = _morphology.getPoints();
