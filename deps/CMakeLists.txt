@@ -19,27 +19,6 @@ if(NOT glm_FOUND AND NOT TARGET glm)
     if(CMAKE_COMPILER_IS_GNUCXX AND NOT CMAKE_CXX_COMPILER_VERSION VERSION_LESS 8.0)
       target_compile_options(glm INTERFACE -Wno-error=class-memaccess)
     endif()
-
-    #add_library(glm INTERFACE)
-    #target_include_directories(glm INTERFACE
-	#    $<INSTALL_INTERFACE:include>
-	#    $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/glm>)
-
-    #if(CMAKE_COMPILER_IS_GNUCXX AND NOT CMAKE_CXX_COMPILER_VERSION VERSION_LESS 8.0)
-    #  target_compile_options(glm INTERFACE -Wno-error=class-memaccess)
-    #endif()
-
-    # Export target
-    #install(TARGETS glm
-    #    EXPORT Brion-targets
-    #    LIBRARY DESTINATION lib
-    #    ARCHIVE DESTINATION lib
-    #    INCLUDES DESTINATION include
-    #)
-
-    # Install includes
-    #install(DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/glm/glm
-    #    DESTINATION include)
 endif()
 
 # --------------------------------------------------------------------------------
