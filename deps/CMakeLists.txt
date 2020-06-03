@@ -14,6 +14,7 @@ if(NOT glm_FOUND AND NOT TARGET glm)
     set(CMAKE_EXPORT_NO_PACKAGE_REGISTRY ON)
     set(CMAKE_INSTALL_LIBDIR lib)
     add_subdirectory(glm)
+
     # WAR for https://github.com/g-truc/glm/issues/854
     if(CMAKE_COMPILER_IS_GNUCXX AND NOT CMAKE_CXX_COMPILER_VERSION VERSION_LESS 8.0)
       target_compile_options(glm INTERFACE -Wno-error=class-memaccess)
@@ -67,3 +68,4 @@ if(NOT MVDTool_FOUND AND NOT TARGET MVDTool)
     target_link_libraries(MVDTool INTERFACE HighFive)
     target_compile_definitions(MVDTool INTERFACE -DH5_USE_BOOST)
 endif()
+    # WAR for https://github.com/g-truc/glm/issues/854
