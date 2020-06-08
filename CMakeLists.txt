@@ -70,16 +70,20 @@ set(BRION_DEB_DEPENDS libhdf5-serial-dev libboost-date-time-dev
 set(BRION_PORT_DEPENDS sphinx py-lxml)
 
 # Required and optional packages
+# Configuration to bring boost
 set(Boost_USE_STATIC_RUNTIME OFF)
 set(Boost_USE_STATIC_LIBS OFF)
 set(BUILD_SHARED_LIBS ON)
 find_package(Boost REQUIRED COMPONENTS
   date_time filesystem iostreams program_options regex system unit_test_framework)
+# Choose the appropiate version of boost python based on the available python
 include(ChoosePython)
 find_package(Boost COMPONENTS python${USE_BOOST_PYTHON_VERSION})
+# Sets the global library used to link
 if(Boost_PYTHON${USE_BOOST_PYTHON_VERSION}_FOUND)
     set(Boost_PYTHON3_LIBRARY ${Boost_PYTHON${USE_BOOST_PYTHON_VERSION}_LIBRARY})
 endif()
+# Old way of finding python
 if(${CMAKE_VERSION} VERSION_LESS "3.12.0")
     set(Python_ADDITIONAL_VERSIONS 3)
     find_package(PythonInterp)
@@ -89,13 +93,11 @@ if(${CMAKE_VERSION} VERSION_LESS "3.12.0")
 else()
     find_package(Python3 COMPONENTS Interpreter Development NumPy)
     # Addpat cmake 3.12+ variables to our variable system
-    if(Python3_FOUND)
+    if(${Python3_FOUND} AND ${Python3_NumPy_FOUND})
         set(PYTHON_EXECUTABLE ${Python3_EXECUTABLE})
         set(PYTHON_INCLUDE_PATH ${Python3_INCLUDE_DIRS})
-        if(Python3_NumPy_FOUND)
-            set(PYTHON_NUMPY_INCLUDE_DIR ${Python3_NumPy_INCLUDE_DIRS})
-            set(NUMPY_FOUND ${Python3_NumPy_FOUND})
-        endif()
+        set(PYTHON_NUMPY_INCLUDE_DIR ${Python3_NumPy_INCLUDE_DIRS})
+        set(NUMPY_FOUND ${Python3_NumPy_FOUND})
     endif()
 endif()
 find_package(glm QUIET)
