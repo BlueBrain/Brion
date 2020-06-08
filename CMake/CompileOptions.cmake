@@ -8,13 +8,13 @@ function(compile_options TARGET_NAME)
     list(APPEND COMPILE_OPTIONS -Wsign-promo
                                 -Wvla
                                 -fno-strict-aliasing
-                                -Wall
                                 -Wextra
                                 -Winvalid-pch
                                 -Winit-self
                                 -Wno-unknown-pragmas
                                 -Wshadow
                                 -Werror
+                                -fPIC
                                 -O3)
     if(CMAKE_CXX_COMPILER_ID STREQUAL "Intel")
         list(APPEND COMPILE_OPTIONS -Wno-non-virtual-dtor -Wno-deprecated)

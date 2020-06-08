@@ -37,6 +37,8 @@ if(CHOOSE_PYTHON_DONE)
 endif()
 set(CHOOSE_PYTHON_DONE ON)
 
+include(FindBoostConfig) # Including the workarounds for boost finders.
+
 set(USE_PYTHON_VERSION "auto" CACHE STRING
   "Choose the required Python version (2, 3 or auto).")
 
@@ -51,7 +53,7 @@ if(${USE_PYTHON_VERSION} STREQUAL auto)
   # Finding Boost first if needed because if the Python3 interpreter is found
   # first there's no way back.
   if(NOT CHOOSE_PYTHON_IGNORE_BOOST)
-    foreach(__suffix 3 38 -py38 37 -py37 -py36 -py35 -py34 )
+    foreach(__suffix 3 38 -py38 37 -py37 36 -py36 -py35 -py34 27 )
       find_package(Boost COMPONENTS python${__suffix} QUIET)
       if(Boost_FOUND)
         string(TOUPPER  ${__suffix} __boost_python_library_suffix)

@@ -61,6 +61,7 @@ set(BRION_HEADERS
   plugin/compartmentReportCommon.h
   plugin/compartmentReportDummy.h
   plugin/compartmentReportHDF5.h
+  plugin/compartmentReportHDF5Sonata.h
   plugin/compartmentReportLegacyHDF5.h
   plugin/morphologyHDF5.h
   plugin/morphologySWC.h
@@ -68,6 +69,7 @@ set(BRION_HEADERS
   plugin/spikeReportBinary.h
   plugin/spikeReportBluron.h
   plugin/spikeReportHDF5.h
+  plugin/spikeReportHDF5Sonata.h
   plugin/spikeReportNEST.h
   plugin/utilsHDF5.h
   serializable.h
@@ -95,6 +97,7 @@ set(BRION_SOURCES
   plugin/compartmentReportCommon.cpp
   plugin/compartmentReportDummy.cpp
   plugin/compartmentReportHDF5.cpp
+  plugin/compartmentReportHDF5Sonata.cpp
   plugin/compartmentReportLegacyHDF5.cpp
   plugin/morphologyHDF5.cpp
   plugin/morphologySWC.cpp
@@ -102,6 +105,7 @@ set(BRION_SOURCES
   plugin/spikeReportBinary.cpp
   plugin/spikeReportBluron.cpp
   plugin/spikeReportHDF5.cpp
+  plugin/spikeReportHDF5Sonata.cpp
   plugin/spikeReportNEST.cpp
   plugin/utilsHDF5.cpp
   serializable.cpp

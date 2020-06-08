@@ -7,9 +7,13 @@
 #
 
 # Cannot compile python bindings if no boost python or python interpreter is found
+
+message("Boost python3 library: ${Boost_PYTHON3_LIBRARY}")
+message("Python executable: ${PYTHON_EXECUTABLE}")
+message("Numpy: ${NUMPY_FOUND}")
+
 if(NOT Boost_PYTHON3_LIBRARY OR
     NOT PYTHON_EXECUTABLE OR NOT NUMPY_FOUND)
-
     message(STATUS "Not configured brain.py: Boost.Python, Python or Numpy not found")
     return()
 endif()
