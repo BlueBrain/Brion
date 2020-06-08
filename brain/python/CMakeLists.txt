@@ -93,8 +93,6 @@ if(BBPTestData_FOUND)
   target_link_libraries(brain_python PRIVATE BBPTestData)
 endif()
 
-message(${PYTHON_LIBRARY_SUFFIX})
-
 set_target_properties(brain_python PROPERTIES
     OUTPUT_NAME "_brain" PREFIX ""
     LIBRARY_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/lib/brain)
