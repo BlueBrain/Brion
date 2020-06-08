@@ -8,6 +8,7 @@ function(compile_options TARGET_NAME)
     list(APPEND COMPILE_OPTIONS -Wsign-promo
                                 -Wvla
                                 -fno-strict-aliasing
+                                -Wall
                                 -Wextra
                                 -Winvalid-pch
                                 -Winit-self
