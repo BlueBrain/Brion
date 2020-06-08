@@ -173,9 +173,11 @@ bool CompartmentReportHDF5Sonata::handles(const CompartmentReportInitData& initD
     if ((initData.getAccessMode() & MODE_READ) == 0)
         return true;
 
-    //std::lock_guard<std::mutex> mutex(detail::hdf5Mutex());
-    //HighFive::SilenceHDF5 silence;
-    return true;//_verifyFile(openFile(initData.getURI().getPath(), MODE_READ, false));
+    std::lock_guard<std::mutex> mutex(detail::hdf5Mutex());
+    HighFive::SilenceHDF5 silence;
+    std::unique_ptr<HighFive::File> temp
+            (new HighFive::File(openFile(initData.getURI().getPath(), MODE_READ, false)));
+    return temp->exist("report");
 }
 
 std::string CompartmentReportHDF5Sonata::getDescription()

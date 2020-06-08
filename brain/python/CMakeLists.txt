@@ -8,13 +8,13 @@
 
 # Cannot compile python bindings if no boost python or python interpreter is found
 
-message("Boost python3 library: ${Boost_PYTHON3_LIBRARY}")
-message("Python executable: ${PYTHON_EXECUTABLE}")
-message("Numpy: ${NUMPY_FOUND}")
-
 if(NOT Boost_PYTHON3_LIBRARY OR
     NOT PYTHON_EXECUTABLE OR NOT NUMPY_FOUND)
-    message(STATUS "Not configured brain.py: Boost.Python, Python or Numpy not found")
+    if(BRION_REQUIRE_PYTHON)
+        message( FATAL_ERROR "Not configured brain.py: Boost.Python, Python or Numpy not found. Build set to force python" )
+    else()
+        message(STATUS "Not configured brain.py: Boost.Python, Python or Numpy not found")
+    endif()
     return()
 endif()
 
@@ -93,23 +93,25 @@ if(BBPTestData_FOUND)
   target_link_libraries(brain_python PRIVATE BBPTestData)
 endif()
 
+message(${PYTHON_LIBRARY_SUFFIX})
+
 set_target_properties(brain_python PROPERTIES
     OUTPUT_NAME "_brain" PREFIX ""
-    LIBRARY_OUTPUT_DIRECTORY ${CMAKE_LIBRARY_OUTPUT_DIRECTORY}/brain)
+    LIBRARY_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/lib/brain)
 
-configure_file(brain/__init__.py.in ${CMAKE_LIBRARY_OUTPUT_DIRECTORY}/brain/__init__.py)
+configure_file(brain/__init__.py.in ${CMAKE_BINARY_DIR}/lib/brain/__init__.py)
 
 macro(COPY_AND_INSTALL_PACKAGE_DIRECTORY DIRECTORY)
     file(COPY brain/${DIRECTORY}
-      DESTINATION ${CMAKE_LIBRARY_OUTPUT_DIRECTORY}/brain)
+      DESTINATION ${CMAKE_BINARY_DIR}/lib/brain)
 
-    install(DIRECTORY ${CMAKE_LIBRARY_OUTPUT_DIRECTORY}/brain/${DIRECTORY}
+    install(DIRECTORY ${CMAKE_BINARY_DIR}/lib/brain/${DIRECTORY}
       DESTINATION ${PYTHON_LIBRARY_SUFFIX}/brain
       COMPONENT COMMON)
 endmacro()
 
 install(TARGETS brain_python
   LIBRARY DESTINATION ${PYTHON_LIBRARY_SUFFIX}/brain)
-install(FILES ${CMAKE_LIBRARY_OUTPUT_DIRECTORY}/brain/__init__.py
+install(FILES ${CMAKE_BINARY_DIR}/lib/brain/__init__.py
         DESTINATION ${PYTHON_LIBRARY_SUFFIX}/brain)
 copy_and_install_package_directory(neuron)

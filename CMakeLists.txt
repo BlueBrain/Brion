@@ -36,6 +36,10 @@ set(BRION_REV_STRING ${PROJECT_VERSION_MAJOR}.${PROJECT_VERSION_MINOR}.${PROJECT
 option(BRION_SKIP_LIBSONATA_SUBMODULE "Skip libsonata module" OFF)
 # Wether to build doxygen documentatin or not
 option(BRION_BUILD_DOC "Build documentation for Brion" OFF)
+# Wether to fail if python components are not found
+option(BRION_REQUIRE_PYTHON "Fail build if python is not found" OFF)
+
+
 # If no cmake install dir specified, initialize to /usr
 if(CMAKE_INSTALL_PREFIX_INITIALIZED_TO_DEFAULT AND NOT MSVC)
   set(CMAKE_INSTALL_PREFIX "/usr" CACHE PATH
@@ -66,6 +70,9 @@ set(BRION_DEB_DEPENDS libhdf5-serial-dev libboost-date-time-dev
 set(BRION_PORT_DEPENDS sphinx py-lxml)
 
 # Required and optional packages
+set(Boost_USE_STATIC_RUNTIME OFF)
+set(Boost_USE_STATIC_LIBS OFF)
+set(BUILD_SHARED_LIBS ON)
 find_package(Boost REQUIRED COMPONENTS
   date_time filesystem iostreams program_options regex system unit_test_framework)
 include(ChoosePython)
@@ -81,10 +88,14 @@ if(${CMAKE_VERSION} VERSION_LESS "3.12.0")
     set(NUMPY_FOUND ${Numpy_FOUND})
 else()
     find_package(Python3 COMPONENTS Interpreter Development NumPy)
-    set(PYTHON_EXECUTABLE ${Python3_EXECUTABLE})
-    if(Python3_NumPy_FOUND)
-        message("HERE")
-        set(NUMPY_FOUND ${Python3_NumPy_FOUND})
+    # Addpat cmake 3.12+ variables to our variable system
+    if(Python3_FOUND)
+        set(PYTHON_EXECUTABLE ${Python3_EXECUTABLE})
+        set(PYTHON_INCLUDE_PATH ${Python3_INCLUDE_DIRS})
+        if(Python3_NumPy_FOUND)
+            set(PYTHON_NUMPY_INCLUDE_DIR ${Python3_NumPy_INCLUDE_DIRS})
+            set(NUMPY_FOUND ${Python3_NumPy_FOUND})
+        endif()
     endif()
 endif()
 find_package(glm QUIET)

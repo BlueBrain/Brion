@@ -95,6 +95,23 @@ bool SpikeReportHDF5Sonata::handles(const PluginInitData& initData)
     if (!uri.getScheme().empty() && uri.getScheme() != "file")
         return false;
 
+    try
+    {
+        HighFive::SilenceHDF5 silence;
+        std::unique_ptr<HighFive::File> temp (new HighFive::File(initData.getURI().getPath()));
+
+        if(!temp->exist("/spikes"))
+            return false;
+
+        const auto group = temp->getGroup("/spikes");
+        if(!group.exist("All"))
+            return false;
+    }
+    catch(...)
+    {
+        return false;
+    }
+
     const auto ext = boost::filesystem::path(uri.getPath()).extension();
     return ext == brion::plugin::HDF_REPORT_FILE_EXT;
 }
