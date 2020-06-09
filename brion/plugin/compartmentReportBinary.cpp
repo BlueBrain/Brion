@@ -270,9 +270,7 @@ CompartmentReportBinary::CompartmentReportBinary(
 #endif
     }
     else
-    {
         _file.open(_path);
-    }
 
     if (!_parseHeader())
         BRION_THROW("Parsing header failed")
@@ -327,7 +325,7 @@ bool CompartmentReportBinary::_remapFile(const size_t size)
 {
     if (_file.is_open())
         _file.close();
-    _file.open(_path, std::ios_base::in | std::ios_base::out, size);
+    _file.open(_path, std::ios_base::in, size);
     return _file.is_open();
 }
 
@@ -393,7 +391,7 @@ bool CompartmentReportBinary::_loadFrames(const size_t startFrame,
 bool CompartmentReportBinary::_loadFrameMemMap(const size_t frameNumber,
                                                float* buffer) const
 {
-    const uint8_t* ptr = reinterpret_cast<const uint8_t*>(_file.data());
+    const uint8_t* ptr = reinterpret_cast<const uint8_t*>(_file.const_data());
     if (!ptr)
         return false;
 
@@ -503,7 +501,7 @@ void CompartmentReportBinary::_loadFramesAIO(const size_t, const size_t,
 floatsPtr CompartmentReportBinary::loadNeuron(const uint32_t gid) const
 {
     const uint8_t* const bytePtr =
-        reinterpret_cast<const uint8_t*>(_file.data());
+        reinterpret_cast<const uint8_t*>(_file.const_data());
     if (!bytePtr ||
         (_subtarget ? _targetMapping : _sourceMapping).offsets.empty())
     {
@@ -689,7 +687,7 @@ bool CompartmentReportBinary::_parseHeader()
 
 void CompartmentReportBinary::_parseGIDs()
 {
-    const uint8_t* ptr = reinterpret_cast<const uint8_t*>(_file.data());
+    const uint8_t* ptr = reinterpret_cast<const uint8_t*>(_file.const_data());
     ptr += _header.headerSize + NUMBER_OF_CELL;
     for (int32_t i = 0; i < _header.numCells; ++i)
     {
@@ -703,7 +701,7 @@ void CompartmentReportBinary::_parseGIDs()
 bool CompartmentReportBinary::_parseMapping()
 {
     _sourceMapping.frameSize = _header.numCompartments;
-    const uint8_t* ptr = reinterpret_cast<const uint8_t*>(_file.data());
+    const uint8_t* ptr = reinterpret_cast<const uint8_t*>(_file.const_data());
     size_t offset = _header.headerSize;
     std::unique_ptr<uint8_t[]> buffer(new uint8_t[_dataOffset]);
     std::copy(ptr, ptr + _dataOffset, buffer.get());
