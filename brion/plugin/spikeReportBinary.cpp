@@ -69,13 +69,13 @@ public:
     // Read-only mapping
     BinaryReportMap(const std::string& path)
         : _path(path)
-        , _map(path)
+        , _map(path, std::ios_base::in)
     {
         const size_t totalSize = _map.size();
         if (totalSize < sizeof(Header) || (totalSize % sizeof(uint32_t)) != 0)
             BRION_THROW("Incompatible binary report: " + path)
 
-        if (!reinterpret_cast<Header&>(*(_map.data())).isValid())
+        if (!reinterpret_cast<const Header&>(*(_map.const_data())).isValid())
             BRION_THROW("Invalid binary spike report header: " + path)
     }
 
@@ -99,6 +99,8 @@ public:
 
     void resize(const size_t nSpikes)
     {
+        if(_map.flags() != boost::iostreams::mapped_file::readwrite)
+            BRION_THROW("SpikeReportBinary: Cannot resize, file opened on read only mode")
         // Save whatever is already on the mapped memory
         std::vector<char> tempDataBuffer(_map.size());
         std::memcpy(tempDataBuffer.data(), _map.data(), _map.size() * sizeof(char));
@@ -120,7 +122,7 @@ public:
 
     const Spike* getReadableSpikes() const
     {
-        return reinterpret_cast<const Spike*>(_map.data() + sizeof(Header));
+        return reinterpret_cast<const Spike*>(_map.const_data() + sizeof(Header));
     }
 
     Spike* getWritableSpikes()
