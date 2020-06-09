@@ -1,5 +1,6 @@
 /* Copyright (c) 2013-2018, EPFL/Blue Brain Project
  *                          Juan Hernando <juan.hernando@epfl.ch>
+ *                          Nadir Román Guerrero <nadir.romanguerrero@epfl.ch>
  *
  * This file is part of Brion <https://github.com/BlueBrain/Brion>
  *
@@ -17,11 +18,12 @@
  * 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
  */
 
-#include "compartmentReportHDF5.h"
+#include "compartmentReportHDF5Sonata.h"
 #include "utilsHDF5.h"
 
 #include "../detail/hdf5Mutex.h"
 #include "../detail/utilsHDF5.h"
+
 #include "../log.h"
 #include "../pluginLibrary.h"
 
@@ -33,7 +35,9 @@
 #include <boost/icl/interval_set.hpp>
 #include <boost/scoped_array.hpp>
 
-#include <highfive/H5Utility.hpp>
+#include <highfive/H5DataType.hpp>
+
+#include <limits>
 
 namespace brion
 {
@@ -41,8 +45,20 @@ namespace plugin
 {
 namespace
 {
-constexpr uint32_t _sonataMagic = 0x0A7A;
-constexpr uint32_t _currentVersion[] = {0, 1};
+class PluginRegisterer
+{
+public:
+    PluginRegisterer()
+    {
+        auto& pluginManager = PluginLibrary::instance().getManager<CompartmentReportPlugin>();
+        pluginManager.registerFactory<CompartmentReportHDF5Sonata>();
+    }
+};
+
+PluginRegisterer registerer;
+
+//constexpr uint32_t _sonataMagic = 0x0A7A;
+//constexpr uint32_t _currentVersion[] = {0, 1};
 
 constexpr size_t _autoCacheSize = std::numeric_limits<size_t>::max();
 
@@ -73,28 +89,6 @@ std::vector<hsize_t> _computeChunkDims(const std::vector<uint32_t>& cellSizes,
     if ((frames * frameSize) < valuesPerChunk)
         return {hsize_t(std::floor(valuesPerChunk / frameSize)), frameSize};
     return {frames, valuesPerChunk / frames};
-}
-
-bool _verifyFile(const HighFive::File& file)
-{
-    try
-    {
-        uint32_t magic = 0;
-        file.getAttribute("magic").read(magic);
-        if (magic != _sonataMagic)
-            return false;
-
-        std::vector<uint32_t> version;
-        file.getAttribute("version").read(version);
-        if (version.size() != 2 || version[0] != _currentVersion[0] ||
-            version[1] != _currentVersion[1])
-            return false;
-    }
-    catch (HighFive::Exception& e)
-    {
-        return false;
-    }
-    return true;
 }
 
 size_t _parseSizeOption(const std::string& value, const std::string& name)
@@ -131,20 +125,9 @@ size_t _parseCacheSizeOption(const URI& uri)
     return _parseSizeOption(value, "cache_size");
 }
 
-class PluginRegisterer
-{
-public:
-    PluginRegisterer()
-    {
-        auto& pluginManager = PluginLibrary::instance().getManager<CompartmentReportPlugin>();
-        pluginManager.registerFactory<CompartmentReportHDF5>();
-    }
-};
+} // namespace
 
-PluginRegisterer registerer;
-}
-
-CompartmentReportHDF5::CompartmentReportHDF5(
+CompartmentReportHDF5Sonata::CompartmentReportHDF5Sonata(
     const CompartmentReportInitData& initData)
     : _startTime(0)
     , _endTime(0)
@@ -174,13 +157,13 @@ CompartmentReportHDF5::CompartmentReportHDF5(
     _parseWriteOptions(initData.getURI());
 }
 
-CompartmentReportHDF5::~CompartmentReportHDF5()
+CompartmentReportHDF5Sonata::~CompartmentReportHDF5Sonata()
 {
     std::lock_guard<std::mutex> mutex(detail::hdf5Mutex());
     _file.reset();
 }
 
-bool CompartmentReportHDF5::handles(const CompartmentReportInitData& initData)
+bool CompartmentReportHDF5Sonata::handles(const CompartmentReportInitData& initData)
 {
     const auto& uri = initData.getURI();
     if (!isHDF5File(uri))
@@ -192,10 +175,12 @@ bool CompartmentReportHDF5::handles(const CompartmentReportInitData& initData)
 
     std::lock_guard<std::mutex> mutex(detail::hdf5Mutex());
     HighFive::SilenceHDF5 silence;
-    return _verifyFile(openFile(initData.getURI().getPath(), MODE_READ, false));
+    std::unique_ptr<HighFive::File> temp
+            (new HighFive::File(openFile(initData.getURI().getPath(), MODE_READ, false)));
+    return temp->exist("report");
 }
 
-std::string CompartmentReportHDF5::getDescription()
+std::string CompartmentReportHDF5Sonata::getDescription()
 {
     return "SONATA HDF5 compartment reports:  "
            "[file://]/path/to/report.(h5|hdf5)"
@@ -208,37 +193,37 @@ std::string CompartmentReportHDF5::getDescription()
            " auto cache size is limited to 1GB.";
 }
 
-size_t CompartmentReportHDF5::getCellCount() const
+size_t CompartmentReportHDF5Sonata::getCellCount() const
 {
     return _subset ? _gids.size() : _sourceGIDs.size();
 }
 
-const GIDSet& CompartmentReportHDF5::getGIDs() const
+const GIDSet& CompartmentReportHDF5Sonata::getGIDs() const
 {
     return _subset ? _gids : _sourceGIDs;
 }
 
-const SectionOffsets& CompartmentReportHDF5::getOffsets() const
+const SectionOffsets& CompartmentReportHDF5Sonata::getOffsets() const
 {
     return (_subset ? _targetMapping : _sourceMapping).offsets;
 }
 
-const CompartmentCounts& CompartmentReportHDF5::getCompartmentCounts() const
+const CompartmentCounts& CompartmentReportHDF5Sonata::getCompartmentCounts() const
 {
     return (_subset ? _targetMapping : _sourceMapping).counts;
 }
 
-size_t CompartmentReportHDF5::getNumCompartments(const size_t index) const
+size_t CompartmentReportHDF5Sonata::getNumCompartments(const size_t index) const
 {
     return (_subset ? _targetMapping : _sourceMapping).cellSizes[index];
 }
 
-size_t CompartmentReportHDF5::getFrameSize() const
+size_t CompartmentReportHDF5Sonata::getFrameSize() const
 {
     return (_subset ? _targetMapping : _sourceMapping).frameSize;
 }
 
-void CompartmentReportHDF5::updateMapping(const GIDSet& gids)
+void CompartmentReportHDF5Sonata::updateMapping(const GIDSet& gids)
 {
     std::lock_guard<std::mutex> mutex(detail::hdf5Mutex());
     HighFive::SilenceHDF5 silence;
@@ -246,7 +231,7 @@ void CompartmentReportHDF5::updateMapping(const GIDSet& gids)
     _updateMapping(gids);
 }
 
-void CompartmentReportHDF5::writeHeader(const double startTime,
+void CompartmentReportHDF5Sonata::writeHeader(const double startTime,
                                         const double endTime,
                                         const double timestep,
                                         const std::string& dunit,
@@ -269,7 +254,7 @@ void CompartmentReportHDF5::writeHeader(const double startTime,
     _tunit = tunit;
 }
 
-bool CompartmentReportHDF5::writeCompartments(const uint32_t gid,
+bool CompartmentReportHDF5Sonata::writeCompartments(const uint32_t gid,
                                               const uint16_ts& counts)
 {
     // Storing the mapping data temporarily until the first frame is inserted
@@ -289,7 +274,7 @@ bool CompartmentReportHDF5::writeCompartments(const uint32_t gid,
     return true;
 }
 
-bool CompartmentReportHDF5::writeFrame(const uint32_t gid, const float* values,
+bool CompartmentReportHDF5Sonata::writeFrame(const uint32_t gid, const float* values,
                                        const size_t /*size*/,
                                        const double timestamp)
 {
@@ -316,14 +301,14 @@ bool CompartmentReportHDF5::writeFrame(const uint32_t gid, const float* values,
     }
     catch (const HighFive::Exception& e)
     {
-        BRION_ERROR << "CompartmentReportHDF5: error writing frame: " << e.what()
-                    << std::endl;
+        BRION_ERROR << "CompartmentReportHDF5Sonata: error writing frame: " << e.what()
+                  << std::endl;
         return false;
     }
     return true;
 }
 
-bool CompartmentReportHDF5::writeFrame(const GIDSet& gids, const float* values,
+bool CompartmentReportHDF5Sonata::writeFrame(const GIDSet& gids, const float* values,
                                        const size_ts& sizes,
                                        const double timestamp)
 {
@@ -358,21 +343,21 @@ bool CompartmentReportHDF5::writeFrame(const GIDSet& gids, const float* values,
     }
     catch (const HighFive::Exception& e)
     {
-        BRION_ERROR << "CompartmentReportHDF5: error writing frame: " << e.what()
-                    << std::endl;
+        BRION_ERROR << "CompartmentReportHDF5Sonata: error writing frame: " << e.what()
+                  << std::endl;
         return false;
     }
     return true;
 }
 
-bool CompartmentReportHDF5::flush()
+bool CompartmentReportHDF5Sonata::flush()
 {
     std::lock_guard<std::mutex> mutex(detail::hdf5Mutex());
     _file->flush();
     return true;
 }
 
-bool CompartmentReportHDF5::_loadFrame(const size_t frameNumber,
+bool CompartmentReportHDF5Sonata::_loadFrame(const size_t frameNumber,
                                        float* buffer) const
 {
     std::lock_guard<std::mutex> mutex(detail::hdf5Mutex());
@@ -410,7 +395,7 @@ bool CompartmentReportHDF5::_loadFrame(const size_t frameNumber,
     return true;
 }
 
-bool CompartmentReportHDF5::_loadFrames(size_t frameNumber, size_t frameCount,
+bool CompartmentReportHDF5Sonata::_loadFrames(size_t frameNumber, size_t frameCount,
                                         float* buffer) const
 {
     std::lock_guard<std::mutex> mutex(detail::hdf5Mutex());
@@ -453,19 +438,26 @@ bool CompartmentReportHDF5::_loadFrames(size_t frameNumber, size_t frameCount,
                                                 buffer);
 }
 
-void CompartmentReportHDF5::_readMetaData()
+void CompartmentReportHDF5Sonata::_readMetaData()
 {
     try
     {
-        if (!_verifyFile(*_file))
+        if(!_file->exist("report"))
+            BRION_THROW("Error opening compartment report: No \"report\" group found")
+
+        const HighFive::Group reportGroup = _file->getGroup("report");
+
+        if(!reportGroup.exist("All"))
         {
-            BRION_THROW("Error opening compartment report: not"
-                        " a SONATA compartment report")
+            BRION_THROW("Error opening compartment report: "
+                      "No \"All\" group found within report group")
         }
+
+        const HighFive::Group allGroup = reportGroup.getGroup("All");
 
         // Opening the dataset temporarily, it will be reopen later with
         // proper chunk cache configuration.
-        _data.reset(new HighFive::DataSet(_file->getDataSet("data")));
+        _data.reset(new HighFive::DataSet(allGroup.getDataSet("data")));
         try
         {
             _data->getAttribute("units").read(_dunit);
@@ -474,7 +466,7 @@ void CompartmentReportHDF5::_readMetaData()
         {
             _dunit = "mV";
         }
-        const auto& mapping = _file->getGroup("mapping");
+        const auto& mapping = allGroup.getGroup("mapping");
         const auto& time = mapping.getDataSet("time");
         try
         {
@@ -488,9 +480,8 @@ void CompartmentReportHDF5::_readMetaData()
         std::vector<double> timeData;
         time.read(timeData);
         if (timeData.size() != 3)
-        {
-           BRION_THROW("Error opening compartment report: Bad time metadata")
-        }
+            BRION_THROW("Error opening compartment report: Bad time metadata")
+
         _startTime = timeData[0];
         _endTime = timeData[1];
         _timestep = timeData[2];
@@ -499,25 +490,28 @@ void CompartmentReportHDF5::_readMetaData()
         const auto& dims = _data->getSpace().getDimensions();
         if (dims.size() != 2)
             BRION_THROW("Bad report: data is not 2-dimensional")
+
         _sourceMapping.frameSize = dims[1];
     }
     catch (std::exception& e)
     {
-        throw std::runtime_error(
-            std::string("Error opening compartment report: ") + e.what());
+        BRION_THROW(std::string("Error opening compartment report: ") + std::string(e.what()));
     }
 }
 
-void CompartmentReportHDF5::_parseBasicCellInfo()
+void CompartmentReportHDF5Sonata::_parseBasicCellInfo()
 {
+    const HighFive::Group reportGroup = _file->getGroup("report");
+    const HighFive::Group allGroup = reportGroup.getGroup("All");
+
     // This not only parses the GIDs, but also computes the cell offsets
     // and compartment counts per cell, with the proper reordering if needed.
-    const auto& mapping = _file->getGroup("mapping");
+    const auto& mapping = allGroup.getGroup("mapping");
     std::vector<uint32_t> gids;
     std::vector<size_t> offsets;
-    const auto& gidsDataSet = mapping.getDataSet("gids");
+    const auto& gidsDataSet = mapping.getDataSet("node_ids");
     gidsDataSet.read(gids);
-    mapping.getDataSet("index_pointer").read(offsets);
+    mapping.getDataSet("index_pointers").read(offsets);
     if ((gids.size() != offsets.size() && gids.size() + 1 != offsets.size()) ||
         gids.empty())
         BRION_THROW("Bad report metadata")
@@ -578,16 +572,19 @@ void CompartmentReportHDF5::_parseBasicCellInfo()
     }
 }
 
-void CompartmentReportHDF5::_processMapping()
+void CompartmentReportHDF5Sonata::_processMapping()
 {
-    const auto& mapping = _file->getGroup("mapping");
+    const HighFive::Group reportGroup = _file->getGroup("report");
+    const HighFive::Group allGroup = reportGroup.getGroup("All");
+
+    const auto& mapping = allGroup.getGroup("mapping");
     std::vector<uint32_t> sectionIDs;
-    mapping.getDataSet("element_id").read(sectionIDs);
+    mapping.getDataSet("element_ids").read(sectionIDs);
     try
     {
         mapping.getDataSet("element_pos");
-        BRION_WARN << "Unsupported mapping attribute in compartment"
-                   << " report: element_pos" << std::endl;
+        BRION_WARN << "Unsupported mapping attribute in compartment "
+                 << "report: element_pos" << std::endl;
     }
     catch (...)
     {
@@ -644,7 +641,7 @@ void CompartmentReportHDF5::_processMapping()
     }
 }
 
-void CompartmentReportHDF5::_updateMapping(const GIDSet& gids)
+void CompartmentReportHDF5Sonata::_updateMapping(const GIDSet& gids)
 {
     if (_sourceGIDs.empty())
         _parseBasicCellInfo();
@@ -672,19 +669,11 @@ void CompartmentReportHDF5::_updateMapping(const GIDSet& gids)
     _targetMapping = _reduceMapping(_sourceMapping, _subsetIndices);
 }
 
-void CompartmentReportHDF5::_writeMetadataAndMapping()
+void CompartmentReportHDF5Sonata::_writeMetadataAndMapping()
 {
     auto root = _file->getGroup("/");
-
-    // Writing metadata
-
-    auto version = _file->createAttribute<uint32_t>(
-        "version", HighFive::DataSpace(std::vector<size_t>({2})));
-    version.write(_currentVersion);
-
-    auto magic = _file->createAttribute<uint32_t>(
-        "magic", HighFive::DataSpace(std::vector<size_t>({1})));
-    magic.write(_sonataMagic);
+    HighFive::Group reportG = _file->createGroup("report");
+    HighFive::Group allG = reportG.createGroup("All");
 
     detail::addStringAttribute(*_file, "creator", "Brion");
     detail::addStringAttribute(*_file, "software_version", BRION_REV_STRING);
@@ -734,7 +723,7 @@ void CompartmentReportHDF5::_writeMetadataAndMapping()
     _targetMapping.cellOffsets = std::move(cellOffsets);
 
     // Writing the mapping datasets
-    auto mapping = _file->createGroup("mapping");
+    auto mapping = allG.createGroup("mapping");
 
     auto time =
         mapping.createDataSet<double>("time", HighFive::DataSpace(
@@ -743,26 +732,29 @@ void CompartmentReportHDF5::_writeMetadataAndMapping()
     detail::addStringAttribute(time, "units", _tunit);
 
     auto gidsDataSet = mapping.createDataSet<uint32_t>(
-        "gids", HighFive::DataSpace(std::vector<size_t>{cellCount}));
+        "node_ids", HighFive::DataSpace(std::vector<size_t>{cellCount}));
     gidsDataSet.write(_GIDlist);
     auto sorted = gidsDataSet.createAttribute<int8_t>(
         "sorted", HighFive::DataSpace(std::vector<size_t>({1})));
     sorted.write(1);
 
     auto elementDataSet =
-        mapping.createDataSet<uint32_t>("element_id",
+        mapping.createDataSet<uint32_t>("element_ids",
                                         HighFive::DataSpace(std::vector<size_t>{
                                             sortedMapping.size()}));
     elementDataSet.write(sortedMapping);
 
     auto offsetSet = mapping.createDataSet<uint64_t>(
-        "index_pointer", HighFive::DataSpace(std::vector<size_t>{
+        "index_pointers", HighFive::DataSpace(std::vector<size_t>{
                              _targetMapping.cellOffsets.size()}));
     offsetSet.write(_targetMapping.cellOffsets);
 }
 
-void CompartmentReportHDF5::_allocateDataSet()
+void CompartmentReportHDF5Sonata::_allocateDataSet()
 {
+    HighFive::Group reportG = _file->getGroup("report");
+    HighFive::Group allG = reportG.getGroup("All");
+
     const double step = getTimestep();
     // Adding step / 2 to the window to avoid off by 1 errors during truncation
     // after the division.
@@ -788,12 +780,12 @@ void CompartmentReportHDF5::_allocateDataSet()
         HighFive::Caching(chunksPerFrame + 1, chunksPerFrame * _chunkSize));
 
     _data.reset(new HighFive::DataSet(
-        _file->createDataSet<float>("data", dataspace, chunking, caching)));
+        allG.createDataSet<float>("data", dataspace, chunking, caching)));
 
     detail::addStringAttribute(*_data, "units", _dunit);
 }
 
-void CompartmentReportHDF5::_parseWriteOptions(const URI& uri)
+void CompartmentReportHDF5Sonata::_parseWriteOptions(const URI& uri)
 {
     for (auto i = uri.queryBegin(); i != uri.queryEnd(); ++i)
     {
@@ -830,7 +822,7 @@ void CompartmentReportHDF5::_parseWriteOptions(const URI& uri)
     }
 }
 
-void CompartmentReportHDF5::_reopenDataSet(size_t cacheSizeHint)
+void CompartmentReportHDF5Sonata::_reopenDataSet(size_t cacheSizeHint)
 {
     // Getting the chunk dims
     auto properties = H5Dget_create_plist(_data->getId());
@@ -904,7 +896,10 @@ void CompartmentReportHDF5::_reopenDataSet(size_t cacheSizeHint)
 
     HighFive::DataSetAccessProps accessProps;
     accessProps.add(HighFive::Caching(numSlots, cacheSizeHint));
-    _data.reset(new HighFive::DataSet(_file->getDataSet("data", accessProps)));
+    HighFive::Group reportG = _file->getGroup("report");
+    HighFive::Group allG = reportG.getGroup("All");
+    _data.reset(new HighFive::DataSet(allG.getDataSet("data", accessProps)));
 }
-}
-}
+
+} // namespace plugin
+} // namespace brion

@@ -364,7 +364,7 @@ bool convert(const brion::URI& fromURI, const brion::URI& toURI)
     }
     catch (const std::runtime_error& e)
     {
-        const std::string expected("No plugin implementation available for ");
+        const std::string expected("Could not find an implementation for ");
         BOOST_CHECK_MESSAGE(std::string(e.what()).find(expected) == 0,
                             e.what());
         return false;

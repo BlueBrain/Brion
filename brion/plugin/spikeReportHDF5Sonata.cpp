@@ -17,7 +17,7 @@
  * 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
  */
 
-#include "spikeReportHDF5.h"
+#include "spikeReportHDF5Sonata.h"
 
 #include "../pluginLibrary.h"
 
@@ -42,7 +42,7 @@ public:
     PluginRegisterer()
     {
         auto& pluginManager = PluginLibrary::instance().getManager<SpikeReportPlugin>();
-        pluginManager.registerFactory<SpikeReportHDF5>();
+        pluginManager.registerFactory<SpikeReportHDF5Sonata>();
     }
 };
 
@@ -51,7 +51,7 @@ PluginRegisterer registerer;
 constexpr char HDF_REPORT_FILE_EXT[] = ".h5";
 } // namespace
 
-SpikeReportHDF5::SpikeReportHDF5(const PluginInitData& initData)
+SpikeReportHDF5Sonata::SpikeReportHDF5Sonata(const PluginInitData& initData)
     : SpikeReportPlugin(initData)
     , _file([initData]() {
         // For consistency with the other spike plugins, we convert
@@ -68,8 +68,9 @@ SpikeReportHDF5::SpikeReportHDF5(const PluginInitData& initData)
     }())
 {
     const auto group = _file.getGroup("/spikes");
-    const auto setGids = group.getDataSet("gids");
-    const auto setTimestamps = group.getDataSet("timestamps");
+    const auto allG = group.getGroup("All");
+    const auto setGids = allG.getDataSet("node_ids");
+    const auto setTimestamps = allG.getDataSet("timestamps");
 
     uint32_ts gids;
     floats timestamps;
@@ -88,24 +89,41 @@ SpikeReportHDF5::SpikeReportHDF5(const PluginInitData& initData)
         _endTime = _spikes.rbegin()->first;
 }
 
-bool SpikeReportHDF5::handles(const PluginInitData& initData)
+bool SpikeReportHDF5Sonata::handles(const PluginInitData& initData)
 {
     const URI& uri = initData.getURI();
     if (!uri.getScheme().empty() && uri.getScheme() != "file")
         return false;
 
+    try
+    {
+        HighFive::SilenceHDF5 silence;
+        std::unique_ptr<HighFive::File> temp (new HighFive::File(initData.getURI().getPath()));
+
+        if(!temp->exist("/spikes"))
+            return false;
+
+        const auto group = temp->getGroup("/spikes");
+        if(!group.exist("All"))
+            return false;
+    }
+    catch(...)
+    {
+        return false;
+    }
+
     const auto ext = boost::filesystem::path(uri.getPath()).extension();
     return ext == brion::plugin::HDF_REPORT_FILE_EXT;
 }
 
-std::string SpikeReportHDF5::getDescription()
+std::string SpikeReportHDF5Sonata::getDescription()
 {
     return "Sonata spike reports: "
            "[file://]/path/to/report" +
            std::string(HDF_REPORT_FILE_EXT);
 }
 
-Spikes SpikeReportHDF5::read(const float)
+Spikes SpikeReportHDF5Sonata::read(const float)
 {
     // In file based reports, this function reads all remaining data.
     Spikes spikes;
@@ -120,7 +138,7 @@ Spikes SpikeReportHDF5::read(const float)
     return spikes;
 }
 
-Spikes SpikeReportHDF5::readUntil(const float toTimeStamp)
+Spikes SpikeReportHDF5Sonata::readUntil(const float toTimeStamp)
 {
     Spikes spikes;
 
@@ -147,7 +165,7 @@ Spikes SpikeReportHDF5::readUntil(const float toTimeStamp)
     return spikes;
 }
 
-void SpikeReportHDF5::readSeek(const float toTimeStamp)
+void SpikeReportHDF5Sonata::readSeek(const float toTimeStamp)
 {
     if (_spikes.empty())
     {

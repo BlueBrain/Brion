@@ -36,6 +36,10 @@ set(BRION_REV_STRING ${PROJECT_VERSION_MAJOR}.${PROJECT_VERSION_MINOR}.${PROJECT
 option(BRION_SKIP_LIBSONATA_SUBMODULE "Skip libsonata module" OFF)
 # Wether to build doxygen documentatin or not
 option(BRION_BUILD_DOC "Build documentation for Brion" OFF)
+# Wether to fail if python components are not found
+option(BRION_REQUIRE_PYTHON "Fail build if python is not found" OFF)
+
+
 # If no cmake install dir specified, initialize to /usr
 if(CMAKE_INSTALL_PREFIX_INITIALIZED_TO_DEFAULT AND NOT MSVC)
   set(CMAKE_INSTALL_PREFIX "/usr" CACHE PATH
@@ -45,7 +49,6 @@ endif()
 # Include custom cmake modules
 list(APPEND CMAKE_MODULE_PATH ${PROJECT_SOURCE_DIR}/CMake)
 include(CompileOptions)
-include(ChoosePython)
 
 # Configure base directories
 set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/lib)
@@ -67,16 +70,35 @@ set(BRION_DEB_DEPENDS libhdf5-serial-dev libboost-date-time-dev
 set(BRION_PORT_DEPENDS sphinx py-lxml)
 
 # Required and optional packages
+# Configuration to bring boost
+set(Boost_USE_STATIC_RUNTIME OFF)
+set(Boost_USE_STATIC_LIBS OFF)
+set(BUILD_SHARED_LIBS ON)
 find_package(Boost REQUIRED COMPONENTS
   date_time filesystem iostreams program_options regex system unit_test_framework)
-find_package(Boost COMPONENTS python3)
+# Choose the appropiate version of boost python based on the available python
+include(ChoosePython)
+find_package(Boost COMPONENTS python${USE_BOOST_PYTHON_VERSION})
+# Sets the global library used to link
+if(Boost_PYTHON${USE_BOOST_PYTHON_VERSION}_FOUND)
+    set(Boost_PYTHON3_LIBRARY ${Boost_PYTHON${USE_BOOST_PYTHON_VERSION}_LIBRARY})
+endif()
+# Old way of finding python
 if(${CMAKE_VERSION} VERSION_LESS "3.12.0")
     set(Python_ADDITIONAL_VERSIONS 3)
     find_package(PythonInterp)
     find_package(PythonLibs)
     find_package(NumPy 1.7 REQUIRED)
+    set(NUMPY_FOUND ${Numpy_FOUND})
 else()
-    find_package(Python3 COMPONENTS Interpreter Development NumPy 1.7)
+    find_package(Python3 COMPONENTS Interpreter Development NumPy)
+    # Addpat cmake 3.12+ variables to our variable system
+    if(${Python3_FOUND} AND ${Python3_NumPy_FOUND})
+        set(PYTHON_EXECUTABLE ${Python3_EXECUTABLE})
+        set(PYTHON_INCLUDE_PATH ${Python3_INCLUDE_DIRS})
+        set(PYTHON_NUMPY_INCLUDE_DIR ${Python3_NumPy_INCLUDE_DIRS})
+        set(NUMPY_FOUND ${Python3_NumPy_FOUND})
+    endif()
 endif()
 find_package(glm QUIET)
 find_package(HighFive QUIET)
