@@ -425,6 +425,11 @@ Quaternionfs Circuit::getRotations(const GIDSet& gids) const
     return _impl->getRotations(gids);
 }
 
+size_ts Circuit::getLayers(const GIDSet &gids) const
+{
+    return _impl->getLayers(gids);
+}
+
 template <typename T>
 std::vector<T> Circuit::getAttribute(const std::string& name,
                                      const GIDSet& gids) const

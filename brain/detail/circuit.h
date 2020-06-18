@@ -181,6 +181,7 @@ public:
     virtual size_ts getETypes(const GIDSet& gids) const = 0;
     virtual Strings getElectrophysiologyTypeNames() const = 0;
     virtual Quaternionfs getRotations(const GIDSet& gids) const = 0;
+    virtual size_ts getLayers(const GIDSet& gids) const = 0;
     virtual Strings getMorphologyNames(const GIDSet& gids) const = 0;
     virtual std::vector<bool> getRecenter(const GIDSet&) const
     {
@@ -410,6 +411,10 @@ public:
         }
 
         return output;
+    }
+    size_ts getLayers(const GIDSet&) const final
+    {
+        BRAIN_THROW("Uninplemented")
     }
     Strings getMorphologyNames(const GIDSet& gids) const final
     {
@@ -807,6 +812,32 @@ public:
         return rotations;
     }
 
+    size_ts getLayers(const GIDSet& gids) const final
+    {
+        if(gids.empty())
+            return size_ts();
+        brion::NeuronMatrix data = _circuit.get(gids, brion::NEURON_LAYER);
+        size_ts layers (gids.size());
+
+#pragma omp parallel for
+        for(size_t i = 0; i < gids.size(); ++i)
+        {
+            try
+            {
+                layers[i] = lexical_cast<size_t>(data[i][0]);
+            }
+            catch (const boost::bad_lexical_cast&)
+            {
+                GIDSet::const_iterator gid = gids.begin();
+                std::advance(gid, i);
+                BRAIN_WARN << "Error parsing circuit layer for gid " << *gid
+                         << std::endl;
+            }
+        }
+
+        return layers;
+    }
+
     Strings getMorphologyNames(const GIDSet& gids) const final
     {
         if (gids.empty())
@@ -931,6 +962,44 @@ struct MVD3 : public BBPCircuit
         {
             BRAIN_THROW("Exception in getRotations(): " + std::string(e.what()))
         }
+    }
+
+    size_ts getLayers(const GIDSet& gids) const final
+    {
+        if (gids.empty())
+            return size_ts();
+
+        size_ts results(gids.size());
+        const ::MVD3::Range& range = _getRange(gids);
+        std::vector<std::string> layerStr;
+        try
+        {
+            std::lock_guard<std::mutex> lock(brion::detail::hdf5Mutex());
+            HighFive::SilenceHDF5 silence;
+            layerStr = _circuit.getLayers(range);
+        }
+        catch (const HighFive::Exception& e)
+        {
+            BRAIN_THROW("Exception in getLayers(): " + std::string(e.what()))
+        }
+
+#pragma omp parallel for
+        for(size_t i = 0; i < gids.size(); ++i)
+        {
+            try
+            {
+                results[i] = lexical_cast<size_t>(layerStr[i]);
+            }
+            catch (const boost::bad_lexical_cast&)
+            {
+                GIDSet::const_iterator gid = gids.begin();
+                std::advance(gid, i);
+                BRAIN_WARN << "Error parsing circuit layer for gid " << *gid
+                         << std::endl;
+            }
+        }
+
+        return results;
     }
 
     Strings getMorphologyNames(const GIDSet& gids) const final

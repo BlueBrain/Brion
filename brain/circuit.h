@@ -161,6 +161,11 @@ public:
      */
     BRAIN_API Quaternionfs getRotations(const GIDSet& gids) const;
 
+    /** @return The layer ids of the given cells in the iteration order
+     *          of the input gids.
+     */
+    BRAIN_API size_ts getLayers(const GIDSet& gids) const;
+
     /** Get the value of a custom attribute for a set of gids.
 
         This only works for circuit file formats that support custom attribute
