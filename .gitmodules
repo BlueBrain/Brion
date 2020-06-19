@@ -10,3 +10,6 @@
 [submodule "deps/MVDTool"]
 	path = deps/MVDTool
 	url = https://github.com/BlueBrain/MVDTool.git
+[submodule "deps/MorphIO"]
+	path = deps/MorphIO
+	url = https://github.com/BlueBrain/MorphIO
