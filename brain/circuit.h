@@ -164,7 +164,7 @@ public:
     /** @return The layer ids of the given cells in the iteration order
      *          of the input gids.
      */
-    BRAIN_API size_ts getLayers(const GIDSet& gids) const;
+    BRAIN_API size_ts getLayers(const GIDSet& gids, const std::string& srcTSV = "") const;
 
     /** Get the value of a custom attribute for a set of gids.
 

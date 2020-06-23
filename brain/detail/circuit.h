@@ -181,7 +181,7 @@ public:
     virtual size_ts getETypes(const GIDSet& gids) const = 0;
     virtual Strings getElectrophysiologyTypeNames() const = 0;
     virtual Quaternionfs getRotations(const GIDSet& gids) const = 0;
-    virtual size_ts getLayers(const GIDSet& gids) const = 0;
+    virtual size_ts getLayers(const GIDSet& gids, const std::string& tsvSrc = "") const = 0;
     virtual Strings getMorphologyNames(const GIDSet& gids) const = 0;
     virtual std::vector<bool> getRecenter(const GIDSet&) const
     {
@@ -412,7 +412,7 @@ public:
 
         return output;
     }
-    size_ts getLayers(const GIDSet&) const final
+    size_ts getLayers(const GIDSet&, const std::string&) const final
     {
         BRAIN_THROW("Uninplemented")
     }
@@ -812,7 +812,7 @@ public:
         return rotations;
     }
 
-    size_ts getLayers(const GIDSet& gids) const final
+    size_ts getLayers(const GIDSet& gids, const std::string&) const final
     {
         if(gids.empty())
             return size_ts();
@@ -964,7 +964,7 @@ struct MVD3 : public BBPCircuit
         }
     }
 
-    size_ts getLayers(const GIDSet& gids) const final
+    size_ts getLayers(const GIDSet& gids, const std::string& tsvSource) const final
     {
         if (gids.empty())
             return size_ts();
@@ -976,11 +976,12 @@ struct MVD3 : public BBPCircuit
         {
             std::lock_guard<std::mutex> lock(brion::detail::hdf5Mutex());
             HighFive::SilenceHDF5 silence;
+            _circuit.openComboTsv(tsvSource);
             layerStr = _circuit.getLayers(range);
         }
         catch (const HighFive::Exception& e)
         {
-            BRAIN_THROW("Exception in getLayers(): " + std::string(e.what()))
+            BRAIN_WARN << "Circuit layers not available: " + std::string(e.what()) << std::endl;
         }
 
 #pragma omp parallel for
@@ -1024,6 +1025,6 @@ struct MVD3 : public BBPCircuit
     }
 
 private:
-    ::MVD3::MVD3File _circuit;
+    mutable ::MVD3::MVD3File _circuit;
 };
 } // namespace brain
