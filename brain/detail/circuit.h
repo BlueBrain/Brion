@@ -181,6 +181,8 @@ public:
     virtual size_ts getETypes(const GIDSet& gids) const = 0;
     virtual Strings getElectrophysiologyTypeNames() const = 0;
     virtual Quaternionfs getRotations(const GIDSet& gids) const = 0;
+    virtual std::vector<std::string> getLayers(const GIDSet& gids,
+                                               const std::string& tsvSrc = "") const = 0;
     virtual Strings getMorphologyNames(const GIDSet& gids) const = 0;
     virtual std::vector<bool> getRecenter(const GIDSet&) const
     {
@@ -410,6 +412,10 @@ public:
         }
 
         return output;
+    }
+    std::vector<std::string> getLayers(const GIDSet&, const std::string&) const final
+    {
+        BRAIN_THROW("Uninplemented")
     }
     Strings getMorphologyNames(const GIDSet& gids) const final
     {
@@ -807,6 +813,20 @@ public:
         return rotations;
     }
 
+    std::vector<std::string> getLayers(const GIDSet& gids, const std::string&) const final
+    {
+        if(gids.empty())
+            return std::vector<std::string>();
+        brion::NeuronMatrix data = _circuit.get(gids, brion::NEURON_LAYER);
+        std::vector<std::string> layers (gids.size());
+
+#pragma omp parallel for
+        for(size_t i = 0; i < gids.size(); ++i)
+            layers[i] = data[i][0];
+
+        return layers;
+    }
+
     Strings getMorphologyNames(const GIDSet& gids) const final
     {
         if (gids.empty())
@@ -933,6 +953,30 @@ struct MVD3 : public BBPCircuit
         }
     }
 
+    std::vector<std::string>
+    getLayers(const GIDSet& gids, const std::string& tsvSource) const final
+    {
+        if (gids.empty())
+            return std::vector<std::string>();
+
+        size_ts results(gids.size());
+        const ::MVD3::Range& range = _getRange(gids);
+        std::vector<std::string> layerStr;
+        try
+        {
+            std::lock_guard<std::mutex> lock(brion::detail::hdf5Mutex());
+            HighFive::SilenceHDF5 silence;
+            _circuit.openComboTsv(tsvSource);
+            return _circuit.getLayers(range);
+        }
+        catch (const HighFive::Exception& e)
+        {
+            BRAIN_WARN << "Circuit layers not available: " + std::string(e.what()) << std::endl;
+        }
+
+        return std::vector<std::string>();
+    }
+
     Strings getMorphologyNames(const GIDSet& gids) const final
     {
         if (gids.empty())
@@ -955,6 +999,6 @@ struct MVD3 : public BBPCircuit
     }
 
 private:
-    ::MVD3::MVD3File _circuit;
+    mutable ::MVD3::MVD3File _circuit;
 };
 } // namespace brain
