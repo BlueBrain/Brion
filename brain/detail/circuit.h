@@ -181,7 +181,8 @@ public:
     virtual size_ts getETypes(const GIDSet& gids) const = 0;
     virtual Strings getElectrophysiologyTypeNames() const = 0;
     virtual Quaternionfs getRotations(const GIDSet& gids) const = 0;
-    virtual size_ts getLayers(const GIDSet& gids, const std::string& tsvSrc = "") const = 0;
+    virtual std::vector<std::string> getLayers(const GIDSet& gids,
+                                               const std::string& tsvSrc = "") const = 0;
     virtual Strings getMorphologyNames(const GIDSet& gids) const = 0;
     virtual std::vector<bool> getRecenter(const GIDSet&) const
     {
@@ -412,7 +413,7 @@ public:
 
         return output;
     }
-    size_ts getLayers(const GIDSet&, const std::string&) const final
+    std::vector<std::string> getLayers(const GIDSet&, const std::string&) const final
     {
         BRAIN_THROW("Uninplemented")
     }
@@ -812,28 +813,16 @@ public:
         return rotations;
     }
 
-    size_ts getLayers(const GIDSet& gids, const std::string&) const final
+    std::vector<std::string> getLayers(const GIDSet& gids, const std::string&) const final
     {
         if(gids.empty())
-            return size_ts();
+            return std::vector<std::string>();
         brion::NeuronMatrix data = _circuit.get(gids, brion::NEURON_LAYER);
-        size_ts layers (gids.size());
+        std::vector<std::string> layers (gids.size());
 
 #pragma omp parallel for
         for(size_t i = 0; i < gids.size(); ++i)
-        {
-            try
-            {
-                layers[i] = lexical_cast<size_t>(data[i][0]);
-            }
-            catch (const boost::bad_lexical_cast&)
-            {
-                GIDSet::const_iterator gid = gids.begin();
-                std::advance(gid, i);
-                BRAIN_WARN << "Error parsing circuit layer for gid " << *gid
-                         << std::endl;
-            }
-        }
+            layers[i] = data[i][0];
 
         return layers;
     }
@@ -964,10 +953,11 @@ struct MVD3 : public BBPCircuit
         }
     }
 
-    size_ts getLayers(const GIDSet& gids, const std::string& tsvSource) const final
+    std::vector<std::string>
+    getLayers(const GIDSet& gids, const std::string& tsvSource) const final
     {
         if (gids.empty())
-            return size_ts();
+            return std::vector<std::string>();
 
         size_ts results(gids.size());
         const ::MVD3::Range& range = _getRange(gids);
@@ -977,30 +967,14 @@ struct MVD3 : public BBPCircuit
             std::lock_guard<std::mutex> lock(brion::detail::hdf5Mutex());
             HighFive::SilenceHDF5 silence;
             _circuit.openComboTsv(tsvSource);
-            layerStr = _circuit.getLayers(range);
+            return _circuit.getLayers(range);
         }
         catch (const HighFive::Exception& e)
         {
             BRAIN_WARN << "Circuit layers not available: " + std::string(e.what()) << std::endl;
         }
 
-#pragma omp parallel for
-        for(size_t i = 0; i < gids.size(); ++i)
-        {
-            try
-            {
-                results[i] = lexical_cast<size_t>(layerStr[i]);
-            }
-            catch (const boost::bad_lexical_cast&)
-            {
-                GIDSet::const_iterator gid = gids.begin();
-                std::advance(gid, i);
-                BRAIN_WARN << "Error parsing circuit layer for gid " << *gid
-                         << std::endl;
-            }
-        }
-
-        return results;
+        return std::vector<std::string>();
     }
 
     Strings getMorphologyNames(const GIDSet& gids) const final
