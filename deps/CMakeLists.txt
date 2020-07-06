@@ -68,4 +68,35 @@ if(NOT MVDTool_FOUND AND NOT TARGET MVDTool)
     target_link_libraries(MVDTool INTERFACE HighFive)
     target_compile_definitions(MVDTool INTERFACE -DH5_USE_BOOST)
 endif()
-    # WAR for https://github.com/g-truc/glm/issues/854
+
+# --------------------------------------------------------------------------------
+# MorphIO
+# --------------------------------------------------------------------------------
+if(NOT MorphIO_FOUND AND NOT TARGET MorphIO::morphio_shared)
+    set(MORPHIO_INCLUDE_DIR ${CMAKE_CURRENT_SOURCE_DIR}/MorphIO/include/)
+
+    # Deps
+    add_subdirectory(MorphIO/3rdparty/GSL_LITE)
+    target_include_directories(gsl-lite SYSTEM INTERFACE)
+    add_library(lexertl INTERFACE)
+    target_include_directories(lexertl SYSTEM INTERFACE MorphIO/3rdparty/lexertl)
+
+    execute_process(COMMAND git describe --tags
+                    WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/MorphIO
+                    RESULT_VARIABLE GIT_VERSION_FAILED
+                    OUTPUT_VARIABLE MORPHIO_VERSION_STRING
+                    ERROR_VARIABLE GIT_VERSION_ERROR
+                    OUTPUT_STRIP_TRAILING_WHITESPACE)
+
+    # Retrieve version
+    string(REGEX MATCHALL "^v([0-9]+)\\.([0-9]+)\\.([0-9]+).*$" OUTPUT_VAR ${MORPHIO_VERSION_STRING})
+    set(MorphIO_VERSION_MAJOR ${CMAKE_MATCH_1})
+    set(MorphIO_VERSION_MINOR ${CMAKE_MATCH_2})
+    set(MorphIO_VERSION_PATCH ${CMAKE_MATCH_3})
+    # Morphio
+    add_subdirectory(MorphIO/src)
+    add_library(morphiointer INTERFACE)
+    target_include_directories(morphiointer INTERFACE ${CMAKE_CURRENT_LIST_DIR}/MorphIO/include)
+    target_link_libraries(morphiointer INTERFACE morphio_shared)
+    add_library(MorphIO::morphio_shared ALIAS morphiointer)
+endif()

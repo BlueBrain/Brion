@@ -1,6 +1,5 @@
-/* Copyright (c) 2013-2017, EPFL/Blue Brain Project
- *                          Juan Hernando <jhernando@fi.upm.es>
- *                          Daniel Nachbaur <daniel.nachbaur@epfl.ch>
+/* Copyright (c) 2020, EPFL/Blue Brain Project
+ *                     Nadir Román Guerrero <nadir.romanguerrero@epfl.ch>
  *
  * This file is part of Brion <https://github.com/BlueBrain/Brion>
  *
@@ -18,8 +17,8 @@
  * 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
  */
 
-#ifndef BRION_PLUGIN_MORPHOLOGYSWC
-#define BRION_PLUGIN_MORPHOLOGYSWC
+#ifndef BRION_PLUGIN_MORPHOLOGYMORPHIO_H
+#define BRION_PLUGIN_MORPHOLOGYMORPHIO_H
 
 #include "../morphologyPlugin.h"
 
@@ -27,10 +26,10 @@ namespace brion
 {
 namespace plugin
 {
-class MorphologySWC : public MorphologyPlugin
+class MorphologyMORPHIO : public MorphologyPlugin
 {
 public:
-    explicit MorphologySWC(const MorphologyInitData& initData);
+    explicit MorphologyMORPHIO(const MorphologyInitData& initData);
 
     /** Check if this plugin can handle the given uri. */
     static bool handles(const MorphologyInitData& initData);
@@ -39,12 +38,8 @@ public:
 private:
     // Plugin API
     void load() final;
-
-    struct RawSWCInfo;
-    void _readSamples(RawSWCInfo& info);
-    void _buildSampleTree(RawSWCInfo& info);
-    void _buildStructure(RawSWCInfo& info);
 };
 }
 }
-#endif
+
+#endif // BRION_PLUGIN_MORPHOLOGYMORPHIO_H

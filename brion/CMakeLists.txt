@@ -63,8 +63,7 @@ set(BRION_HEADERS
   plugin/compartmentReportHDF5.h
   plugin/compartmentReportHDF5Sonata.h
   plugin/compartmentReportLegacyHDF5.h
-  plugin/morphologyHDF5.h
-  plugin/morphologySWC.h
+  plugin/morphologyMORPHIO.h
   plugin/spikeReportASCII.h
   plugin/spikeReportBinary.h
   plugin/spikeReportBluron.h
@@ -99,8 +98,7 @@ set(BRION_SOURCES
   plugin/compartmentReportHDF5.cpp
   plugin/compartmentReportHDF5Sonata.cpp
   plugin/compartmentReportLegacyHDF5.cpp
-  plugin/morphologyHDF5.cpp
-  plugin/morphologySWC.cpp
+  plugin/morphologyMORPHIO.cpp
   plugin/spikeReportASCII.cpp
   plugin/spikeReportBinary.cpp
   plugin/spikeReportBluron.cpp
@@ -135,6 +133,7 @@ target_include_directories(Brion SYSTEM PUBLIC ${Boost_INCLUDE_DIRS})
 # Link libraries
 target_link_libraries(Brion PUBLIC glm)
 target_link_libraries(Brion PRIVATE HighFive)
+target_link_libraries(Brion PRIVATE MorphIO::morphio_shared)
 target_link_libraries(Brion PRIVATE ${Boost_FILESYSTEM_LIBRARIES})
 target_link_libraries(Brion PRIVATE ${Boost_REGEX_LIBRARIES})
 target_link_libraries(Brion PRIVATE ${Boost_IOSTREAMS_LIBRARIES})

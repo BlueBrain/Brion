@@ -51,7 +51,7 @@ public:
         namespace fs = boost::filesystem;
         fs::path path = source;
         const std::string ext = fs::extension(path);
-        if (ext != ".mvd" && ext != ".mvd2" && ext != ".mvd3")
+        if (ext != ".mvd" && ext != ".mvd2")
             throw std::runtime_error(
                 "Expecting mvd file format for circuit file " + source);
 
