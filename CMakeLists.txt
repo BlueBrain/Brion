@@ -89,7 +89,7 @@ if(${CMAKE_VERSION} VERSION_LESS "3.12.0")
     find_package(PythonInterp)
     find_package(PythonLibs)
     find_package(NumPy 1.7 REQUIRED)
-    set(NUMPY_FOUND ${Numpy_FOUND})
+    set(NUMPY_FOUND ${NumPy_FOUND})
 else()
     find_package(Python3 COMPONENTS Interpreter Development NumPy)
     # Addpat cmake 3.12+ variables to our variable system

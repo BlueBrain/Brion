@@ -959,9 +959,7 @@ struct MVD3 : public BBPCircuit
         if (gids.empty())
             return std::vector<std::string>();
 
-        size_ts results(gids.size());
         const ::MVD3::Range& range = _getRange(gids);
-        std::vector<std::string> layerStr;
         try
         {
             std::lock_guard<std::mutex> lock(brion::detail::hdf5Mutex());
