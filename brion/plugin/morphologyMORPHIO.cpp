@@ -19,6 +19,8 @@
 
 #include "morphologyMORPHIO.h"
 
+#include "../detail/hdf5Mutex.h"
+
 #include "../pluginLibrary.h"
 
 #include <boost/filesystem.hpp>
@@ -36,6 +38,14 @@ namespace plugin
 {
 namespace
 {
+std::string GetFileExtension(const std::string& path)
+{
+    namespace fs = boost::filesystem;
+    std::string ext = fs::extension(fs::path(path));
+    std::transform(ext.begin(), ext.end(), ext.begin(),
+        [](unsigned char c){ return std::tolower(c); });
+    return ext;
+}
 class PluginRegisterer
 {
 public:
@@ -56,12 +66,7 @@ MorphologyMORPHIO::MorphologyMORPHIO(const MorphologyInitData& data)
 
 bool MorphologyMORPHIO::handles(const MorphologyInitData& initData)
 {
-    namespace fs = boost::filesystem;
-    fs::path path = initData.getURI().getPath();
-    std::string ext = fs::extension(path);
-    std::transform(ext.begin(), ext.end(), ext.begin(),
-        [](unsigned char c){ return std::tolower(c); });
-
+    const auto ext = GetFileExtension(initData.getURI().getPath());
     return ext == ".swc" || ext == ".h5" || ext == ".asc";
 }
 
@@ -74,10 +79,19 @@ std::string MorphologyMORPHIO::getDescription()
 
 void MorphologyMORPHIO::load()
 {
-    morphio::Morphology morph (_data.getURI().getPath());
+    // Use a lock only to read (morphio constructor) if we are loading a highfive morphology
+    std::unique_ptr<morphio::Morphology> morph;
+    const auto ext = GetFileExtension(_data.getURI().getPath());
+    if(ext == ".h5")
+    {
+        std::lock_guard<std::mutex> lock(detail::hdf5Mutex());
+        morph = std::make_unique<morphio::Morphology>(_data.getURI().getPath());
+    }
+    else
+        morph = std::make_unique<morphio::Morphology>(_data.getURI().getPath());
 
     // HANDLE SOMA
-    const auto soma = morph.soma();
+    const auto soma = morph->soma();
 
     _sections.emplace_back(0, -1);
     _sectionTypes.push_back(SectionType::SECTION_SOMA);
@@ -92,7 +106,7 @@ void MorphologyMORPHIO::load()
     }
 
     // HANDLE REST OF THE SECTIONS
-    const auto& sections = morph.sections();
+    const auto& sections = morph->sections();
 
     for(const auto& section : sections)
     {
