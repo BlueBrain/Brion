@@ -3,6 +3,8 @@ notifications:
     on_success: never
 language: cpp
 sudo: false
+python:
+  - "3.6"
 os:
   - osx
 env:
@@ -18,6 +20,10 @@ matrix:
   fast_finish: true
 before_install:
         #  - brew update
+  - pyenv install 3.6.6
+  - pyenv global system 3.6.6
+  - python3 -c "import sys; print(sys.version)"
+  - python -c "import sys; print(sys.version)"
   - brew outdated cmake || brew upgrade cmake
   # We need to install gcc before hdf5 because otherwise hdf5 will fail.
   # The or statement is a hack to ensure we override the existing gcc without
@@ -31,10 +37,10 @@ before_install:
     #  - brew list hdf5@1.10 || brew install hdf5@1.10
   - brew install boost-python
   - brew install lcov
-  - ls -la /usr/local/opt/hdf5
+  - ls -la /usr/local/Cellar/hdf5/1.10.5_1
 script:
   - pip install gcovr
   - mkdir $BUILD_TYPE
   - cd $BUILD_TYPE
-  - HDF5_ROOT=/usr/local/opt/hdf5@1.10 cmake -GNinja -DCMAKE_INSTALL_PREFIX=$PWD/install -DCMAKE_BUILD_TYPE=$BUILD_TYPE -DEXTLIB_FROM_SUBMODULES=ON .. 
+  - HDF5_ROOT=/usr/local/Cellar/hdf5/1.10.5_1 cmake -GNinja -DCMAKE_INSTALL_PREFIX=$PWD/install -DCMAKE_BUILD_TYPE=$BUILD_TYPE -DEXTLIB_FROM_SUBMODULES=ON .. 
   - ninja all && ninja $PROJECT_NAME-tests && ninja smoketests
