@@ -23,11 +23,12 @@ before_install:
   # The or statement is a hack to ensure we override the existing gcc without
   # having an error
   - brew install gcc || brew link --overwrite gcc
-  - brew install cppcheck doxygen ninja
-    #  - brew list hdf5@1.10 || brew install hdf5@1.10
   - brew switch hdf5 1.10.5_1
   - brew install numpy@1.16
-  - brew switch numpy 1.16
+  - brew list --versions numpy
+  - brew switch numpy 1.16.6_1
+  - brew install cppcheck doxygen ninja
+    #  - brew list hdf5@1.10 || brew install hdf5@1.10
   - brew install boost-python
   - brew install lcov
 script:
