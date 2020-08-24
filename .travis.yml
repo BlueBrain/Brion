@@ -27,6 +27,7 @@ before_install:
     #  - brew list hdf5@1.10 || brew install hdf5@1.10
   - brew switch hdf5 1.10.5_1
   - brew install numpy@1.16.6
+  - brew switch numpy 1.16.6
   - brew install boost-python
   - brew install lcov
 script:
