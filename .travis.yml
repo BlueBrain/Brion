@@ -17,6 +17,7 @@ env:
 matrix:
   fast_finish: true
 before_install:
+  #- pip install numpy==1.16
   - brew update
   - brew outdated cmake || brew upgrade cmake
   # We need to install gcc before hdf5 because otherwise hdf5 will fail.
@@ -26,6 +27,8 @@ before_install:
   - brew install cppcheck doxygen ninja
   - brew list hdf5 || brew install hdf5
   - brew switch hdf5 1.10.5_1
+  - brew list numpy || brew install numpy
+  - brew switch numpy 1.16.6
   - brew install boost-python
   - brew install lcov
 script:
