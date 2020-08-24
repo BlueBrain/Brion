@@ -34,7 +34,7 @@ before_install:
   - find /usr/local/lib |grep numpy
   - brew install cppcheck doxygen ninja
   - brew list hdf5@1.10 || brew install hdf5@1.10
-  - brew switch hdf5 1.10.6_1
+    #- brew switch hdf5 1.10.6_1
   - brew install boost-python
   - brew install lcov
   - ls -la /usr/local/Cellar/hdf5/1.10.5_1
