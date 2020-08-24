@@ -24,7 +24,7 @@ before_install:
   # having an error
   - brew install gcc || brew link --overwrite gcc
   - brew switch hdf5 1.10.5_1
-  - brew install numpy@1.16 || brew link --overwrite numpy@1.16
+  - brew install numpy@1.16 && brew link --overwrite numpy@1.16
   - brew list --versions numpy
   - find /usr/local/lib |grep numpy
   - brew install cppcheck doxygen ninja
