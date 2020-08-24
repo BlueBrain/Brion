@@ -24,7 +24,8 @@ before_install:
   # having an error
   - brew install gcc || brew link --overwrite gcc
   - brew install cppcheck doxygen ninja
-  - brew list hdf5 || brew install hdf5
+  - brew list hdf5@1.10 || brew install hdf5@1.10
+  - brew switch hdf5 1.10
   - brew install boost-python
   - brew install lcov
 script:
