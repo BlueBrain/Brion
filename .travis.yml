@@ -21,7 +21,7 @@ matrix:
 before_install:
         #  - brew update
   - pyenv install 3.6.6
-  - pyenv global system 3.6.6
+  - pyenv global 3.6.6
   - python3 -c "import sys; print(sys.version)"
   - python -c "import sys; print(sys.version)"
   - brew outdated cmake || brew upgrade cmake
@@ -29,12 +29,12 @@ before_install:
   # The or statement is a hack to ensure we override the existing gcc without
   # having an error
   - brew install gcc || brew link --overwrite gcc
-  - brew switch hdf5 1.10.5_1
   - brew install numpy@1.16 && brew link --overwrite numpy@1.16
   - brew list --versions numpy
   - find /usr/local/lib |grep numpy
   - brew install cppcheck doxygen ninja
-    #  - brew list hdf5@1.10 || brew install hdf5@1.10
+  - brew list hdf5@1.10 || brew install hdf5@1.10
+  - brew switch hdf5 1.10.6_1
   - brew install boost-python
   - brew install lcov
   - ls -la /usr/local/Cellar/hdf5/1.10.5_1
