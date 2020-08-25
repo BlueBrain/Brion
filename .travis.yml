@@ -24,7 +24,7 @@ before_install:
   - pyenv global 3.6.6
   - python3 -c "import sys; print(sys.version)"
   - python -c "import sys; print(sys.version)"
-  - pip3 install numpy==
+  - pip3 install numpy==1.17.3
   - brew outdated cmake || brew upgrade cmake
   # We need to install gcc before hdf5 because otherwise hdf5 will fail.
   # The or statement is a hack to ensure we override the existing gcc without
