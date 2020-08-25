@@ -38,7 +38,7 @@ before_install:
   - brew install boost-python
   - brew install lcov
   - ls -la  /usr/local/Cellar/hdf5@1.10/1.10.6_1
-  - ls -la /usr/local/lib/python3.8/site-packages/numpy/core/include
+  - ls -la /usr/local/lib/python3.8/site-packages/numpy/core/include/numpy
   - brew unlink numpy@1.19
   - pip3 install numpy==1.17.3
 script:
