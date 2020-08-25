@@ -37,10 +37,10 @@ before_install:
     #- brew switch hdf5 1.10.6_1
   - brew install boost-python
   - brew install lcov
-  - ls -la /usr/local/Cellar/hdf5/1.10.5_1
+  - ls -la  /usr/local/Cellar/hdf5@1.10/1.10.6_1
 script:
   - pip install gcovr
   - mkdir $BUILD_TYPE
   - cd $BUILD_TYPE
-  - HDF5_ROOT=/usr/local/Cellar/hdf5/1.10.5_1 cmake -GNinja -DCMAKE_INSTALL_PREFIX=$PWD/install -DCMAKE_BUILD_TYPE=$BUILD_TYPE -DEXTLIB_FROM_SUBMODULES=ON .. 
+  - HDF5_ROOT=/usr/local/Cellar/hdf5@1.10/1.10.6_1 cmake -GNinja -DCMAKE_INSTALL_PREFIX=$PWD/install -DCMAKE_BUILD_TYPE=$BUILD_TYPE -DEXTLIB_FROM_SUBMODULES=ON .. 
   - ninja all && ninja $PROJECT_NAME-tests && ninja smoketests
