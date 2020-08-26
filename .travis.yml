@@ -35,7 +35,7 @@ before_install:
   - brew install cppcheck doxygen ninja
   - brew list hdf5@1.10 || brew install hdf5@1.10
     #- brew switch hdf5 1.10.6_1
-  - brew install boost-python
+  - brew install boost-python3
   - brew install lcov
   - ls -la  /usr/local/Cellar/hdf5@1.10/1.10.6_1
   - ls -la /usr/local/lib/python3.8/site-packages/numpy/core/include/numpy
