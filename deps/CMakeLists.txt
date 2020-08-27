@@ -20,7 +20,7 @@ if(NOT glm_FOUND AND NOT TARGET glm)
       target_compile_options(glm INTERFACE -Wno-error=class-memaccess)
     endif()
     # Disable warnings
-    target_compile_options(glm PUBLIC -w)
+    target_compile_options(glm INTERFACE -w)
 endif()
 
 # --------------------------------------------------------------------------------
