@@ -53,6 +53,7 @@ public:
     {
         auto& pluginManager = PluginLibrary::instance().getManager<MorphologyPlugin>();
         pluginManager.registerFactory<MorphologyMORPHIO>();
+        morphio::set_maximum_warnings(0);
     }
 };
 
