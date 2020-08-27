@@ -37,9 +37,12 @@ target_include_directories(BrainPythonHelpers PUBLIC
                                 $<BUILD_INTERFACE:${PYTHON_INCLUDE_DIRS}>
                                 $<INSTALL_INTERFACE:include/brain>)
 target_include_directories(BrainPythonHelpers PRIVATE ${PYTHON_INCLUDE_PATH})
+target_include_directories(BrainPythonHelpers PRIVATE ${PYTHON_NUMPY_INCLUDE_DIR})
 target_link_libraries(BrainPythonHelpers PUBLIC glm)
 target_link_libraries(BrainPythonHelpers PUBLIC ${Boost_PYTHON3_LIBRARY})
 target_link_libraries(BrainPythonHelpers PUBLIC Brain)
+target_link_libraries(BrainPythonHelpers PUBLIC ${PYTHON_LIBRARIES})
+target_link_libraries(BrainPythonHelpers PRIVATE ${Boost_PYTHON3_LIBRARY})
 
 set_target_properties(BrainPythonHelpers
     PROPERTIES

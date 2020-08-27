@@ -24,12 +24,14 @@ before_install:
   # having an error
   - brew install gcc || brew link --overwrite gcc
   - brew install cppcheck doxygen ninja
-  - brew list hdf5 || brew install hdf5
-  - brew install boost-python
+  - brew list hdf5@1.10 || brew install hdf5@1.10
+  - brew install boost-python3
   - brew install lcov
+  - brew unlink numpy@1.19
+  - pip3 install numpy==1.17.3
 script:
   - pip install gcovr
   - mkdir $BUILD_TYPE
   - cd $BUILD_TYPE
-  - HDF5_ROOT=/usr/local/opt/hdf5 cmake -GNinja -DCMAKE_INSTALL_PREFIX=$PWD/install -DCMAKE_BUILD_TYPE=$BUILD_TYPE -DEXTLIB_FROM_SUBMODULES=ON .. 
+  - HDF5_ROOT=/usr/local/Cellar/hdf5@1.10/1.10.6_1 cmake -GNinja -DCMAKE_INSTALL_PREFIX=$PWD/install -DCMAKE_BUILD_TYPE=$BUILD_TYPE -DEXTLIB_FROM_SUBMODULES=ON ..
   - ninja all && ninja $PROJECT_NAME-tests && ninja smoketests

@@ -956,7 +956,7 @@ struct MVD3 : public BBPCircuit
     std::vector<std::string>
     getLayers(const GIDSet& gids, const std::string& tsvSource) const final
     {
-        if (gids.empty())
+        if (gids.empty() || tsvSource.empty())
             return std::vector<std::string>();
 
         const ::MVD3::Range& range = _getRange(gids);
