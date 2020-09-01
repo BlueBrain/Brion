@@ -55,7 +55,8 @@ size_t CompartmentReportCommon::_getFrameNumber(double timestamp) const
                  startTime) -
         startTime;
 
-    return size_t(timestamp / step);
+    const double magnitude = round(1.0 / step);
+    return static_cast<size_t>(timestamp * magnitude);
 }
 
 size_t CompartmentReportCommon::getFrameCount() const

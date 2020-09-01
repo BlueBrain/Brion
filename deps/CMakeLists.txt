@@ -19,6 +19,8 @@ if(NOT glm_FOUND AND NOT TARGET glm)
     if(CMAKE_COMPILER_IS_GNUCXX AND NOT CMAKE_CXX_COMPILER_VERSION VERSION_LESS 8.0)
       target_compile_options(glm INTERFACE -Wno-error=class-memaccess)
     endif()
+    # Disable warnings
+    target_compile_options(glm INTERFACE -w)
 endif()
 
 # --------------------------------------------------------------------------------
