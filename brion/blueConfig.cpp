@@ -182,10 +182,17 @@ public:
         return kv->second;
     }
 
-    const std::string& getCircuitTarget()
+    const std::string getCircuitTarget()
     {
-        return get(brion::CONFIGSECTION_RUN, getRun(),
-                   BLUECONFIG_CIRCUIT_TARGET_KEY);
+        const std::string& ct = get(brion::CONFIGSECTION_RUN, getRun(),
+                                BLUECONFIG_CIRCUIT_TARGET_KEY);
+        // Patch for sonata circuits, where the circuit target comes as
+        // population_name:circuit_target
+        auto colonPos = ct.find(":");
+        if(colonPos != std::string::npos)
+            return ct.substr(colonPos + 1);
+
+        return ct;
     }
 
     const std::string& getOutputRoot()
