@@ -504,7 +504,15 @@ void CompartmentReportHDF5Sonata::_readMetaData()
 void CompartmentReportHDF5Sonata::_parseBasicCellInfo()
 {
     const HighFive::Group reportGroup = _file->getGroup("report");
-    const HighFive::Group allGroup = reportGroup.getGroup("All");
+    auto objectNameList = reportGroup.listObjectNames();
+    if(objectNameList.empty())
+    {
+        BRION_THROW("Error opening compartment report: "
+                  "No population found within report group")
+    }
+    auto firstPopulation = *objectNameList.begin();
+
+    const HighFive::Group allGroup = reportGroup.getGroup(firstPopulation);
 
     // This not only parses the GIDs, but also computes the cell offsets
     // and compartment counts per cell, with the proper reordering if needed.
@@ -577,8 +585,15 @@ void CompartmentReportHDF5Sonata::_parseBasicCellInfo()
 void CompartmentReportHDF5Sonata::_processMapping()
 {
     const HighFive::Group reportGroup = _file->getGroup("report");
-    const HighFive::Group allGroup = reportGroup.getGroup("All");
+    auto objectNameList = reportGroup.listObjectNames();
+    if(objectNameList.empty())
+    {
+        BRION_THROW("Error opening compartment report: "
+                  "No population found within report group")
+    }
+    auto firstPopulation = *objectNameList.begin();
 
+    const HighFive::Group allGroup = reportGroup.getGroup(firstPopulation);
     const auto& mapping = allGroup.getGroup("mapping");
     std::vector<uint32_t> sectionIDs;
     mapping.getDataSet("element_ids").read(sectionIDs);
@@ -755,7 +770,15 @@ void CompartmentReportHDF5Sonata::_writeMetadataAndMapping()
 void CompartmentReportHDF5Sonata::_allocateDataSet()
 {
     HighFive::Group reportG = _file->getGroup("report");
-    HighFive::Group allG = reportG.getGroup("All");
+    auto objectNameList = reportG.listObjectNames();
+    if(objectNameList.empty())
+    {
+        BRION_THROW("Error opening compartment report: "
+                  "No population found within report group")
+    }
+    auto firstPopulation = *objectNameList.begin();
+
+    HighFive::Group allGroup = reportG.getGroup(firstPopulation);
 
     const double step = getTimestep();
     // Adding step / 2 to the window to avoid off by 1 errors during truncation
@@ -782,7 +805,7 @@ void CompartmentReportHDF5Sonata::_allocateDataSet()
         HighFive::Caching(chunksPerFrame + 1, chunksPerFrame * _chunkSize));
 
     _data.reset(new HighFive::DataSet(
-        allG.createDataSet<float>("data", dataspace, chunking, caching)));
+        allGroup.createDataSet<float>("data", dataspace, chunking, caching)));
 
     detail::addStringAttribute(*_data, "units", _dunit);
 }
@@ -899,7 +922,14 @@ void CompartmentReportHDF5Sonata::_reopenDataSet(size_t cacheSizeHint)
     HighFive::DataSetAccessProps accessProps;
     accessProps.add(HighFive::Caching(numSlots, cacheSizeHint));
     HighFive::Group reportG = _file->getGroup("report");
-    HighFive::Group allG = reportG.getGroup("All");
+    auto objectNameList = reportG.listObjectNames();
+    if(objectNameList.empty())
+    {
+        BRION_THROW("Error opening compartment report: "
+                  "No population found within report group")
+    }
+    auto firstPopulation = *objectNameList.begin();
+    HighFive::Group allG = reportG.getGroup(firstPopulation);
     _data.reset(new HighFive::DataSet(allG.getDataSet("data", accessProps)));
 }
 
