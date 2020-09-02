@@ -266,6 +266,19 @@ URI BlueConfig::getCircuitSource() const
     return uri;
 }
 
+URI BlueConfig::getCellLibrarySource() const
+{
+    // Implementation according to
+    // https://bbpteam.epfl.ch/documentation/projects/Circuit%20Documentation/latest/blueconfig.html#blueconfigsection-0
+
+    const fs::path path(
+        get(CONFIGSECTION_RUN, _impl->getRun(), BLUECONFIG_CELLLIBRARY_PATH_KEY));
+    URI uri;
+    uri.setScheme("file");
+    uri.setPath(path.string());
+    return uri;
+}
+
 URI BlueConfig::getSynapseSource() const
 {
     URI uri;

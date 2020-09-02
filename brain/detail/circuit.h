@@ -43,6 +43,7 @@
 
 #include <mvd/mvd3.hpp>
 #include <mvd/mvd_generic.hpp>
+#include <mvd/sonata.hpp>
 
 #include <boost/filesystem.hpp>
 
@@ -223,314 +224,6 @@ public:
     virtual const brion::Synapse* getSynapseExtra() const = 0;
     virtual const brion::Synapse& getSynapsePositions(
         const bool afferent) const = 0;
-};
-
-class SonataCircuit : public Circuit::Impl
-{
-public:
-    explicit SonataCircuit(const URI& uri)
-        : config(uri)
-    {
-        const auto& subnetworks = config.getNodes();
-        const auto& node = subnetworks.front();
-        nodes.reset(new brion::Nodes(URI(node.elements)));
-
-        if (subnetworks.size() > 1)
-            BRAIN_WARN << "More than one subnetwork found, ignoring extra ones." << std::endl;
-
-        const auto populations = nodes->getPopulationNames();
-        if (populations.size() > 1)
-            BRAIN_WARN << "More than one population found, ignoring extra ones." << std::endl;
-
-        population = populations.front();
-        const auto nodeGroupIDs = nodes->getNodeGroupIDs(population);
-        const auto nodeIDs = nodes->getNodeIDs(population);
-        const auto nodeGroupIndices = nodes->getNodeGroupIndices(population);
-        const auto originalNodeTypeIDs = nodes->getNodeTypes(population);
-        const size_t numNodes = nodeIDs.size();
-
-        for (size_t i = 0; i < numNodes; i++)
-        {
-            if (nodeGroupIDs[i] != 0)
-            {
-                BRAIN_WARN << "More than one group ID found, ignoring extra ones." << std::endl;
-                break;
-            }
-        }
-
-        size_t expectedIdx = 0;
-        for (size_t i = 0; i < numNodes; i++)
-        {
-            const auto groupID = nodeGroupIDs[i];
-            const auto nodeGroupIndex = nodeGroupIndices[i];
-
-            if (groupID != 0)
-                continue;
-
-            if (expectedIdx != nodeGroupIndex)
-            {
-                BRAIN_THROW("Expected node group index '" + std::to_string(expectedIdx) + "' got '"
-                          + std::to_string(nodeGroupIndex) + "'")
-            }
-            expectedIdx++;
-            nodeTypeIDs.push_back(originalNodeTypeIDs[i]);
-        }
-
-        numNeurons = expectedIdx;
-        morphologySource = URI(config.getComponentPath("morphologies_dir"));
-        nodeGroup = nodes->openGroup(population, 0);
-        nodeTypesFile.reset(new brion::CsvConfig(URI(node.types)));
-
-        for (const auto name : nodeGroup.getAttributeNames())
-            nodeAttributes.insert(name);
-        for (const auto name : nodeTypesFile->getProperties())
-            nodeTypeProperties.insert(name);
-    }
-    virtual ~SonataCircuit() {}
-    size_t getNumNeurons() const final { return numNeurons; }
-    GIDSet getGIDs() const
-    {
-        brain::GIDSet gids;
-        brain::GIDSet::const_iterator hint = gids.begin();
-        for (uint32_t i = 0; i < getNumNeurons(); ++i)
-            // Note that GIDs start at 0 in this case
-            hint = gids.insert(hint, i);
-        return gids;
-    }
-
-    GIDSet getGIDs(const std::string& /*target*/) const final
-    {
-        BRAIN_THROW("Unimplemented")
-    }
-
-    Vector3fs getPositions(const GIDSet& gids) const final
-    {
-        if (gids.empty())
-            return Vector3fs();
-
-        const size_t startIdx = *gids.begin();
-        const size_t endIdx = *gids.rbegin() + 1;
-
-        const auto attributeX =
-            nodeGroup.getAttribute<float>("x", startIdx, endIdx);
-        const auto attributeY =
-            nodeGroup.getAttribute<float>("y", startIdx, endIdx);
-        const auto attributeZ =
-            nodeGroup.getAttribute<float>("z", startIdx, endIdx);
-
-        Vector3fs output;
-        for (auto gid : gids)
-        {
-            const float x = attributeX[gid - startIdx];
-            const float y = attributeY[gid - startIdx];
-            const float z = attributeZ[gid - startIdx];
-
-            output.push_back(glm::vec3(x, y, z));
-        }
-        return output;
-    }
-    size_ts getMTypes(const GIDSet& /*gids*/) const final
-    {
-        BRAIN_THROW("Unimplemented")
-    }
-    Strings getMorphologyTypeNames() const final
-    {
-        BRAIN_THROW("Unimplemented")
-    }
-    size_ts getETypes(const GIDSet& /*gids*/) const final
-    {
-        BRAIN_THROW("Unimplemented")
-    }
-    Strings getElectrophysiologyTypeNames() const final
-    {
-        BRAIN_THROW("Unimplemented")
-    }
-    Quaternionfs getRotations(const GIDSet& gids) const final
-    {
-        if (gids.empty())
-            return Quaternionfs();
-
-        const size_t startIdx = *gids.begin();
-        const size_t endIdx = *gids.rbegin() + 1;
-
-        auto getter = [this](const char* attr, size_t start, size_t end) {
-            try
-            {
-                HighFive::SilenceHDF5 silence;
-                return nodeGroup.getAttribute<float>(attr, start, end);
-            }
-            catch (const HighFive::Exception& e)
-            {
-                return std::vector<float>(end - start, 0);
-            }
-        };
-        std::vector<float> rotationAngleX =
-            getter("rotation_angle_xaxis", startIdx, endIdx);
-        std::vector<float> rotationAngleY =
-            getter("rotation_angle_yaxis", startIdx, endIdx);
-        std::vector<float> rotationAngleZ =
-            getter("rotation_angle_zaxis", startIdx, endIdx);
-
-        Quaternionfs output;
-
-        for (const auto gid : gids)
-        {
-            const float rX = rotationAngleX[gid - startIdx];
-            const float rY = rotationAngleY[gid - startIdx];
-            const float rZ = rotationAngleZ[gid - startIdx];
-
-            // Special case for missing rotation angles.
-            if (rX == 0 && rY == 0 && rZ == 0)
-            {
-                output.push_back(glm::quat_cast(glm::mat4(1.f)));
-                continue;
-            }
-
-            const float cX = std::cos(rX), cY = std::cos(rY), cZ = std::cos(rZ);
-            const float sX = std::sin(rX), sY = std::sin(rY), sZ = std::sin(rZ);
-
-            // These are the values given by multiplying the rotation
-            // matrices for R(X)R(Y)R(Z) i.e. extrinsic rotation around Z
-            // then Y then X
-            glm::mat3 mtx (1.f);
-
-            mtx[0] = glm::vec3(cY * cZ, cZ * sX * sY + cX * sZ, sX * sZ - cX * cZ * sY);
-            mtx[1] = glm::vec3(-cY * sZ, cX * cZ - sX * sY * sZ, cZ * sX + cX * sY * sZ);
-            mtx[2] = glm::vec3(sY, -cY * sX, cX * cY);
-            /*
-            mtx(0, 0) = cY * cZ;
-            mtx(0, 1) = -cY * sZ;
-            mtx(0, 2) = sY;
-            mtx(1, 0) = cZ * sX * sY + cX * sZ;
-            mtx(1, 1) = cX * cZ - sX * sY * sZ;
-            mtx(1, 2) = -cY * sX;
-            mtx(2, 0) = sX * sZ - cX * cZ * sY;
-            mtx(2, 1) = cZ * sX + cX * sY * sZ;
-            mtx(2, 2) = cX * cY;
-            */
-            output.push_back(glm::quat_cast(mtx));
-        }
-
-        return output;
-    }
-    std::vector<std::string> getLayers(const GIDSet&, const std::string&) const final
-    {
-        BRAIN_THROW("Uninplemented")
-    }
-    Strings getMorphologyNames(const GIDSet& gids) const final
-    {
-        return getAttribute<std::string>("morphology", gids);
-    }
-
-    std::vector<bool> getRecenter(const GIDSet& gids) const final
-    {
-        if (nodeAttributes.find("recenter") != nodeAttributes.end() ||
-            nodeTypeProperties.find("recenter") != nodeTypeProperties.end())
-        {
-            return getAttribute<bool>("recenter", gids);
-        }
-        return std::vector<bool>(gids.size(), true);
-    }
-
-    template <typename T>
-    std::vector<T> getAttribute(const std::string& name,
-                                const GIDSet& gids) const
-    {
-        std::vector<T> output;
-        if (gids.empty())
-            return output;
-
-        const size_t startIdx = *gids.begin();
-        const size_t endIdx = *gids.rbegin() + 1;
-
-        if (nodeAttributes.find(name) != nodeAttributes.end())
-        {
-            // Looking in the node group
-            const auto data =
-                _getAttribute<T>(nodeGroup, name, startIdx, endIdx);
-            for (const auto gid : gids)
-                output.push_back(data[gid - startIdx]);
-        }
-        else if (nodeTypeProperties.find(name) != nodeTypeProperties.end())
-        {
-            // Looking in the node types
-            for (const auto gid : gids)
-            {
-                const auto nodeTypeID = nodeTypeIDs[gid];
-                const auto value = nodeTypesFile->getProperty(nodeTypeID, name);
-                try
-                {
-                    output.push_back(lexical_cast<T>(value));
-                }
-                catch (const boost::bad_lexical_cast&)
-                {
-                    throw std::runtime_error("Error converting attribute " +
-                                             name + " for node type ID " +
-                                             std::to_string(nodeTypeID));
-                }
-            }
-        }
-        else
-        {
-            throw std::runtime_error("Invalid node attribute: " + name);
-        }
-        return output;
-    }
-
-    URI getMorphologySource() const final { return morphologySource; }
-    std::string getSynapseSource() const
-    {
-        return synapseSource.getPath();
-    }
-    std::string getSynapseProjectionSource(const std::string& name) const
-    {
-        (void)name;
-        BRAIN_THROW("Unimplemented")
-    }
-    const brion::SynapseSummary& getSynapseSummary() const final
-    {
-        BRAIN_THROW("Unimplemented")
-    }
-    const brion::Synapse& getSynapseAttributes(const bool) const final
-    {
-        BRAIN_THROW("Unimplemented")
-    }
-    const brion::Synapse& getAfferentProjectionAttributes(
-        const std::string&) const final
-    {
-        BRAIN_THROW("Unimplemented")
-    }
-    const brion::Synapse* getSynapseExtra() const final
-    {
-        BRAIN_THROW("Unimplemented")
-    }
-    const brion::Synapse& getSynapsePositions(const bool) const final
-    {
-        BRAIN_THROW("Unimplemented")
-    }
-
-    brion::CircuitConfig config;
-
-    std::unique_ptr<brion::Nodes> nodes;
-    brion::NodeGroup nodeGroup;
-    std::unique_ptr<brion::CsvConfig> nodeTypesFile;
-    size_t numNeurons = 0;
-    URI morphologySource;
-    std::string population;
-
-    // Name caches to speed up looking for attributes in the node group or
-    // the node types CSV
-    std::unordered_set<std::string> nodeAttributes;
-    std::unordered_set<std::string> nodeTypeProperties;
-
-    uint32_ts nodeTypeIDs; // GID to node type ID mapping
-
-    // Unimplemented
-    URI synapseSource;
-    URI circuitSource;
-
-    std::unique_ptr<brion::Synapse> synapse;
-    std::unique_ptr<brion::SynapseSummary> synapseSummary;
 };
 
 class BBPCircuit : public Circuit::Impl
@@ -999,4 +692,157 @@ struct MVD3 : public BBPCircuit
 private:
     mutable ::MVD3::MVD3File _circuit;
 };
+
+struct SonataCircuit : public BBPCircuit
+{
+    SonataCircuit(const brion::BlueConfig& config)
+        : BBPCircuit(config)
+        , _circuit(std::make_unique<::MVD::SonataFile>(config.getCellLibrarySource().getPath()))
+    {
+    }
+
+    size_t getNumNeurons() const final { return _circuit->getNbNeuron(); }
+    Vector3fs getPositions(const GIDSet& gids) const final
+    {
+        if (gids.empty())
+            return Vector3fs();
+
+        Vector3fs results(gids.size());
+        const ::MVD3::Range& range = _getRange(gids);
+        try
+        {
+            std::lock_guard<std::mutex> lock(brion::detail::hdf5Mutex());
+            HighFive::SilenceHDF5 silence;
+            const ::MVD3::Positions& positions = _circuit->getPositions(range);
+            _assign(range, gids, positions, results, _toVector3f);
+            return results;
+        }
+        catch (const HighFive::Exception& e)
+        {
+            BRAIN_THROW("Exception in getPositions(): " + std::string(e.what()))
+        }
+    }
+
+    size_ts getMTypes(const GIDSet& gids) const final
+    {
+        if (gids.empty())
+            return size_ts();
+
+        size_ts results(gids.size());
+        const ::MVD3::Range& range = _getRange(gids);
+        try
+        {
+            std::lock_guard<std::mutex> lock(brion::detail::hdf5Mutex());
+            HighFive::SilenceHDF5 silence;
+            const size_ts& mtypes = _circuit->getIndexMtypes(range);
+            _assign(range, gids, mtypes, results, _nop<size_t>);
+            return results;
+        }
+        catch (const HighFive::Exception& e)
+        {
+            BRAIN_THROW("Exception in getMTypes(): " + std::string(e.what()))
+        }
+    }
+
+    Strings getMorphologyTypeNames() const final
+    {
+        std::lock_guard<std::mutex> lock(brion::detail::hdf5Mutex());
+        return _circuit->listAllMtypes();
+    }
+
+    size_ts getETypes(const GIDSet& gids) const final
+    {
+        if (gids.empty())
+            return size_ts();
+
+        size_ts results(gids.size());
+        const ::MVD3::Range& range = _getRange(gids);
+        try
+        {
+            std::lock_guard<std::mutex> lock(brion::detail::hdf5Mutex());
+            HighFive::SilenceHDF5 silence;
+            const size_ts& etypes = _circuit->getIndexEtypes(range);
+            _assign(range, gids, etypes, results, _nop<size_t>);
+            return results;
+        }
+        catch (const HighFive::Exception& e)
+        {
+            BRAIN_THROW("Exception in getETypes(): " + std::string(e.what()))
+        }
+    }
+
+    Strings getElectrophysiologyTypeNames() const final
+    {
+        std::lock_guard<std::mutex> lock(brion::detail::hdf5Mutex());
+        return _circuit->listAllEtypes();
+    }
+
+    Quaternionfs getRotations(const GIDSet& gids) const final
+    {
+        if (gids.empty())
+            return Quaternionfs();
+
+        Quaternionfs results(gids.size());
+        const ::MVD3::Range& range = _getRange(gids);
+        try
+        {
+            std::lock_guard<std::mutex> lock(brion::detail::hdf5Mutex());
+            HighFive::SilenceHDF5 silence;
+            const ::MVD3::Rotations& rotations = _circuit->getRotations(range);
+            _assign(range, gids, rotations, results, _toQuaternion);
+            return results;
+        }
+        catch (const HighFive::Exception& e)
+        {
+            BRAIN_THROW("Exception in getRotations(): " + std::string(e.what()))
+        }
+    }
+
+    std::vector<std::string>
+    getLayers(const GIDSet& gids, const std::string& tsvSource) const final
+    {
+        if (gids.empty() || tsvSource.empty())
+            return std::vector<std::string>();
+
+        const ::MVD3::Range& range = _getRange(gids);
+        try
+        {
+            std::lock_guard<std::mutex> lock(brion::detail::hdf5Mutex());
+            HighFive::SilenceHDF5 silence;
+            _circuit->openComboTsv(tsvSource);
+            return _circuit->getLayers(range);
+        }
+        catch (const HighFive::Exception& e)
+        {
+            BRAIN_WARN << "Circuit layers not available: " + std::string(e.what()) << std::endl;
+        }
+
+        return std::vector<std::string>();
+    }
+
+    Strings getMorphologyNames(const GIDSet& gids) const final
+    {
+        if (gids.empty())
+            return Strings();
+
+        Strings results(gids.size());
+        const ::MVD3::Range& range = _getRange(gids);
+        try
+        {
+            std::lock_guard<std::mutex> lock(brion::detail::hdf5Mutex());
+            HighFive::SilenceHDF5 silence;
+            const Strings& morphos = _circuit->getMorphologies(range);
+            _assign(range, gids, morphos, results, _nop<std::string>);
+            return results;
+        }
+        catch (const HighFive::Exception& e)
+        {
+            BRAIN_THROW("Exception in getMorphologyNames(): " + std::string(e.what()))
+        }
+    }
+
+private:
+    mutable std::unique_ptr<::MVD::SonataFile> _circuit;
+};
+
 } // namespace brain

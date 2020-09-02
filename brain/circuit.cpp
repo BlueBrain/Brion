@@ -301,11 +301,19 @@ private:
 Circuit::Impl* newImpl(const brion::BlueConfig& config)
 {
     const std::string circuit = config.getCircuitSource().getPath();
-    Circuit::Impl* out;
-    if (boost::algorithm::ends_with(circuit, ".mvd2"))
+    const std::string cellLibrary = config.getCellLibrarySource().getPath();
+    Circuit::Impl* out {nullptr};
+    if (boost::algorithm::ends_with(circuit, ".mvd2")
+            && boost::filesystem::exists(circuit))
         out = new MVD2(config);
-    else
+    else if (boost::algorithm::ends_with(circuit, ".mvd3")
+            && boost::filesystem::exists(circuit))
         out = new MVD3(config);
+    else if (boost::algorithm::ends_with(cellLibrary, ".h5")
+            && boost::filesystem::exists(cellLibrary))
+        out = new SonataCircuit(config);
+    else
+        BRAIN_THROW("Unknown circuit format. Supported: MVD2, MVD3, Sonata HDF5");
 
     out->_source = brion::URI(config.getSource());
     return out;
@@ -313,15 +321,7 @@ Circuit::Impl* newImpl(const brion::BlueConfig& config)
 
 Circuit::Impl* newImpl(const URI& source)
 {
-    // Check if sonata
-    const auto path = source.getPath();
-    Circuit::Impl* out;
-    if (boost::algorithm::ends_with(path, ".json"))
-        out = new SonataCircuit(source);
-    else
-        out = newImpl(brion::BlueConfig(source.getPath()));
-    out->_source = source;
-    return out;
+    return newImpl(brion::BlueConfig(source.getPath()));
 }
 
 Circuit::Circuit(const URI& source)
@@ -429,38 +429,6 @@ std::vector<std::string> Circuit::getLayers(const GIDSet &gids, const std::strin
 {
     return _impl->getLayers(gids, srcTsv);
 }
-
-template <typename T>
-std::vector<T> Circuit::getAttribute(const std::string& name,
-                                     const GIDSet& gids) const
-{
-    // Virtual template functions are not supported by the language, since this
-    // is supported only by SONATA anyway, will try a dynamic cast for
-    // simplificty
-    auto impl = dynamic_cast<const SonataCircuit*>(_impl.get());
-    if (!impl)
-        throw std::runtime_error(
-            "Custom attributes are not supported by the this circuit type");
-    return impl->getAttribute<T>(name, gids);
-}
-
-// Soma template instantiations
-template std::vector<char> Circuit::getAttribute<char>(
-    const std::string& name, const GIDSet& gids) const;
-
-template std::vector<unsigned char> Circuit::getAttribute<unsigned char>(
-    const std::string& name, const GIDSet& gids) const;
-
-template std::vector<uint32_t> Circuit::getAttribute<uint32_t>(
-    const std::string& name, const GIDSet& gids) const;
-template std::vector<uint64_t> Circuit::getAttribute<uint64_t>(
-    const std::string& name, const GIDSet& gids) const;
-template std::vector<float> Circuit::getAttribute<float>(
-    const std::string& name, const GIDSet& gids) const;
-template std::vector<double> Circuit::getAttribute<double>(
-    const std::string& name, const GIDSet& gids) const;
-template std::vector<std::string> Circuit::getAttribute<std::string>(
-    const std::string& name, const GIDSet& gids) const;
 
 size_t Circuit::getNumNeurons() const
 {

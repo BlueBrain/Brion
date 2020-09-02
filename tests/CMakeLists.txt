@@ -21,6 +21,9 @@ configure_file(paths.h.in ${PROJECT_BINARY_DIR}/tests/paths.h)
 # Gather all cpp files
 file(GLOB_RECURSE TEST_FILES RELATIVE ${CMAKE_CURRENT_LIST_DIR} *.cpp)
 
+list(REMOVE_ITEM TEST_FILES brain/sonataCircuit.cpp)
+list(REMOVE_ITEM TEST_FILES brain/sonataSimulation.cpp)
+
 set(CPP_TEST_TARGETS)
 
 # Generate a test for each file
