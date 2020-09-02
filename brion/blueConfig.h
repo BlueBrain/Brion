@@ -170,6 +170,12 @@ public:
     BRION_API std::string getCircuitTarget() const;
 
     /**
+     * @return the name of the circuit population, if any
+     * @version 1.0
+     */
+    BRION_API std::string getCircuitPopulation() const;
+
+    /**
      * @return the set of GIDs for the given target
      * @throw  std::runtime_error if target is invalid
      * @version 1.7

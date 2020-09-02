@@ -195,6 +195,19 @@ public:
         return ct;
     }
 
+    const std::string getCircuitPopulation()
+    {
+        const std::string& ct = get(brion::CONFIGSECTION_RUN, getRun(),
+                                    BLUECONFIG_CIRCUIT_TARGET_KEY);
+        // Patch for sonata circuits, where the circuit target comes as
+        // population_name:circuit_target
+        auto colonPos = ct.find(":");
+        if(colonPos != std::string::npos)
+            return ct.substr(0, colonPos);
+
+        return std::string();
+    }
+
     const std::string& getOutputRoot()
     {
         return get(brion::CONFIGSECTION_RUN, getRun(),
@@ -428,6 +441,11 @@ brion::URIs BlueConfig::getTargetSources() const
 std::string BlueConfig::getCircuitTarget() const
 {
     return _impl->getCircuitTarget();
+}
+
+std::string BlueConfig::getCircuitPopulation() const
+{
+    return _impl->getCircuitPopulation();
 }
 
 GIDSet BlueConfig::parseTarget(const std::string& target) const
