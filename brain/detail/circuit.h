@@ -697,8 +697,21 @@ struct SonataCircuit : public BBPCircuit
 {
     SonataCircuit(const brion::BlueConfig& config)
         : BBPCircuit(config)
-        , _circuit(std::make_unique<::MVD::SonataFile>(config.getCellLibrarySource().getPath()))
     {
+        std::string populationName;
+        auto target = config.getCircuitTarget();
+        if(!target.empty())
+        {
+            std::string populationName;
+            const auto colonPos = target.find(":");
+            if(colonPos != std::string::npos)
+                populationName = target.substr(0, colonPos);
+            if(!populationName.empty())
+                BRAIN_INFO << "Loading circuit population " << populationName << std::endl;
+        }
+
+        _circuit = std::make_unique<::MVD::SonataFile>(
+                    config.getCellLibrarySource().getPath(), populationName);
     }
 
     size_t getNumNeurons() const final { return _circuit->getNbNeuron(); }
