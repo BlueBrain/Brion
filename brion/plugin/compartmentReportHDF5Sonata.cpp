@@ -447,13 +447,15 @@ void CompartmentReportHDF5Sonata::_readMetaData()
 
         const HighFive::Group reportGroup = _file->getGroup("report");
 
-        if(!reportGroup.exist("All"))
+        auto objectNameList = reportGroup.listObjectNames();
+        if(objectNameList.empty())
         {
             BRION_THROW("Error opening compartment report: "
-                      "No \"All\" group found within report group")
+                      "No population found within report group")
         }
+        auto firstPopulation = *objectNameList.begin();
 
-        const HighFive::Group allGroup = reportGroup.getGroup("All");
+        const HighFive::Group allGroup = reportGroup.getGroup(firstPopulation);
 
         // Opening the dataset temporarily, it will be reopen later with
         // proper chunk cache configuration.
