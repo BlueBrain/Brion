@@ -702,7 +702,6 @@ struct SonataCircuit : public BBPCircuit
         auto target = config.getCircuitTarget();
         if(!target.empty())
         {
-            std::string populationName;
             const auto colonPos = target.find(":");
             if(colonPos != std::string::npos)
                 populationName = target.substr(0, colonPos);
