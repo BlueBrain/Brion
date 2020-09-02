@@ -21,6 +21,8 @@ configure_file(paths.h.in ${PROJECT_BINARY_DIR}/tests/paths.h)
 # Gather all cpp files
 file(GLOB_RECURSE TEST_FILES RELATIVE ${CMAKE_CURRENT_LIST_DIR} *.cpp)
 
+# Disabling SONATA tests based on the old standard, not valid anymore.
+# Will be re-enabled when a test data with the new standard becomes available.
 list(REMOVE_ITEM TEST_FILES brain/sonataCircuit.cpp)
 list(REMOVE_ITEM TEST_FILES brain/sonataSimulation.cpp)
 
