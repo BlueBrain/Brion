@@ -115,6 +115,12 @@ public:
     BRION_API URI getCircuitSource() const;
 
     /**
+     * @return the URI to the location of cell library file.
+     * @version 1.0
+     */
+    BRION_API URI getCellLibrarySource() const;
+
+    /**
      * @return the URI to the location of synapse nrn files.
      * @version 1.7
      */
@@ -162,6 +168,12 @@ public:
      * @version 1.7
      */
     BRION_API std::string getCircuitTarget() const;
+
+    /**
+     * @return the name of the circuit population, if any
+     * @version 1.0
+     */
+    BRION_API std::string getCircuitPopulation() const;
 
     /**
      * @return the set of GIDs for the given target

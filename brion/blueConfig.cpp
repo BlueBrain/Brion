@@ -182,10 +182,30 @@ public:
         return kv->second;
     }
 
-    const std::string& getCircuitTarget()
+    const std::string getCircuitTarget()
     {
-        return get(brion::CONFIGSECTION_RUN, getRun(),
-                   BLUECONFIG_CIRCUIT_TARGET_KEY);
+        const std::string& ct = get(brion::CONFIGSECTION_RUN, getRun(),
+                                BLUECONFIG_CIRCUIT_TARGET_KEY);
+        // Patch for sonata circuits, where the circuit target comes as
+        // population_name:circuit_target
+        auto colonPos = ct.find(":");
+        if(colonPos != std::string::npos)
+            return ct.substr(colonPos + 1);
+
+        return ct;
+    }
+
+    const std::string getCircuitPopulation()
+    {
+        const std::string& ct = get(brion::CONFIGSECTION_RUN, getRun(),
+                                    BLUECONFIG_CIRCUIT_TARGET_KEY);
+        // Patch for sonata circuits, where the circuit target comes as
+        // population_name:circuit_target
+        auto colonPos = ct.find(":");
+        if(colonPos != std::string::npos)
+            return ct.substr(0, colonPos);
+
+        return std::string();
     }
 
     const std::string& getOutputRoot()
@@ -263,6 +283,19 @@ URI BlueConfig::getCircuitSource() const
     URI uri;
     uri.setScheme("file");
     uri.setPath(filename);
+    return uri;
+}
+
+URI BlueConfig::getCellLibrarySource() const
+{
+    // Implementation according to
+    // https://bbpteam.epfl.ch/documentation/projects/Circuit%20Documentation/latest/blueconfig.html#blueconfigsection-0
+
+    const fs::path path(
+        get(CONFIGSECTION_RUN, _impl->getRun(), BLUECONFIG_CELLLIBRARY_PATH_KEY));
+    URI uri;
+    uri.setScheme("file");
+    uri.setPath(path.string());
     return uri;
 }
 
@@ -408,6 +441,11 @@ brion::URIs BlueConfig::getTargetSources() const
 std::string BlueConfig::getCircuitTarget() const
 {
     return _impl->getCircuitTarget();
+}
+
+std::string BlueConfig::getCircuitPopulation() const
+{
+    return _impl->getCircuitPopulation();
 }
 
 GIDSet BlueConfig::parseTarget(const std::string& target) const
