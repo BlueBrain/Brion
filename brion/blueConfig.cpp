@@ -396,7 +396,7 @@ URI BlueConfig::getSpikeSource() const
     std::string path =
         adjust_path(_impl->sourceParentPath,
                     get(CONFIGSECTION_RUN, _impl->getRun(), BLUECONFIG_SPIKES_PATH_KEY));
-    if (path.empty())
+    if (path.empty() || fs::is_directory(path))
         path = _impl->getOutputRoot() + SPIKE_FILE;
 
     // If we dont find out.dat, try out.hdf5
