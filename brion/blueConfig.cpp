@@ -76,6 +76,28 @@ inline std::string lexical_cast(const brion::BlueConfigSection& b)
 }
 } // namespace boost
 
+inline std::string adjust_path(const std::string& blueConfigPath, const std::string& targetPath)
+{
+    // In the transition to SONATA, some paths include population names in their paths
+    // with the format:
+    //              <entry name> <path>:<population name>
+
+    const std::string cleanPath = targetPath.find(":") != std::string::npos
+                                        ? targetPath.substr(0, targetPath.find(":"))
+                                        : targetPath;
+
+    if(*cleanPath.begin() == '/' && fs::exists(cleanPath))
+        return cleanPath;
+    else
+    {
+        const std::string fullPath = blueConfigPath + "/" + cleanPath;
+        if(fs::exists(fullPath))
+            return fullPath;
+    }
+
+    BRION_THROW("Could not find " + cleanPath)
+}
+
 namespace brion
 {
 typedef std::unordered_map<std::string, std::string> KVStore;
@@ -89,6 +111,7 @@ public:
     explicit BlueConfig(const std::string& source_)
         : source(source_)
     {
+        sourceParentPath = source.substr(0, source.find_last_of("/"));
         std::ifstream file(source.c_str());
         if (!file.is_open())
             BRION_THROW("Cannot open BlueConfig file " + source)
@@ -208,10 +231,10 @@ public:
         return std::string();
     }
 
-    const std::string& getOutputRoot()
+    const std::string getOutputRoot()
     {
-        return get(brion::CONFIGSECTION_RUN, getRun(),
-                   BLUECONFIG_OUTPUT_PATH_KEY);
+        return adjust_path(sourceParentPath, get(brion::CONFIGSECTION_RUN, getRun(),
+                                                 BLUECONFIG_OUTPUT_PATH_KEY));
     }
 
     template <typename T>
@@ -230,6 +253,7 @@ public:
     }
 
     std::string source;
+    std::string sourceParentPath;
     Strings names[CONFIGSECTION_ALL];
     ValueTable table[CONFIGSECTION_ALL];
 };
@@ -272,7 +296,8 @@ brion::Targets BlueConfig::getTargets() const
 URI BlueConfig::getCircuitSource() const
 {
     const fs::path path(
-        get(CONFIGSECTION_RUN, _impl->getRun(), BLUECONFIG_CIRCUIT_PATH_KEY));
+        adjust_path(_impl->sourceParentPath,
+                    get(CONFIGSECTION_RUN, _impl->getRun(), BLUECONFIG_CIRCUIT_PATH_KEY)));
     std::string filename = path.string();
     if (fs::exists(path) && !fs::is_regular_file(fs::canonical(path)))
     {
@@ -292,7 +317,8 @@ URI BlueConfig::getCellLibrarySource() const
     // https://bbpteam.epfl.ch/documentation/projects/Circuit%20Documentation/latest/blueconfig.html#blueconfigsection-0
 
     const fs::path path(
-        get(CONFIGSECTION_RUN, _impl->getRun(), BLUECONFIG_CELLLIBRARY_PATH_KEY));
+        adjust_path(_impl->sourceParentPath,
+                    get(CONFIGSECTION_RUN, _impl->getRun(), BLUECONFIG_CELLLIBRARY_PATH_KEY)));
     URI uri;
     uri.setScheme("file");
     uri.setPath(path.string());
@@ -304,14 +330,16 @@ URI BlueConfig::getSynapseSource() const
     URI uri;
     uri.setScheme("file");
     uri.setPath(
-        get(CONFIGSECTION_RUN, _impl->getRun(), BLUECONFIG_NRN_PATH_KEY));
+        adjust_path(_impl->sourceParentPath,
+                    get(CONFIGSECTION_RUN, _impl->getRun(), BLUECONFIG_NRN_PATH_KEY)));
     return uri;
 }
 
 URI BlueConfig::getProjectionSource(const std::string& name) const
 {
     std::string path =
-        get(CONFIGSECTION_PROJECTION, name, BLUECONFIG_PROJECTION_PATH_KEY);
+        adjust_path(_impl->sourceParentPath,
+                    get(CONFIGSECTION_PROJECTION, name, BLUECONFIG_PROJECTION_PATH_KEY));
     if (path.empty())
     {
         BRION_WARN << "Invalid or missing projection  " << name << std::endl;
@@ -325,8 +353,9 @@ URI BlueConfig::getProjectionSource(const std::string& name) const
 
 URI BlueConfig::getMorphologySource() const
 {
-    URI uri(get(CONFIGSECTION_RUN, _impl->getRun(),
-                BLUECONFIG_MORPHOLOGY_PATH_KEY));
+    URI uri(adjust_path(_impl->sourceParentPath,
+                        get(CONFIGSECTION_RUN, _impl->getRun(),
+                            BLUECONFIG_MORPHOLOGY_PATH_KEY)));
     if (uri.getScheme().empty())
         uri.setScheme("file");
 
@@ -365,8 +394,9 @@ URI BlueConfig::getReportSource(const std::string& report) const
 URI BlueConfig::getSpikeSource() const
 {
     std::string path =
-        get(CONFIGSECTION_RUN, _impl->getRun(), BLUECONFIG_SPIKES_PATH_KEY);
-    if (path.empty())
+        adjust_path(_impl->sourceParentPath,
+                    get(CONFIGSECTION_RUN, _impl->getRun(), BLUECONFIG_SPIKES_PATH_KEY));
+    if (path.empty() || fs::is_directory(path))
         path = _impl->getOutputRoot() + SPIKE_FILE;
 
     // If we dont find out.dat, try out.hdf5
@@ -381,7 +411,8 @@ URI BlueConfig::getSpikeSource() const
 
 URI BlueConfig::getMeshSource() const
 {
-    URI uri(get(CONFIGSECTION_RUN, _impl->getRun(), BLUECONFIG_MESH_PATH_KEY));
+    URI uri(adjust_path(_impl->sourceParentPath,
+                        get(CONFIGSECTION_RUN, _impl->getRun(), BLUECONFIG_MESH_PATH_KEY)));
     if (uri.getScheme().empty())
         uri.setScheme("file");
     // Meshes are actually under a subdirectory named high/TXT, but the suffic
@@ -395,11 +426,13 @@ brion::URIs BlueConfig::getTargetSources() const
 
     URIs uris;
     auto nrnPath =
-        get(brion::CONFIGSECTION_RUN, run, BLUECONFIG_NRN_PATH_KEY);
+        adjust_path(_impl->sourceParentPath,
+                    get(brion::CONFIGSECTION_RUN, run, BLUECONFIG_NRN_PATH_KEY));
     boost::trim_right_if(nrnPath, [](auto c) { return c == '/'; });
 
     auto circuitPath =
-        get(brion::CONFIGSECTION_RUN, run, BLUECONFIG_CIRCUIT_PATH_KEY);
+        adjust_path(_impl->sourceParentPath,
+                    get(brion::CONFIGSECTION_RUN, run, BLUECONFIG_CIRCUIT_PATH_KEY));
     boost::trim_right_if(circuitPath, [](auto c) { return c == '/'; });
 
     // fs::is_directory may wrongly return true for symlinks
