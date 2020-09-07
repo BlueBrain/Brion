@@ -78,16 +78,24 @@ inline std::string lexical_cast(const brion::BlueConfigSection& b)
 
 inline std::string adjust_path(const std::string& blueConfigPath, const std::string& targetPath)
 {
-    if(*targetPath.begin() == '/' && fs::exists(targetPath))
-        return targetPath;
+    // In the transition to SONATA, some paths include population names in their paths
+    // with the format:
+    //              <entry name> <path>:<population name>
+
+    const std::string cleanPath = targetPath.find(":") != std::string::npos
+                                        ? targetPath.substr(0, targetPath.find(":"))
+                                        : targetPath;
+
+    if(*cleanPath.begin() == '/' && fs::exists(cleanPath))
+        return cleanPath;
     else
     {
-        const std::string fullPath = blueConfigPath + "/" + targetPath;
+        const std::string fullPath = blueConfigPath + "/" + cleanPath;
         if(fs::exists(fullPath))
             return fullPath;
     }
 
-    BRION_THROW("Could not find " + targetPath)
+    BRION_THROW("Could not find " + cleanPath)
 }
 
 namespace brion
