@@ -117,28 +117,6 @@ const T& _nop(const T& x)
     return x;
 }
 
-template <typename T>
-std::vector<T> _getAttribute(const brion::NodeGroup& nodeGroup,
-                             const std::string& name, const size_t start,
-                             const size_t end)
-{
-    return nodeGroup.getAttribute<T>(name, start, end);
-}
-
-// bool is not a proper H5 type, so we need a special function for this type
-// of node attributes
-template <>
-std::vector<bool> _getAttribute<bool>(const brion::NodeGroup& nodeGroup,
-                                      const std::string& name,
-                                      const size_t start, const size_t end)
-{
-    const auto values = nodeGroup.getAttribute<uint8_t>(name, start, end);
-    std::vector<bool> result;
-    std::transform(values.begin(), values.end(), result.begin(),
-                   [](const uint8_t x) { return x != 0; });
-    return result;
-}
-
 using CachedMorphologies =
     std::unordered_map<std::string, neuron::MorphologyPtr>;
 using CachedSynapses = std::unordered_map<std::string, brion::SynapseMatrix>;
