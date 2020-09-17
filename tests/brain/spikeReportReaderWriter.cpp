@@ -53,11 +53,14 @@
 
 struct TmpFile
 {
-    const std::string name;
+    std::string name;
 
     explicit TmpFile(const std::string& suffix = std::string())
-        : name("/tmp/" + brion::make_UUID().getString() + suffix)
     {
+        // Try to gather CI jobs temp directory
+        const auto tmpDirVar = std::getenv("TMPDIR");
+        const auto tmpDir = std::string(tmpDirVar != nullptr? tmpDirVar : "/tmp");
+        name = tmpDir + "/" + brion::make_UUID().getString() + suffix;
     }
 
     ~TmpFile()

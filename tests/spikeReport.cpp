@@ -53,12 +53,16 @@ class TemporaryData
 {
 public:
     brion::Spikes spikes;
-    const std::string tmpFileName;
+    std::string tmpFileName;
 
     explicit TemporaryData(const std::string& reportType)
-        : tmpFileName("/tmp/" + brion::make_UUID().getString() + "." +
-                      reportType)
     {
+        // Try to gather CI jobs temp directory
+        const auto tmpDirVar = std::getenv("TMPDIR");
+        const auto tmpDir = std::string(tmpDirVar != nullptr? tmpDirVar : "/tmp");
+        tmpFileName = tmpDir+ "/" + brion::make_UUID().getString() + "." +
+                      reportType;
+
         spikes.push_back({0.1f, 20});
         spikes.push_back({0.2f, 22});
         spikes.push_back({0.2f, 23});
