@@ -79,11 +79,16 @@ class CMakeBuild(build_ext, object):
             self.build_extension(ext)
 
     def build_extension(self, ext):
+        print(self.distribution.get_version())
         extdir = os.path.abspath(os.path.dirname(self.get_ext_fullpath(ext.name)))
         cmake_args = [
             "-DCMAKE_LIBRARY_OUTPUT_DIRECTORY=" + extdir,
-            "-DEXTLIB_FROM_SUBMODULES=ON",
+            "-DEXTLIB_FROM_SUBMODULES=ON", # libsonata dependencies
             "-DCMAKE_BUILD_TYPE=Release",
+            "-DSONATA_TESTS=OFF",   # libsonata tests
+            "-DBUILD_BINDINGS=OFF", # MorphIO python bindings
+            "-DBUILD_UNIT_TESTS=OFF", # MVDTool tests
+            "-DBRION_VERSION_STRING="+self.distribution.get_version(),
             '-DPYTHON_EXECUTABLE=' + sys.executable
         ]
 
