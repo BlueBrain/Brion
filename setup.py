@@ -4,6 +4,7 @@ import platform
 import re
 import subprocess
 import sys
+from pathlib import Path
 
 from setuptools import setup, Extension
 from setuptools.command.build_ext import build_ext
@@ -105,9 +106,24 @@ class CMakeBuild(build_ext, object):
         subprocess.check_call(
             ["cmake", ext.sourcedir] + cmake_args, cwd=self.build_temp, env=env
         )
+
+        build_temp = Path(self.build_temp).resolve()
+        buildStr = str(build_temp)
+        dest_path = Path(self.get_ext_fullpath(ext.name)).resolve()
+        dest_directory = dest_path.parents[0]
+        dest_directory.mkdir(parents=True, exist_ok=True)
+        destStr = str(dest_directory)
+        self.copy_file(buildStr + "/lib/brain/__init__.py", destStr + "/brain")
+
         subprocess.check_call(
             ["cmake", "--build", "."] + build_args, cwd=self.build_temp
         )
+
+        for f in os.listdir(buildStr + "/lib/brain"):
+            if os.path.isfile(buildStr + "/lib/brain/" + f):
+                self.copy_file(buildStr + "/lib/brain/" + f, destStr + "/brain")
+        
+        self.copy_tree(buildStr + "/lib/brain/neuron", destStr + "/brain")
 
 
 class PkgTest(test):
