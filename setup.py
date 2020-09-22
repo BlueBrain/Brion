@@ -107,17 +107,16 @@ class CMakeBuild(build_ext, object):
             ["cmake", ext.sourcedir] + cmake_args, cwd=self.build_temp, env=env
         )
 
+        subprocess.check_call(
+            ["cmake", "--build", "."] + build_args, cwd=self.build_temp
+        )
+
         build_temp = Path(self.build_temp).resolve()
         buildStr = str(build_temp)
         dest_path = Path(self.get_ext_fullpath(ext.name)).resolve()
         dest_directory = dest_path.parents[0]
         dest_directory.mkdir(parents=True, exist_ok=True)
         destStr = str(dest_directory)
-        self.copy_file(buildStr + "/lib/brain/__init__.py", destStr + "/brain")
-
-        subprocess.check_call(
-            ["cmake", "--build", "."] + build_args, cwd=self.build_temp
-        )
 
         for f in os.listdir(buildStr + "/lib/brain"):
             if os.path.isfile(buildStr + "/lib/brain/" + f):
