@@ -17,7 +17,6 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 # Allow per target specification of build output folder
 set_property(GLOBAL PROPERTY USE_FOLDERS ON)
 
-message(WARNING "INPUTTED SHIT ${BRION_VERSION_STRING}")
 # Get the last commit hash
 if(NOT BRION_VERSION_STRING)
     execute_process(COMMAND "/usr/bin/git" "rev-parse" "--short=8" "HEAD"
