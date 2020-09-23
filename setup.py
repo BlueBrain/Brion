@@ -114,22 +114,22 @@ class CMakeBuild(build_ext, object):
         build_temp = Path(self.build_temp).resolve()
         buildStr = str(build_temp)
         dest_path = Path(self.get_ext_fullpath(ext.name)).resolve()
-        dest_directory = dest_path.parents[0]
+        dest_directory = dest_path.parents[0] / Path("brain")
         dest_directory.mkdir(parents=True, exist_ok=True)
         destStr = str(dest_directory)
 
         # Copy base libraries
         for f in os.listdir(buildStr + "/lib"):
             if os.path.isfile(buildStr + "/lib/" + f):
-                self.copy_file(buildStr + "/lib/" + f, destStr + "/brain")
+                self.copy_file(buildStr + "/lib/" + f, destStr)
 
         # Copy python library and files
         for f in os.listdir(buildStr + "/lib/brain"):
             if os.path.isfile(buildStr + "/lib/brain/" + f):
-                self.copy_file(buildStr + "/lib/brain/" + f, destStr + "/brain")
+                self.copy_file(buildStr + "/lib/brain/" + f, destStr)
         
         # Copy neuron module
-        self.copy_tree(buildStr + "/lib/brain/neuron", destStr + "/brain")
+        self.copy_tree(buildStr + "/lib/brain/neuron", destStr)
 
 
 class PkgTest(test):
