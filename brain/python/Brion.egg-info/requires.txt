@@ -1,4 +1,0 @@
-numpy>=1.7.0
-
-[docs]
-sphinx-bluebrain-theme

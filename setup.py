@@ -118,10 +118,17 @@ class CMakeBuild(build_ext, object):
         dest_directory.mkdir(parents=True, exist_ok=True)
         destStr = str(dest_directory)
 
+        # Copy base libraries
+        for f in os.listdir(buildStr + "/lib"):
+            if os.path.isfile(buildStr + "/lib/" + f):
+                self.copy_file(buildStr + "/lib/" + f, destStr + "/brain")
+
+        # Copy python library and files
         for f in os.listdir(buildStr + "/lib/brain"):
             if os.path.isfile(buildStr + "/lib/brain/" + f):
                 self.copy_file(buildStr + "/lib/brain/" + f, destStr + "/brain")
         
+        # Copy neuron module
         self.copy_tree(buildStr + "/lib/brain/neuron", destStr + "/brain")
 
 
