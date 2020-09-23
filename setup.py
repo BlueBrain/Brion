@@ -129,7 +129,7 @@ class CMakeBuild(build_ext, object):
                 self.copy_file(buildStr + "/lib/brain/" + f, destStr)
         
         # Copy neuron module
-        self.copy_tree(buildStr + "/lib/brain/neuron", destStr)
+        self.copy_tree(buildStr + "/lib/brain/neuron", destStr + "/neuron")
 
 
 class PkgTest(test):
