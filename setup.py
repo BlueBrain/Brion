@@ -111,26 +111,6 @@ class CMakeBuild(build_ext, object):
             ["cmake", "--build", "."] + build_args, cwd=self.build_temp
         )
 
-        build_temp = Path(self.build_temp).resolve()
-        buildStr = str(build_temp)
-        dest_path = Path(self.get_ext_fullpath(ext.name)).resolve()
-        dest_directory = dest_path.parents[0] / Path("brain")
-        dest_directory.mkdir(parents=True, exist_ok=True)
-        destStr = str(dest_directory)
-
-        # Copy base libraries
-        for f in os.listdir(buildStr + "/lib"):
-            if os.path.isfile(buildStr + "/lib/" + f):
-                self.copy_file(buildStr + "/lib/" + f, destStr)
-
-        # Copy python library and files
-        for f in os.listdir(buildStr + "/lib/brain"):
-            if os.path.isfile(buildStr + "/lib/brain/" + f):
-                self.copy_file(buildStr + "/lib/brain/" + f, destStr)
-        
-        # Copy neuron module
-        self.copy_tree(buildStr + "/lib/brain/neuron", destStr + "/neuron")
-
 
 class PkgTest(test):
     """Custom disutils command that acts like as a replacement
@@ -163,7 +143,7 @@ with open('README.md') as f:
     README = f.read()
 
 setup(
-    name="Brion",
+    name="brain",
     description='BlueBrain I/O Library',
     author="Blue Brain Project, EPFL",
     long_description=README,
@@ -173,7 +153,7 @@ setup(
     classifiers=[
         "License :: OSI Approved :: GNU Lesser General Public License v3 (LGPLv3)",
     ],
-    ext_modules=[CMakeExtension("brain")],
+    ext_modules=[CMakeExtension("brain._brain")],
     cmdclass=lazy_dict(
         build_ext=CMakeBuild,
         test_ext=CMakeBuild,
@@ -189,6 +169,6 @@ setup(
     use_scm_version={"local_scheme": "no-local-version",
                      },
     package_dir={"": "brain/python"},
-    packages=['brain',
+    packages=['brain', 'brain.neuron',
               ],
 )

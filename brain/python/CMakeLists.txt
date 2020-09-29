@@ -96,9 +96,14 @@ if(BBPTestData_FOUND)
   target_link_libraries(brain_python PRIVATE BBPTestData)
 endif()
 
-set_target_properties(brain_python PROPERTIES
-    OUTPUT_NAME "_brain" PREFIX ""
-    LIBRARY_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/lib/brain)
+if(BRION_USE_CUSTOM_LIB_DIR)
+    set_target_properties(brain_python PROPERTIES
+        OUTPUT_NAME "_brain" PREFIX "")
+else()
+    set_target_properties(brain_python PROPERTIES
+        OUTPUT_NAME "_brain" PREFIX ""
+        LIBRARY_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/lib/brain)
+endif()
 
 configure_file(brain/__init__.py.in ${CMAKE_BINARY_DIR}/lib/brain/__init__.py)
 

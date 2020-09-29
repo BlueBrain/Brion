@@ -61,7 +61,13 @@ include(CompileOptions)
 
 # Configure base directories
 set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/lib)
-set(CMAKE_LIBRARY_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/lib)
+
+if(NOT CMAKE_LIBRARY_OUTPUT_DIRECTORY)
+    set(CMAKE_LIBRARY_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/lib)
+    set(BRION_USE_CUSTOM_LIB_DIR OFF)
+else()
+    set(BRION_USE_CUSTOM_LIB_DIR ON)
+endif()
 
 # Configure used python version
 set(USE_PYTHON_VERSION 3)
