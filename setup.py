@@ -147,7 +147,7 @@ setup(
     description='BlueBrain I/O Library',
     author="Blue Brain Project, EPFL",
     long_description=README,
-    long_description_content_type='text/x-rst',
+    long_description_content_type='text/markdown',
     license="LGPLv3",
     url='https://github.com/BlueBrain/Brion',
     classifiers=[
