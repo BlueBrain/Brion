@@ -38,6 +38,7 @@ if(NOT sonata_FOUND AND NOT TARGET sonata::sonata_shared)
         set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -fprofile-instr-generate -fcoverage-mapping")
         set(CMAKE_C_FLAGS_DEBUG "${CMAKE_C_FLAGS_DEBUG} -fprofile-instr-generate -fcoverage-mapping")
     endif()
+    set(SONATA_VERSION "0.1.3")
     add_subdirectory(libsonata)
     add_library(sonatainter INTERFACE)
     target_include_directories(sonatainter INTERFACE ${CMAKE_CURRENT_LIST_DIR}/libsonata/include)
@@ -83,18 +84,11 @@ if(NOT MorphIO_FOUND AND NOT TARGET MorphIO::morphio_shared)
     add_library(lexertl INTERFACE)
     target_include_directories(lexertl SYSTEM INTERFACE MorphIO/3rdparty/lexertl)
 
-    execute_process(COMMAND git describe --tags
-                    WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/MorphIO
-                    RESULT_VARIABLE GIT_VERSION_FAILED
-                    OUTPUT_VARIABLE MORPHIO_VERSION_STRING
-                    ERROR_VARIABLE GIT_VERSION_ERROR
-                    OUTPUT_STRIP_TRAILING_WHITESPACE)
-
     # Retrieve version
-    string(REGEX MATCHALL "^v([0-9]+)\\.([0-9]+)\\.([0-9]+).*$" OUTPUT_VAR ${MORPHIO_VERSION_STRING})
-    set(MorphIO_VERSION_MAJOR ${CMAKE_MATCH_1})
-    set(MorphIO_VERSION_MINOR ${CMAKE_MATCH_2})
-    set(MorphIO_VERSION_PATCH ${CMAKE_MATCH_3})
+    set(MORPHIO_VERSION_STRING "2.3.10")
+    set(MorphIO_VERSION_MAJOR 2)
+    set(MorphIO_VERSION_MINOR 3)
+    set(MorphIO_VERSION_PATCH 10)
     # Morphio
     add_subdirectory(MorphIO/src)
     add_library(morphiointer INTERFACE)

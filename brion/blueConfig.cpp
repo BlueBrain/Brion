@@ -95,7 +95,7 @@ inline std::string adjust_path(const std::string& blueConfigPath, const std::str
             return fullPath;
     }
 
-    BRION_THROW("Could not find " + cleanPath)
+    return std::string(); // empty path
 }
 
 namespace brion

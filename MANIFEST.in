@@ -1,0 +1,37 @@
+recursive-include CMake *
+recursive-include brion *
+recursive-include brain *
+recursive-include doc *
+include CMakeLists.txt
+
+include deps/CMakeLists.txt
+
+include deps/glm/CMakeLists.txt
+include deps/glm/cmake_uninstall.cmake.in
+recursive-include deps/glm/cmake *
+recursive-include deps/glm/glm *
+recursive-include deps/glm/test *
+
+include deps/libsonata/CMakeLists.txt
+recursive-include deps/libsonata/CMake *
+recursive-include deps/libsonata/include *
+recursive-include deps/libsonata/src *
+recursive-include deps/libsonata/extlib *
+
+include deps/MorphIO/CMakeLists.txt
+recursive-include deps/MorphIO/CMake *
+recursive-include deps/MorphIO/include *
+recursive-include deps/MorphIO/src *
+recursive-include deps/MorphIO/tests *
+include deps/MorphIO/3rdparty/CMakeLists.txt
+recursive-include deps/MorphIO/3rdparty/GSL_LITE *
+recursive-include deps/MorphIO/3rdparty/lexertl *
+
+recursive-include deps/HighFive/include *
+include deps/HighFive/CMakeLists.txt
+include deps/HighFive/LICENSE
+
+include deps/MVDTool/CMakeLists.txt
+recursive-include deps/MVDTool/CMake *
+recursive-include deps/MVDTool/include *
+recursive-include deps/MVDTool/src *
