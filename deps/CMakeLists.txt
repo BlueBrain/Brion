@@ -8,12 +8,6 @@ include(ExternalProject)
 # --------------------------------------------------------------------------------
 if(NOT glm_FOUND AND NOT TARGET glm)
     message(STATUS "Gathering GLM from submodules")
-    #option(GLM_QUIET "No CMake Message" ON)
-    #option(GLM_TEST_ENABLE "Build unit tests" OFF)
-    #option(GLM_TEST_ENABLE_CXX_14 "Enable C++ 14" ON)
-    #set(CMAKE_EXPORT_NO_PACKAGE_REGISTRY ON)
-    #set(CMAKE_INSTALL_LIBDIR lib)
-    #add_subdirectory(glm)
 
     add_library(glm INTERFACE)
     target_include_directories(glm INTERFACE
