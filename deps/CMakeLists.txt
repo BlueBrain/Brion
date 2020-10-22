@@ -8,12 +8,17 @@ include(ExternalProject)
 # --------------------------------------------------------------------------------
 if(NOT glm_FOUND AND NOT TARGET glm)
     message(STATUS "Gathering GLM from submodules")
-    option(GLM_QUIET "No CMake Message" ON)
-    option(GLM_TEST_ENABLE "Build unit tests" OFF)
-    option(GLM_TEST_ENABLE_CXX_14 "Enable C++ 14" ON)
-    set(CMAKE_EXPORT_NO_PACKAGE_REGISTRY ON)
-    set(CMAKE_INSTALL_LIBDIR lib)
-    add_subdirectory(glm)
+    #option(GLM_QUIET "No CMake Message" ON)
+    #option(GLM_TEST_ENABLE "Build unit tests" OFF)
+    #option(GLM_TEST_ENABLE_CXX_14 "Enable C++ 14" ON)
+    #set(CMAKE_EXPORT_NO_PACKAGE_REGISTRY ON)
+    #set(CMAKE_INSTALL_LIBDIR lib)
+    #add_subdirectory(glm)
+
+    add_library(glm INTERFACE)
+    target_include_directories(glm INTERFACE
+        $<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}>
+        $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/glm>)
 
     # WAR for https://github.com/g-truc/glm/issues/854
     if(CMAKE_COMPILER_IS_GNUCXX AND NOT CMAKE_CXX_COMPILER_VERSION VERSION_LESS 8.0)
@@ -21,6 +26,22 @@ if(NOT glm_FOUND AND NOT TARGET glm)
     endif()
     # Disable warnings
     target_compile_options(glm INTERFACE -w)
+
+    # Export target
+    install(TARGETS glm
+        EXPORT Brion-targets
+        LIBRARY DESTINATION lib
+        ARCHIVE DESTINATION lib
+        INCLUDES DESTINATION include
+    )
+    install(TARGETS glm
+        EXPORT Brain-targets
+        LIBRARY DESTINATION lib
+        ARCHIVE DESTINATION lib
+        INCLUDES DESTINATION include
+    )
+
+    install(DIRECTORY glm/glm DESTINATION include)
 endif()
 
 # --------------------------------------------------------------------------------
