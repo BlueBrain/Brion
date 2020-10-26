@@ -25,6 +25,7 @@ before_install:
   - brew install gcc || brew link --overwrite gcc
   - brew install cppcheck doxygen ninja
   - brew list hdf5@1.10 || brew install hdf5@1.10
+  - brew list hdf5@1.10
   - brew install boost-python3
   - brew install lcov
   - brew unlink numpy@1.19
