@@ -9,6 +9,8 @@ include(ExternalProject)
 if(NOT glm_FOUND AND NOT TARGET glm)
     message(STATUS "Gathering GLM from submodules")
 
+    add_compile_definitions(GLM_FORCE_CXX14)
+
     add_library(glm INTERFACE)
     target_include_directories(glm INTERFACE
         $<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}>
