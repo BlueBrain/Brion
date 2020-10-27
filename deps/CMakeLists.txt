@@ -9,19 +9,10 @@ include(ExternalProject)
 if(NOT glm_FOUND AND NOT TARGET glm)
     message(STATUS "Gathering GLM from submodules")
 
-    add_compile_definitions(GLM_FORCE_CXX14)
-
     add_library(glm INTERFACE)
     target_include_directories(glm INTERFACE
         $<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}>
         $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/glm>)
-
-    # WAR for https://github.com/g-truc/glm/issues/854
-    if(CMAKE_COMPILER_IS_GNUCXX AND NOT CMAKE_CXX_COMPILER_VERSION VERSION_LESS 8.0)
-      target_compile_options(glm INTERFACE -Wno-error=class-memaccess)
-    endif()
-    # Disable warnings
-    target_compile_options(glm INTERFACE -w)
 
     # Export target
     install(TARGETS glm
@@ -39,6 +30,14 @@ if(NOT glm_FOUND AND NOT TARGET glm)
 
     install(DIRECTORY glm/glm DESTINATION include)
 endif()
+
+# WAR for https://github.com/g-truc/glm/issues/854
+add_compile_definitions(GLM_FORCE_CXX14)
+if(CMAKE_COMPILER_IS_GNUCXX AND NOT CMAKE_CXX_COMPILER_VERSION VERSION_LESS 8.0)
+  target_compile_options(glm INTERFACE -Wno-error=class-memaccess)
+endif()
+# Disable warnings
+target_compile_options(glm INTERFACE -w)
 
 # --------------------------------------------------------------------------------
 # sonata (which also brings HighFive)
