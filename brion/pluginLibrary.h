@@ -23,6 +23,9 @@
 #include "log.h"
 #include "types.h"
 
+#include <boost/core/demangle.hpp>
+#include <boost/filesystem.hpp>
+
 #include <functional>
 #include <iostream>
 #include <memory>
@@ -118,13 +121,31 @@ public:
 
     std::unique_ptr<SuperT> create(const typename SuperT::DataT& data) const
     {
+        // Throw a meaningful exception when there is no file to read
+        // Avoid wildcards from NEST reports
+        if(data.getURI().getPath().find("*") == std::string::npos
+                && (data.getAccessMode() == MODE_READ
+                    || data.getAccessMode() == MODE_READOVERWRITE
+                    || data.getAccessMode() == MODE_READWRITE))
+        {
+            const std::string& path = data.getURI().getPath();
+            std::string checkPath;
+            if(path.find("/") == 0)
+                checkPath = path;
+            else
+                checkPath = boost::filesystem::current_path().string() + "/" + path;
+
+            if(!boost::filesystem::exists(checkPath))
+                BRION_THROW(boost::core::demangle(typeid(SuperT).name())+": File \""+checkPath+"\"not found");
+        }
+
         for(const auto& factory : _factoryBuffer)
         {
             if(factory->handles(data))
                 return factory->create(data);
         }
 
-        BRION_THROW("Could not find an implementation for " + std::string(typeid(SuperT).name()));
+        BRION_THROW("Could not find an implementation for " + boost::core::demangle(typeid(SuperT).name()));
         return {nullptr};
     }
 

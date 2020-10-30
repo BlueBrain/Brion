@@ -192,7 +192,9 @@ public:
 
     virtual MorphologyCache* getMorphologyCache() const { return nullptr; }
     virtual std::string getSynapseSource() const = 0;
+    virtual const std::string& getSynapsePopulation() const = 0;
     virtual std::string getSynapseProjectionSource(const std::string& name) const = 0;
+    virtual std::string getSynapseProjectionPopulation(const std::string& name) const = 0;
     virtual SynapseCache* getSynapseCache() const { return nullptr; }
     virtual const brion::SynapseSummary& getSynapseSummary() const = 0;
     virtual const brion::Synapse& getSynapseAttributes(
@@ -210,6 +212,7 @@ public:
     explicit BBPCircuit(const brion::BlueConfig& config)
         : _morphologySource(config.getMorphologySource())
         , _synapseSource(config.getSynapseSource())
+        , _synapsePopulation(config.getSynapsePopulation())
         , _targets(config)
     {
         for (auto&& projection :
@@ -247,13 +250,41 @@ public:
         return _synapseSource.getPath();
     }
 
+    const std::string& getSynapsePopulation() const
+    {
+        return _synapsePopulation;
+    }
+
     std::string getSynapseProjectionSource(const std::string& name) const
     {
         auto it = _afferentProjectionSources.find(name);
         if(it == _afferentProjectionSources.end())
             BRAIN_THROW("Projection " + name + " not found")
 
-        return it->second.getPath();
+        auto synapseSource = it->second.getPath();
+
+        // demangle population name from projected synapses file path
+        auto colonPos = synapseSource.find(":");
+        if(colonPos != std::string::npos)
+            return synapseSource.substr(0, colonPos);
+
+        return synapseSource;
+    }
+
+    std::string getSynapseProjectionPopulation(const std::string& name) const
+    {
+        auto it = _afferentProjectionSources.find(name);
+        if(it == _afferentProjectionSources.end())
+            BRAIN_THROW("Projection " + name + " not found")
+
+        auto synapseSource = it->second.getPath();
+
+        // Extract population name from projection path entry
+        auto colonPos = synapseSource.find(":");
+        if(colonPos != std::string::npos)
+            return synapseSource.substr(colonPos + 1);
+
+        return std::string();
     }
 
     SynapseCache* getSynapseCache() const final
@@ -345,6 +376,7 @@ public:
 
     const brion::URI _morphologySource;
     const brion::URI _synapseSource;
+    const std::string _synapsePopulation;
     std::unordered_map<std::string, brion::URI> _afferentProjectionSources;
     Targets _targets;
 

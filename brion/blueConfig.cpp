@@ -76,7 +76,9 @@ inline std::string lexical_cast(const brion::BlueConfigSection& b)
 }
 } // namespace boost
 
-inline std::string adjust_path(const std::string& blueConfigPath, const std::string& targetPath)
+inline std::string adjust_path(const std::string& blueConfigPath,
+                               const std::string& currentDir,
+                               const std::string& targetPath)
 {
     // In the transition to SONATA, some paths include population names in their paths
     // with the format:
@@ -90,7 +92,11 @@ inline std::string adjust_path(const std::string& blueConfigPath, const std::str
         return cleanPath;
     else
     {
-        const std::string fullPath = blueConfigPath + "/" + cleanPath;
+        std::string fullPath = blueConfigPath + "/" + cleanPath;
+        if(fs::exists(fullPath))
+            return fullPath;
+
+        fullPath = currentDir + "/" + cleanPath;
         if(fs::exists(fullPath))
             return fullPath;
     }
@@ -231,10 +237,18 @@ public:
         return std::string();
     }
 
+    const std::string& getCurrentDir()
+    {
+        return get(brion::CONFIGSECTION_RUN, getRun(), BLUECONFIG_CURRENT_DIR_KEY);
+    }
+
     const std::string getOutputRoot()
     {
-        return adjust_path(sourceParentPath, get(brion::CONFIGSECTION_RUN, getRun(),
-                                                 BLUECONFIG_OUTPUT_PATH_KEY));
+        return adjust_path(sourceParentPath,
+                           getCurrentDir(),
+                           get(brion::CONFIGSECTION_RUN,
+                               getRun(),
+                               BLUECONFIG_OUTPUT_PATH_KEY));
     }
 
     template <typename T>
@@ -297,6 +311,7 @@ URI BlueConfig::getCircuitSource() const
 {
     const fs::path path(
         adjust_path(_impl->sourceParentPath,
+                    _impl->getCurrentDir(),
                     get(CONFIGSECTION_RUN, _impl->getRun(), BLUECONFIG_CIRCUIT_PATH_KEY)));
     std::string filename = path.string();
     if (fs::exists(path) && !fs::is_regular_file(fs::canonical(path)))
@@ -318,6 +333,7 @@ URI BlueConfig::getCellLibrarySource() const
 
     const fs::path path(
         adjust_path(_impl->sourceParentPath,
+                    _impl->getCurrentDir(),
                     get(CONFIGSECTION_RUN, _impl->getRun(), BLUECONFIG_CELLLIBRARY_PATH_KEY)));
     URI uri;
     uri.setScheme("file");
@@ -331,14 +347,29 @@ URI BlueConfig::getSynapseSource() const
     uri.setScheme("file");
     uri.setPath(
         adjust_path(_impl->sourceParentPath,
+                    _impl->getCurrentDir(),
                     get(CONFIGSECTION_RUN, _impl->getRun(), BLUECONFIG_NRN_PATH_KEY)));
     return uri;
+}
+
+std::string BlueConfig::getSynapsePopulation() const
+{
+    const auto& synapseSource = get(CONFIGSECTION_RUN, _impl->getRun(), BLUECONFIG_NRN_PATH_KEY);
+
+    // Extract population name from synapses path (nrnPath)
+    auto colonPos = synapseSource.find(":");
+    if(colonPos != std::string::npos)
+        return synapseSource.substr(colonPos + 1);
+
+    return std::string();
+
 }
 
 URI BlueConfig::getProjectionSource(const std::string& name) const
 {
     std::string path =
         adjust_path(_impl->sourceParentPath,
+                    _impl->getCurrentDir(),
                     get(CONFIGSECTION_PROJECTION, name, BLUECONFIG_PROJECTION_PATH_KEY));
     if (path.empty())
     {
@@ -354,6 +385,7 @@ URI BlueConfig::getProjectionSource(const std::string& name) const
 URI BlueConfig::getMorphologySource() const
 {
     URI uri(adjust_path(_impl->sourceParentPath,
+                        _impl->getCurrentDir(),
                         get(CONFIGSECTION_RUN, _impl->getRun(),
                             BLUECONFIG_MORPHOLOGY_PATH_KEY)));
     if (uri.getScheme().empty())
@@ -395,6 +427,7 @@ URI BlueConfig::getSpikeSource() const
 {
     std::string path =
         adjust_path(_impl->sourceParentPath,
+                    _impl->getCurrentDir(),
                     get(CONFIGSECTION_RUN, _impl->getRun(), BLUECONFIG_SPIKES_PATH_KEY));
     if (path.empty() || fs::is_directory(path))
         path = _impl->getOutputRoot() + SPIKE_FILE;
@@ -412,6 +445,7 @@ URI BlueConfig::getSpikeSource() const
 URI BlueConfig::getMeshSource() const
 {
     URI uri(adjust_path(_impl->sourceParentPath,
+                        _impl->getCurrentDir(),
                         get(CONFIGSECTION_RUN, _impl->getRun(), BLUECONFIG_MESH_PATH_KEY)));
     if (uri.getScheme().empty())
         uri.setScheme("file");
@@ -427,11 +461,13 @@ brion::URIs BlueConfig::getTargetSources() const
     URIs uris;
     auto nrnPath =
         adjust_path(_impl->sourceParentPath,
+                    _impl->getCurrentDir(),
                     get(brion::CONFIGSECTION_RUN, run, BLUECONFIG_NRN_PATH_KEY));
     boost::trim_right_if(nrnPath, [](auto c) { return c == '/'; });
 
     auto circuitPath =
         adjust_path(_impl->sourceParentPath,
+                    _impl->getCurrentDir(),
                     get(brion::CONFIGSECTION_RUN, run, BLUECONFIG_CIRCUIT_PATH_KEY));
     boost::trim_right_if(circuitPath, [](auto c) { return c == '/'; });
 

@@ -501,13 +501,22 @@ struct Synapses::SonataImpl : public Synapses::InternalBaseImpl
         : Synapses::InternalBaseImpl(circuit, gids, source, prefetch)
     {
         const std::string projSourceFile = _circuit->getSynapseProjectionSource(source);
+        const std::string& synapsePopulation = _circuit->getSynapseProjectionPopulation(source);
         // We don't have a summary file for projected afferent synapses.
         // But at least we have to figure out the size of the container.
         const bbp::sonata::EdgeStorage edgeStorage (projSourceFile);
-        for(const auto& popName : edgeStorage.populationNames())
+        if(!synapsePopulation.empty())
         {
-            const bbp::sonata::EdgePopulation edges (projSourceFile, "", popName);
+            const bbp::sonata::EdgePopulation edges (projSourceFile, "", synapsePopulation);
             _size += edges.size();
+        }
+        else
+        {
+            for(const auto& popName : edgeStorage.populationNames())
+            {
+                const bbp::sonata::EdgePopulation edges (projSourceFile, "", popName);
+                _size += edges.size();
+            }
         }
 
         if (int(prefetch) & int(SynapsePrefetch::attributes))
@@ -533,9 +542,10 @@ struct Synapses::SonataImpl : public Synapses::InternalBaseImpl
         uint32_ts filteredPreGids, filteredPostGids;
         const std::vector<uint64_t> nodeIds (uniqueIds.begin(), uniqueIds.end());
         const bbp::sonata::EdgeStorage edgeStorage (synapseFilePath);
-        for(const auto& name : edgeStorage.populationNames())
+
+        auto synapseGIDsFunc = [&](const std::string& populationName)
         {
-            const bbp::sonata::EdgePopulation edges (synapseFilePath, "", name);
+            const bbp::sonata::EdgePopulation edges (synapseFilePath, "", populationName);
             const bbp::sonata::Selection s = _afferent? edges.afferentEdges(nodeIds)
                                                       : edges.efferentEdges(nodeIds);
 
@@ -553,6 +563,15 @@ struct Synapses::SonataImpl : public Synapses::InternalBaseImpl
                 filteredPostGids.push_back(
                             static_cast<uint32_t>(postGidsTemp[i]) + 1);
             }
+        };
+
+        const std::string& synapsePopulation = _circuit->getSynapsePopulation();
+        if(!synapsePopulation.empty())
+            synapseGIDsFunc(synapsePopulation);
+        else
+        {
+            for(const auto& name : edgeStorage.populationNames())
+                synapseGIDsFunc(name);
         }
 
         _size = filteredPreGids.size();
@@ -570,10 +589,17 @@ struct Synapses::SonataImpl : public Synapses::InternalBaseImpl
             return;
 
         std::string synapseFilePath;
+        std::string synapsePop;
         if(_externalSource.empty())
+        {
             synapseFilePath = _circuit->getSynapseSource();
+            synapsePop = _circuit->getSynapsePopulation();
+        }
         else
+        {
             synapseFilePath = _circuit->getSynapseProjectionSource(_externalSource);
+            synapsePop = _circuit->getSynapseProjectionPopulation(_externalSource);
+        }
 
         std::set<uint64_t> uniqueIds;
         // Input ids must be decreased by 1
@@ -597,9 +623,10 @@ struct Synapses::SonataImpl : public Synapses::InternalBaseImpl
         _allocateAttributes(_size, _afferent);
 
         size_t i = 0;
-        for(const auto& name : edgeStorage.populationNames())
+
+        auto synapsePropFunc = [&](const std::string& popName)
         {
-            const bbp::sonata::EdgePopulation edges (synapseFilePath, "", name);
+            const bbp::sonata::EdgePopulation edges (synapseFilePath, "", popName);
             const bbp::sonata::Selection s = _afferent? edges.afferentEdges(nodeIds)
                                                       : edges.efferentEdges(nodeIds);
 
@@ -648,6 +675,14 @@ struct Synapses::SonataImpl : public Synapses::InternalBaseImpl
                 ADD_TO_STORAGE(_depression, i, depressions, j)
                 i++;
             }
+        };
+
+        if(!synapsePop.empty())
+            synapsePropFunc(synapsePop);
+        else
+        {
+            for(const auto& name : edgeStorage.populationNames())
+                synapsePropFunc(name);
         }
 
         if(!_afferent)
@@ -685,7 +720,7 @@ struct Synapses::SonataImpl : public Synapses::InternalBaseImpl
 
         size_t i = 0;
 
-        for(const auto& name : edgeStorage.populationNames())
+        auto synapsePosFunc = [&](const std::string& name)
         {
             const bbp::sonata::EdgePopulation edges (synapseFilePath, "", name);
             const bbp::sonata::Selection s = _afferent? edges.afferentEdges(nodeIds)
@@ -726,6 +761,15 @@ struct Synapses::SonataImpl : public Synapses::InternalBaseImpl
 
                 i++;
             }
+        };
+
+        const auto& synapsePop = _circuit->getSynapsePopulation();
+        if(!synapsePop.empty())
+            synapsePosFunc(synapsePop);
+        else
+        {
+            for(const auto& name : edgeStorage.populationNames())
+                synapsePosFunc(name);
         }
 
         if(!_afferent)
