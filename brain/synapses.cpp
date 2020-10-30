@@ -569,10 +569,7 @@ struct Synapses::SonataImpl : public Synapses::InternalBaseImpl
         if(!synapsePopulation.empty())
             synapseGIDsFunc(synapsePopulation);
         else
-        {
-            for(const auto& name : edgeStorage.populationNames())
-                synapseGIDsFunc(name);
-        }
+            synapseGIDsFunc(*edgeStorage.populationNames().begin());
 
         _size = filteredPreGids.size();
         _allocate(_preGID, _size);
@@ -622,10 +619,9 @@ struct Synapses::SonataImpl : public Synapses::InternalBaseImpl
 
         _allocateAttributes(_size, _afferent);
 
-        size_t i = 0;
-
         auto synapsePropFunc = [&](const std::string& popName)
         {
+            size_t i = 0;
             const bbp::sonata::EdgePopulation edges (synapseFilePath, "", popName);
             const bbp::sonata::Selection s = _afferent? edges.afferentEdges(nodeIds)
                                                       : edges.efferentEdges(nodeIds);
@@ -680,10 +676,7 @@ struct Synapses::SonataImpl : public Synapses::InternalBaseImpl
         if(!synapsePop.empty())
             synapsePropFunc(synapsePop);
         else
-        {
-            for(const auto& name : edgeStorage.populationNames())
-                synapsePropFunc(name);
-        }
+            synapsePropFunc(*edgeStorage.populationNames().begin());
 
         if(!_afferent)
         {
@@ -718,10 +711,9 @@ struct Synapses::SonataImpl : public Synapses::InternalBaseImpl
 
         _allocatePositions(_size);
 
-        size_t i = 0;
-
         auto synapsePosFunc = [&](const std::string& name)
         {
+            size_t i = 0;
             const bbp::sonata::EdgePopulation edges (synapseFilePath, "", name);
             const bbp::sonata::Selection s = _afferent? edges.afferentEdges(nodeIds)
                                                       : edges.efferentEdges(nodeIds);
@@ -729,20 +721,25 @@ struct Synapses::SonataImpl : public Synapses::InternalBaseImpl
             const auto preGids = edges.sourceNodeIDs(s);
             const auto postGids = edges.targetNodeIDs(s);
 
-            const auto preCenterXs = edges.getAttribute<double>("afferent_center_x", s);
-            const auto preCenterYs = edges.getAttribute<double>("afferent_center_y", s);
-            const auto preCenterZs = edges.getAttribute<double>("afferent_center_z", s);
-            const auto preSurfaceXs = edges.getAttribute<double>("afferent_surface_x", s);
-            const auto preSurfaceYs = edges.getAttribute<double>("afferent_surface_y", s);
-            const auto preSurfaceZs = edges.getAttribute<double>("afferent_surface_z", s);
-            const auto postCenterXs = edges.getAttribute<double>("efferent_center_x", s);
-            const auto postCenterYs = edges.getAttribute<double>("efferent_center_y", s);
-            const auto postCenterZs = edges.getAttribute<double>("efferent_center_z", s);
-            const auto postSurfaceXs = edges.getAttribute<double>("efferent_surface_x", s);
-            const auto postSurfaceYs = edges.getAttribute<double>("efferent_surface_y", s);
-            const auto postSurfaceZs = edges.getAttribute<double>("efferent_surface_z", s);
+            std::vector<double> preCenterXs, preCenterYs, preCenterZs;
+            std::vector<double> preSurfaceXs, preSurfaceYs, preSurfaceZs;
+            std::vector<double> postCenterXs, postCenterYs, postCenterZs;
+            std::vector<double> postSurfaceXs, postSurfaceYs, postSurfaceZs;
 
-            for(size_t j = 0; j < edges.size(); j++)
+            TRY_GET_ATTRIBUTE(preCenterXs, edges, double, "afferent_center_x", s)
+            TRY_GET_ATTRIBUTE(preCenterYs, edges, double, "afferent_center_y", s)
+            TRY_GET_ATTRIBUTE(preCenterZs, edges, double, "afferent_center_z", s)
+            TRY_GET_ATTRIBUTE(preSurfaceXs, edges, double, "afferent_surface_x", s)
+            TRY_GET_ATTRIBUTE(preSurfaceYs, edges, double, "afferent_surface_y", s)
+            TRY_GET_ATTRIBUTE(preSurfaceZs, edges, double, "afferent_surface_z", s)
+            TRY_GET_ATTRIBUTE(postCenterXs, edges, double, "efferent_center_x", s)
+            TRY_GET_ATTRIBUTE(postCenterYs, edges, double, "efferent_center_y", s)
+            TRY_GET_ATTRIBUTE(postCenterZs, edges, double, "efferent_center_z", s)
+            TRY_GET_ATTRIBUTE(postSurfaceXs, edges, double, "efferent_surface_x", s)
+            TRY_GET_ATTRIBUTE(postSurfaceYs, edges, double, "efferent_surface_y", s)
+            TRY_GET_ATTRIBUTE(postSurfaceZs, edges, double, "efferent_surface_z", s)
+
+            for(size_t j = 0; j < preGids.size(); j++)
             {
                 FILTER(static_cast<uint32_t>(preGids[j] + 1))
 
@@ -767,10 +764,7 @@ struct Synapses::SonataImpl : public Synapses::InternalBaseImpl
         if(!synapsePop.empty())
             synapsePosFunc(synapsePop);
         else
-        {
-            for(const auto& name : edgeStorage.populationNames())
-                synapsePosFunc(name);
-        }
+            synapsePosFunc(*edgeStorage.populationNames().begin());
 
         if(!_afferent)
         {
@@ -811,7 +805,6 @@ struct Synapses::SonataImpl : public Synapses::InternalBaseImpl
 Synapses::Synapses(const Circuit& circuit, const GIDSet& gids,
                    const GIDSet& filterGIDs, const bool afferent,
                    const SynapsePrefetch prefetch)
-//    : _impl(new Impl(circuit, gids, filterGIDs, afferent, prefetch))
 {
     if(circuit._impl->getSynapseSource().find("sonata") != std::string::npos)
         _impl = std::shared_ptr<Synapses::BaseImpl>(new SonataImpl(circuit, gids, filterGIDs, afferent, prefetch));
@@ -821,7 +814,6 @@ Synapses::Synapses(const Circuit& circuit, const GIDSet& gids,
 
 Synapses::Synapses(const Circuit& circuit, const GIDSet& gids,
                    const std::string& source, const SynapsePrefetch prefetch)
-//    : _impl(new Impl(circuit, gids, source, prefetch))
 {
     if(circuit._impl->getSynapseSource().find("sonata") != std::string::npos)
         _impl = std::shared_ptr<Synapses::BaseImpl>(new SonataImpl(circuit, gids, source, prefetch));
@@ -834,13 +826,6 @@ Synapses::~Synapses()
 }
 
 Synapses::Synapses(const SynapsesStream& stream)
-    : _impl(stream._impl->_externalSource.empty()
-                ? new Impl(stream._impl->_circuit, stream._impl->_gids,
-                           stream._impl->_filterGIDs, stream._impl->_afferent,
-                           stream._impl->_prefetch)
-                : new Impl(stream._impl->_circuit, stream._impl->_gids,
-                           stream._impl->_externalSource,
-                           stream._impl->_prefetch))
 {
     if(stream._impl->_externalSource.empty())
     {
