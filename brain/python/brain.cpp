@@ -73,7 +73,7 @@ struct URItoString
     }
 };
 
-BOOST_PYTHON_MODULE(_brain)
+BOOST_PYTHON_MODULE(_brion)
 {
     /* Only change the default Boost.Python options for documentation if we
        are going to get docstrings from doxygen. */

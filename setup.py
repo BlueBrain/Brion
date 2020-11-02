@@ -143,7 +143,7 @@ with open('README.md') as f:
     README = f.read()
 
 setup(
-    name="brain",
+    name="brion",
     description='BlueBrain I/O Library',
     author="Blue Brain Project, EPFL",
     long_description=README,
@@ -153,7 +153,7 @@ setup(
     classifiers=[
         "License :: OSI Approved :: GNU Lesser General Public License v3 (LGPLv3)",
     ],
-    ext_modules=[CMakeExtension("brain._brain")],
+    ext_modules=[CMakeExtension("brion._brion")],
     cmdclass=lazy_dict(
         build_ext=CMakeBuild,
         test_ext=CMakeBuild,
@@ -168,7 +168,7 @@ setup(
     },
     use_scm_version={"local_scheme": "no-local-version",
                      },
-    package_dir={"": "brain/python"},
-    packages=['brain', 'brain.neuron',
+    package_dir={"": "brion/python"},
+    packages=['brion', 'brion.neuron',
               ],
 )
