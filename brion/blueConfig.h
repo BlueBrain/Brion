@@ -127,6 +127,13 @@ public:
     BRION_API URI getSynapseSource() const;
 
     /**
+     * @brief Returns the name of the population to use within the synapse file
+     * @return a string containing the synapse population
+     * @version 1.0
+     */
+    BRION_API std::string getSynapsePopulation() const;
+
+    /**
      * @return the URI to the location of synapse nrn files for projections from
      *         external circuits (e.g. thalamocortical projections)
      * @version 2.0

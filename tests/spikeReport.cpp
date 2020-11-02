@@ -149,7 +149,6 @@ BOOST_AUTO_TEST_CASE(invoke_invalid_method_binary)
 {
     boost::filesystem::path path(BRION_TESTDATA);
     path /= BINARY_SPIKE_FILE;
-
     brion::SpikeReport report(brion::URI(path.string()), brion::MODE_READ);
     BOOST_CHECK_THROW(report.write(brion::Spikes{}), std::runtime_error);
 }
@@ -166,8 +165,9 @@ BOOST_AUTO_TEST_CASE(invoke_invalid_method_bluron)
 BOOST_AUTO_TEST_CASE(invoke_invalid_method_nest)
 {
     boost::filesystem::path path(BRION_TESTDATA);
-    brion::SpikeReport report(brion::URI((path / NEST_SPIKE_FILE).string()),
-                              brion::MODE_READ);
+    path /= NEST_SPIKE_FILE;
+
+    brion::SpikeReport report(brion::URI(path.string()), brion::MODE_READ);
     BOOST_CHECK_THROW(report.write(brion::Spikes{}), std::runtime_error);
 }
 

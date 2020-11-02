@@ -38,6 +38,7 @@ const char* const BLUECONFIG_NRN_PATH_KEY = "nrnPath";
 const char* const BLUECONFIG_MESH_PATH_KEY = "MeshPath";
 const char* const BLUECONFIG_MORPHOLOGY_PATH_KEY = "MorphologyPath";
 const char* const BLUECONFIG_OUTPUT_PATH_KEY = "OutputRoot";
+const char* const BLUECONFIG_CURRENT_DIR_KEY = "CurrentDir";
 const char* const BLUECONFIG_TARGET_FILE_KEY = "TargetFile";
 const char* const BLUECONFIG_SPIKES_PATH_KEY = "SpikesPath";
 
