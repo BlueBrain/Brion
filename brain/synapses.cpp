@@ -621,7 +621,6 @@ struct Synapses::SonataImpl : public Synapses::InternalBaseImpl
 
         auto synapsePropFunc = [&](const std::string& popName)
         {
-            size_t i = 0;
             const bbp::sonata::EdgePopulation edges (synapseFilePath, "", popName);
             const bbp::sonata::Selection s = _afferent? edges.afferentEdges(nodeIds)
                                                       : edges.efferentEdges(nodeIds);
@@ -648,28 +647,26 @@ struct Synapses::SonataImpl : public Synapses::InternalBaseImpl
             TRY_GET_ATTRIBUTE(facilitations, edges, float, "facilitation_time", s)
             TRY_GET_ATTRIBUTE(depressions, edges, float, "depression_time", s)
 
-
-            for(size_t j = 0; j < edges.size(); j++)
+            for(size_t j = 0; j < preGIDs.size(); j++)
             {
                 FILTER(static_cast<uint32_t>(preGIDs[j] + 1));
                 if(!haveGIDs)
                 {
                     if(preGIDs.size() > j)
-                        _preGID.get()[i] = static_cast<uint32_t>(preGIDs[j] + 1);
+                        _preGID.get()[j] = static_cast<uint32_t>(preGIDs[j] + 1);
                     if(postGIDs.size() > j)
-                        _postGID.get()[i] = static_cast<uint32_t>(postGIDs[j] + 1);
+                        _postGID.get()[j] = static_cast<uint32_t>(postGIDs[j] + 1);
                 }
 
-                ADD_TO_STORAGE(_delay, i, delays, j)
-                ADD_TO_STORAGE(_decay, i, decayTimes, j)
-                ADD_TO_STORAGE(_preSectionID, i, preSectionIds, j)
-                ADD_TO_STORAGE(_preSegmentID, i, preSegmentIds, j)
-                ADD_TO_STORAGE(_postSectionID, i, postSectionIds, j)
-                ADD_TO_STORAGE(_postSegmentID, i, postSectionIds, j)
-                ADD_TO_STORAGE(_conductance, i, conductances, j)
-                ADD_TO_STORAGE(_facilitation, i, facilitations, j)
-                ADD_TO_STORAGE(_depression, i, depressions, j)
-                i++;
+                ADD_TO_STORAGE(_delay, j, delays, j)
+                ADD_TO_STORAGE(_decay, j, decayTimes, j)
+                ADD_TO_STORAGE(_preSectionID, j, preSectionIds, j)
+                ADD_TO_STORAGE(_preSegmentID, j, preSegmentIds, j)
+                ADD_TO_STORAGE(_postSectionID, j, postSectionIds, j)
+                ADD_TO_STORAGE(_postSegmentID, j, postSectionIds, j)
+                ADD_TO_STORAGE(_conductance, j, conductances, j)
+                ADD_TO_STORAGE(_facilitation, j, facilitations, j)
+                ADD_TO_STORAGE(_depression, j, depressions, j)
             }
         };
 
@@ -713,7 +710,6 @@ struct Synapses::SonataImpl : public Synapses::InternalBaseImpl
 
         auto synapsePosFunc = [&](const std::string& name)
         {
-            size_t i = 0;
             const bbp::sonata::EdgePopulation edges (synapseFilePath, "", name);
             const bbp::sonata::Selection s = _afferent? edges.afferentEdges(nodeIds)
                                                       : edges.efferentEdges(nodeIds);
@@ -743,20 +739,18 @@ struct Synapses::SonataImpl : public Synapses::InternalBaseImpl
             {
                 FILTER(static_cast<uint32_t>(preGids[j] + 1))
 
-                ADD_TO_STORAGE(_preCenterPositionX, i, preCenterXs, j)
-                ADD_TO_STORAGE(_preCenterPositionY, i, preCenterYs, j)
-                ADD_TO_STORAGE(_preCenterPositionZ, i, preCenterZs, j)
-                ADD_TO_STORAGE(_preSurfacePositionX, i, preSurfaceXs, j)
-                ADD_TO_STORAGE(_preSurfacePositionY, i, preSurfaceYs, j)
-                ADD_TO_STORAGE(_preSurfacePositionZ, i, preSurfaceZs, j)
-                ADD_TO_STORAGE(_postCenterPositionX, i, postCenterXs, j)
-                ADD_TO_STORAGE(_postCenterPositionY, i, postCenterYs, j)
-                ADD_TO_STORAGE(_postCenterPositionZ, i, postCenterZs, j)
-                ADD_TO_STORAGE(_postSurfacePositionX, i, postSurfaceXs, j)
-                ADD_TO_STORAGE(_postSurfacePositionY, i, postSurfaceYs, j)
-                ADD_TO_STORAGE(_postSurfacePositionZ, i, postSurfaceZs, j)
-
-                i++;
+                ADD_TO_STORAGE(_preCenterPositionX, j, preCenterXs, j)
+                ADD_TO_STORAGE(_preCenterPositionY, j, preCenterYs, j)
+                ADD_TO_STORAGE(_preCenterPositionZ, j, preCenterZs, j)
+                ADD_TO_STORAGE(_preSurfacePositionX, j, preSurfaceXs, j)
+                ADD_TO_STORAGE(_preSurfacePositionY, j, preSurfaceYs, j)
+                ADD_TO_STORAGE(_preSurfacePositionZ, j, preSurfaceZs, j)
+                ADD_TO_STORAGE(_postCenterPositionX, j, postCenterXs, j)
+                ADD_TO_STORAGE(_postCenterPositionY, j, postCenterYs, j)
+                ADD_TO_STORAGE(_postCenterPositionZ, j, postCenterZs, j)
+                ADD_TO_STORAGE(_postSurfacePositionX, j, postSurfaceXs, j)
+                ADD_TO_STORAGE(_postSurfacePositionY, j, postSurfaceYs, j)
+                ADD_TO_STORAGE(_postSurfacePositionZ, j, postSurfaceZs, j)
             }
         };
 
