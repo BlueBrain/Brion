@@ -6,8 +6,8 @@
 #
 # Change this number when adding tests to force a CMake run: 3
 
-# If the brain python binding target was not built, tests cannot be built
-if(NOT TARGET brain_python)
+# If the brion python binding target was not built, tests cannot be built
+if(NOT TARGET brion_python)
   return()
 endif()
 
@@ -50,7 +50,7 @@ foreach(PYTHON_TEST ${PYTHON_TESTS})
     add_custom_target(ctest_${NAME}
       COMMAND ${CMAKE_CTEST_COMMAND} -T test --no-compress-output
         -R '^${NAME}$$' -C $<CONFIGURATION> \${ARGS}
-      DEPENDS brain_python ${TEST_FILE}
+      DEPENDS brion_python ${TEST_FILE}
       WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}
       COMMENT "Running ${NAME} python test")
     set_target_properties(ctest_${NAME} PROPERTIES

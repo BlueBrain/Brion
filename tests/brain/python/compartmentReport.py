@@ -19,13 +19,13 @@
 
 
 import setup
-import brain
+import brion
 import numpy
 import unittest
-from brain import *
+from brion import *
 
-report_path = brain.test.root_data_path + "/local/simulations/may17_2011/Control/voltage.h5"
-all_compartments_report_path = brain.test.root_data_path + "/local/simulations/may17_2011/Control/allCompartments.h5"
+report_path = brion.test.root_data_path + "/local/simulations/may17_2011/Control/voltage.h5"
+all_compartments_report_path = brion.test.root_data_path + "/local/simulations/may17_2011/Control/allCompartments.h5"
 
 
 class TestMetaData(unittest.TestCase):

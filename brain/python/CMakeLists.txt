@@ -11,9 +11,9 @@
 if(NOT Boost_PYTHON3_LIBRARY OR
     NOT PYTHON_EXECUTABLE OR NOT NUMPY_FOUND)
     if(BRION_REQUIRE_PYTHON)
-        message( FATAL_ERROR "Not configured brain.py: Boost.Python, Python or Numpy not found. Build set to force python" )
+        message( FATAL_ERROR "Not configured brion.py: Boost.Python, Python or Numpy not found. Build set to force python" )
     else()
-        message(STATUS "Not configured brain.py: Boost.Python, Python or Numpy not found")
+        message(STATUS "Not configured brion.py: Boost.Python, Python or Numpy not found")
     endif()
     return()
 endif()
@@ -58,7 +58,7 @@ install(TARGETS BrainPythonHelpers
     INCLUDES DESTINATION include
 )
 
-set(BRAIN_PYTHON_SOURCES
+set(BRION_PYTHON_SOURCES
     brain.cpp
     circuit.cpp
     simulation.cpp
@@ -73,51 +73,51 @@ set(BRAIN_PYTHON_SOURCES
     neuron/morphology.cpp
 )
 
-add_library(brain_python MODULE ${BRAIN_PYTHON_SOURCES})
+add_library(brion_python MODULE ${BRION_PYTHON_SOURCES})
 
 # Adds compile options using the custom function from CMake/CompileOptions.cmake
-compile_options(brain_python)
+compile_options(brion_python)
 
-target_include_directories(brain_python PRIVATE ${PYTHON_INCLUDE_PATH})
-target_include_directories(brain_python PUBLIC ${PYTHON_INCLUDE_DIRS})
-target_include_directories(brain_python PUBLIC ${PYTHON_NUMPY_INCLUDE_DIR})
+target_include_directories(brion_python PRIVATE ${PYTHON_INCLUDE_PATH})
+target_include_directories(brion_python PUBLIC ${PYTHON_INCLUDE_DIRS})
+target_include_directories(brion_python PUBLIC ${PYTHON_NUMPY_INCLUDE_DIR})
 
 
 if(TARGET ${PROJECT_NAME}-docstrings)
-    add_dependencies(brain_python Brain ${PROJECT_NAME}-docstrings)
-    target_compile_definitions(brain_python PRIVATE BRAIN_HAS_DOCSTRINGS)
+    add_dependencies(brion_python Brain ${PROJECT_NAME}-docstrings)
+    target_compile_definitions(brion_python PRIVATE BRAIN_HAS_DOCSTRINGS)
 endif()
 
-target_link_libraries(brain_python PRIVATE BrainPythonHelpers)
-target_link_libraries(brain_python PRIVATE Brain)
-target_link_libraries(brain_python PRIVATE ${PYTHON_LIBRARIES})
-target_link_libraries(brain_python PRIVATE ${Boost_PYTHON3_LIBRARY})
+target_link_libraries(brion_python PRIVATE BrainPythonHelpers)
+target_link_libraries(brion_python PRIVATE Brain)
+target_link_libraries(brion_python PRIVATE ${PYTHON_LIBRARIES})
+target_link_libraries(brion_python PRIVATE ${Boost_PYTHON3_LIBRARY})
 if(BBPTestData_FOUND)
-  target_link_libraries(brain_python PRIVATE BBPTestData)
+  target_link_libraries(brion_python PRIVATE BBPTestData)
 endif()
 
 if(BRION_USE_CUSTOM_LIB_DIR)
-    set_target_properties(brain_python PROPERTIES
-        OUTPUT_NAME "_brain" PREFIX "")
+    set_target_properties(brion_python PROPERTIES
+        OUTPUT_NAME "_brion" PREFIX "")
 else()
-    set_target_properties(brain_python PROPERTIES
-        OUTPUT_NAME "_brain" PREFIX ""
-        LIBRARY_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/lib/brain)
+    set_target_properties(brion_python PROPERTIES
+        OUTPUT_NAME "_brion" PREFIX ""
+        LIBRARY_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/lib/brion)
 endif()
 
-configure_file(brain/__init__.py.in ${CMAKE_BINARY_DIR}/lib/brain/__init__.py)
+configure_file(brion/__init__.py.in ${CMAKE_BINARY_DIR}/lib/brion/__init__.py)
 
 macro(COPY_AND_INSTALL_PACKAGE_DIRECTORY DIRECTORY)
-    file(COPY brain/${DIRECTORY}
-      DESTINATION ${CMAKE_BINARY_DIR}/lib/brain)
+    file(COPY brion/${DIRECTORY}
+      DESTINATION ${CMAKE_BINARY_DIR}/lib/brion)
 
-    install(DIRECTORY ${CMAKE_BINARY_DIR}/lib/brain/${DIRECTORY}
-      DESTINATION ${PYTHON_LIBRARY_SUFFIX}/brain
+    install(DIRECTORY ${CMAKE_BINARY_DIR}/lib/brion/${DIRECTORY}
+      DESTINATION ${PYTHON_LIBRARY_SUFFIX}/brion
       COMPONENT COMMON)
 endmacro()
 
-install(TARGETS brain_python
-  LIBRARY DESTINATION ${PYTHON_LIBRARY_SUFFIX}/brain)
-install(FILES ${CMAKE_BINARY_DIR}/lib/brain/__init__.py
-        DESTINATION ${PYTHON_LIBRARY_SUFFIX}/brain)
+install(TARGETS brion_python
+  LIBRARY DESTINATION ${PYTHON_LIBRARY_SUFFIX}/brion)
+install(FILES ${CMAKE_BINARY_DIR}/lib/brion/__init__.py
+        DESTINATION ${PYTHON_LIBRARY_SUFFIX}/brion)
 copy_and_install_package_directory(neuron)

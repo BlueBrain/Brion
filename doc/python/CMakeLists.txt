@@ -4,7 +4,7 @@
 # This file is part of Brion <https://github.com/BlueBrain/Brion>
 #
 
-if(NOT Sphinx_FOUND OR NOT TARGET brain_python)
+if(NOT Sphinx_FOUND OR NOT TARGET brion_python)
     message(STATUS "Skipping Python documentation generation")
     return()
 endif()
@@ -24,6 +24,6 @@ set_target_properties(Brion-python-doc-html PROPERTIES
 
     add_dependencies(doxygen Brion-python-doc-html)
 
-if(TARGET brain_python)
-    add_dependencies(Brion-python-doc-html brain_python)
+if(TARGET brion_python)
+    add_dependencies(Brion-python-doc-html brion_python)
 endif()

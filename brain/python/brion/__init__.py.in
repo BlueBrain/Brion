@@ -1,5 +1,5 @@
-# Copyright (c) 2020, EPFL/Blue Brain Project
-#                          Nadir Roman Guerrero <nadir.romanguerrero@epfl.ch>
+# Copyright (c) 2013-2017, EPFL/Blue Brain Project
+#                          Juan Hernando <juan.hernando@epfl.ch>
 #
 # This file is part of Brion <https://github.com/BlueBrain/Brion>
 #
@@ -18,14 +18,17 @@
 
 import sys as _sys
 
-from ._brain import *
+if _sys.version_info[0] != ${USE_PYTHON_VERSION}:
+    raise ImportError("Invalid Python version")
+
+from ._brion import *
 
 from . import neuron
 
-__version__ = '3.2.0'
+__version__ = '${Brion_VERSION}'
 
 # Import the test helper module if present
 try:
-    from ._brain import _test as test
+    from ._brion import _test as test
 except ImportError as e:
     pass

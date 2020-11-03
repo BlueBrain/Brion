@@ -17,7 +17,7 @@
 # 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 
 import setup
-import brain
+import brion
 import numpy
 
 import unittest
@@ -25,14 +25,14 @@ import unittest
 class TestSimulationOpen(unittest.TestCase):
 
     def test_bad_open(self):
-        self.assertRaises(RuntimeError, lambda: brain.Simulation("foo"))
+        self.assertRaises(RuntimeError, lambda: brion.Simulation("foo"))
 
     def test_open(self):
-        simulation = brain.Simulation(brain.test.blue_config)
+        simulation = brion.Simulation(brion.test.blue_config)
 
 class TestSimulation(unittest.TestCase):
     def setUp(self):
-        self.simulation = brain.Simulation(brain.test.blue_config)
+        self.simulation = brion.Simulation(brion.test.blue_config)
 
     def test_open_circuit(self):
         circuit = self.simulation.open_circuit();
