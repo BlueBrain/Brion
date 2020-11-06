@@ -1,5 +1,50 @@
 Changelog {#Changelog}
 =========
+
+# Release 3.3.0
+
+* [305](https://github.com/BlueBrain/Brion/pull/305)
+  Preparation for 3.3.0 release.
+* [304](https://github.com/BlueBrain/Brion/pull/304)
+  Rename brain python package to brion.
+* [303](https://github.com/BlueBrain/Brion/pull/303)
+  Improve SONATA syanapse support.
+* [302](https://github.com/BlueBrain/Brion/pull/302)
+  Fix glm targets not installed properly.
+* [300](https://github.com/BlueBrain/Brion/pull/300)
+  Initial commit for python wheel distribution package support.
+* [299](https://github.com/BlueBrain/Brion/pull/299)
+  Removing unused functions from old SONATA circuit implementation.
+* [298](https://github.com/BlueBrain/Brion/pull/298)
+  Support for relative paths in BlueConfig/CircuitConfig.
+* [297](https://github.com/BlueBrain/Brion/pull/297)
+  SONATA circuit support.
+* [295](https://github.com/BlueBrain/Brion/pull/295)
+  Misc. fixes and updates.
+* [293](https://github.com/BlueBrain/Brion/pull/293)
+  Fix mvdtool bug when mecombo file is empty.
+* [290](https://github.com/BlueBrain/Brion/pull/290)
+  Replacing morphology readers and tests with MorphIO.
+* [289](https://github.com/BlueBrain/Brion/pull/289)
+  Update README.md.
+* [288](https://github.com/BlueBrain/Brion/pull/288)
+  Update MVDTool submodule.
+
+
+# Release 3.2.0 (10-06-2020)
+
+* [287](https://github.com/BlueBrain/Brion/pull/287)
+  Fix wrong file access mode when opening spike report for reading.
+* [286](https://github.com/BlueBrain/Brion/pull/286)
+  Fix cmake build with newer boost, python and cmake version. Fix tests.
+* [285](https://github.com/BlueBrain/Brion/pull/285)
+  Attempt to fix intel compile errors.
+* [284](https://github.com/BlueBrain/Brion/pull/284)
+  Fix installation structure from CMake.
+* [283](https://github.com/BlueBrain/Brion/pull/283)
+  Preparation for 3.2.0 release.
+* [282](https://github.com/BlueBrain/Brion/pull/282)
+  Few fixes related to glm.
 * [281](https://github.com/BlueBrain/Brion/pull/281)
   Strips Pydoxygen, Servus and CMake/common.
 * [280](https://github.com/BlueBrain/Brion/pull/280)
