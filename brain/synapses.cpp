@@ -688,7 +688,7 @@ struct Synapses::SonataImpl : public Synapses::InternalBaseImpl
         if (!_externalSource.empty())
             BRAIN_THROW("Synapse positions are not available for external projection synapses")
 
-        if (_efficacy)
+        if (_preCenterPositionX)
             return;
 
         std::string synapseFilePath = _circuit->getSynapseSource();
@@ -702,9 +702,6 @@ struct Synapses::SonataImpl : public Synapses::InternalBaseImpl
         }
         const std::vector<uint64_t> nodeIds (uniqueIds.begin(), uniqueIds.end());
         const bbp::sonata::EdgeStorage edgeStorage (synapseFilePath);
-
-        if (_preCenterPositionX)
-            return;
 
         _allocatePositions(_size);
 
