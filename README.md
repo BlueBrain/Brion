@@ -25,6 +25,11 @@ readers and writers intended for low level access to the data model. The latter
 is a set of higher level classes that wrap low level data objects with a
 use-case oriented API.
 
+A python package to access the library can also be built and installed with pip. 
+The package is available in PyPi as well, under the name "brion". Please, note that
+the python package **requires the user to have the python development package installed
+on their system**.
+
 ### IO library
 
 This is the core library provided by Brion. It includes classes for reading
@@ -65,12 +70,12 @@ system, including all Unix variants. Brion uses CMake to create a
 platform-specific build environment. The following platforms and build
 environments are tested:
 
-* Linux: Ubuntu 16.04, RHEL 6.8 (Makefile, Ninja)
+* Linux: Ubuntu 16.04 or above, RHEL 6.8 (Makefile, Ninja)
 
 Building from source is as simple as:
 
     git clone --recursive https://github.com/BlueBrain/Brion.git
     mkdir Brion/build
     cd Brion/build
-    cmake -GNinja -DCLONE_SUBPROJECTS=ON ..
+    cmake -GNinja -DCMAKE_BUILD_TYPE=Release -DEXTLIB_FROM_SUBMODULES=ON ..
     ninja

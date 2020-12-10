@@ -659,8 +659,9 @@ struct MVD3 : public BBPCircuit
     std::vector<std::string>
     getLayers(const GIDSet& gids, const std::string& tsvSource) const final
     {
+        std::vector<std::string> mvd3Result;
         if (gids.empty() || tsvSource.empty())
-            return std::vector<std::string>();
+            return mvd3Result;
 
         const ::MVD3::Range& range = _getRange(gids);
         try
@@ -668,14 +669,26 @@ struct MVD3 : public BBPCircuit
             std::lock_guard<std::mutex> lock(brion::detail::hdf5Mutex());
             HighFive::SilenceHDF5 silence;
             _circuit.openComboTsv(tsvSource);
-            return _circuit.getLayers(range);
+            mvd3Result = _circuit.getLayers(range);
         }
         catch (const HighFive::Exception& e)
         {
             BRAIN_WARN << "Circuit layers not available: " + std::string(e.what()) << std::endl;
         }
 
-        return std::vector<std::string>();
+        std::vector<std::string> result;
+        result.reserve(gids.size());
+        uint32_t gidStart = *gids.begin();
+        for(const auto& gid : gids)
+        {
+            auto index = gid - gidStart;
+            if(index > mvd3Result.size())
+                BRAIN_THROW("MVD3 Layer array out of bounds")
+
+            result.push_back(mvd3Result[index]);
+        }
+
+        return result;
     }
 
     Strings getMorphologyNames(const GIDSet& gids) const final

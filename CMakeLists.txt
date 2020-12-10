@@ -6,7 +6,7 @@
 #
 
 # Base configuration
-cmake_minimum_required(VERSION 3.10 FATAL_ERROR)
+cmake_minimum_required(VERSION 3.15 FATAL_ERROR)
 project(Brion VERSION 3.3.0)
 set(Brion_VERSION_ABI 10)
 
@@ -212,8 +212,3 @@ export(
 
 export(PACKAGE Brion)
 export(PACKAGE Brain)
-
-# fill out setup.py metadata for wheel distribution
-configure_file(packaging/python_wheels/setup.py.in
-               ${PROJECT_BINARY_DIR}/packaging/python_wheels/setup.py)
-               
