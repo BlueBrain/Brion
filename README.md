@@ -70,12 +70,12 @@ system, including all Unix variants. Brion uses CMake to create a
 platform-specific build environment. The following platforms and build
 environments are tested:
 
-* Linux: Ubuntu 16.04, RHEL 6.8 (Makefile, Ninja)
+* Linux: Ubuntu 16.04 or above, RHEL 6.8 (Makefile, Ninja)
 
 Building from source is as simple as:
 
     git clone --recursive https://github.com/BlueBrain/Brion.git
     mkdir Brion/build
     cd Brion/build
-    cmake -GNinja -DCLONE_SUBPROJECTS=ON ..
+    cmake -GNinja -DCMAKE_BUILD_TYPE=Release -DEXTLIB_FROM_SUBMODULES=ON ..
     ninja
