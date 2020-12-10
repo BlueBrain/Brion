@@ -6,7 +6,7 @@
 #
 
 # Base configuration
-cmake_minimum_required(VERSION 3.10 FATAL_ERROR)
+cmake_minimum_required(VERSION 3.15 FATAL_ERROR)
 project(Brion VERSION 3.3.0)
 set(Brion_VERSION_ABI 10)
 

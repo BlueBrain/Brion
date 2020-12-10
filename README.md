@@ -25,6 +25,11 @@ readers and writers intended for low level access to the data model. The latter
 is a set of higher level classes that wrap low level data objects with a
 use-case oriented API.
 
+A python package to access the library can also be built and installed with pip. 
+The package is available in PyPi as well, under the name "brion". Please, note that
+the python package **requires the user to have the python development package installed
+on their system**.
+
 ### IO library
 
 This is the core library provided by Brion. It includes classes for reading
