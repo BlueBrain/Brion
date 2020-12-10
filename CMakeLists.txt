@@ -212,8 +212,3 @@ export(
 
 export(PACKAGE Brion)
 export(PACKAGE Brain)
-
-# fill out setup.py metadata for wheel distribution
-configure_file(packaging/python_wheels/setup.py.in
-               ${PROJECT_BINARY_DIR}/packaging/python_wheels/setup.py)
-               
