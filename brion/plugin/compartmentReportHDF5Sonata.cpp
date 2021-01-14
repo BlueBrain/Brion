@@ -660,12 +660,16 @@ void CompartmentReportHDF5Sonata::_processMapping()
 
 void CompartmentReportHDF5Sonata::_updateMapping(const GIDSet& gids)
 {
+    GIDSet fixedGids;
+    for(const auto gid : gids)
+        fixedGids.insert(gid - 1);
+
     if (_sourceGIDs.empty())
         _parseBasicCellInfo();
     if (_sourceMapping.offsets.empty())
         _processMapping();
 
-    _subset = !(gids.empty() || gids == _sourceGIDs);
+    _subset = !(fixedGids.empty() || fixedGids == _sourceGIDs);
 
     if (!_subset)
         return;
@@ -675,14 +679,14 @@ void CompartmentReportHDF5Sonata::_updateMapping(const GIDSet& gids)
     {
         BRION_THROW("CompartmentReportBinary::updateMapping: GIDs out of range")
     }
-    if (intersection != gids)
+    if (intersection != fixedGids)
     {
         _updateMapping(intersection);
         return;
     }
     _gids = std::move(intersection);
 
-    _subsetIndices = _computeSubsetIndices(_sourceGIDs, _gids);
+    _subsetIndices = _computeSubsetIndices(_sourceGIDs, fixedGids);
     _targetMapping = _reduceMapping(_sourceMapping, _subsetIndices);
 }
 
