@@ -153,6 +153,12 @@ public:
       */
     BRION_API URI getMorphologySource() const;
 
+    /**
+     * @return The morphology type to be used
+     * @return The morphology type as string (asc, h5, swc)
+     */
+    BRION_API std::string getMorphologyType() const;
+
     /** @return the URI to the named report. @sa CompartmentReport
      * @version 1.7
      */
