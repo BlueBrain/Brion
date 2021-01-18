@@ -125,6 +125,15 @@ size_t _parseCacheSizeOption(const URI& uri)
     return _parseSizeOption(value, "cache_size");
 }
 
+GIDSet gidsToBase0(const GIDSet& src)
+{
+    GIDSet result;
+    for(auto gid : src)
+        result.insert(gid - 1);
+
+    return result;
+}
+
 } // namespace
 
 CompartmentReportHDF5Sonata::CompartmentReportHDF5Sonata(
@@ -145,7 +154,7 @@ CompartmentReportHDF5Sonata::CompartmentReportHDF5Sonata(
         _reopenDataSet(_parseCacheSizeOption(initData.getURI()));
         if (initData.initMapping)
         {
-            _updateMapping(initData.getGIDs());
+            _updateMapping(gidsToBase0(initData.getGIDs()));
         }
         else
         {
@@ -228,7 +237,7 @@ void CompartmentReportHDF5Sonata::updateMapping(const GIDSet& gids)
     std::lock_guard<std::mutex> mutex(detail::hdf5Mutex());
     HighFive::SilenceHDF5 silence;
 
-    _updateMapping(gids);
+    _updateMapping(gidsToBase0(gids));
 }
 
 void CompartmentReportHDF5Sonata::writeHeader(const double startTime,
@@ -660,16 +669,12 @@ void CompartmentReportHDF5Sonata::_processMapping()
 
 void CompartmentReportHDF5Sonata::_updateMapping(const GIDSet& gids)
 {
-    GIDSet fixedGids;
-    for(const auto gid : gids)
-        fixedGids.insert(gid - 1);
-
     if (_sourceGIDs.empty())
         _parseBasicCellInfo();
     if (_sourceMapping.offsets.empty())
         _processMapping();
 
-    _subset = !(fixedGids.empty() || fixedGids == _sourceGIDs);
+    _subset = !(gids.empty() || gids == _sourceGIDs);
 
     if (!_subset)
         return;
@@ -679,14 +684,14 @@ void CompartmentReportHDF5Sonata::_updateMapping(const GIDSet& gids)
     {
         BRION_THROW("CompartmentReportBinary::updateMapping: GIDs out of range")
     }
-    if (intersection != fixedGids)
+    if (intersection != gids)
     {
         _updateMapping(intersection);
         return;
     }
     _gids = std::move(intersection);
 
-    _subsetIndices = _computeSubsetIndices(_sourceGIDs, fixedGids);
+    _subsetIndices = _computeSubsetIndices(_sourceGIDs, gids);
     _targetMapping = _reduceMapping(_sourceMapping, _subsetIndices);
 }
 
