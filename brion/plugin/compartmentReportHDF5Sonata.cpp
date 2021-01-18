@@ -691,7 +691,7 @@ void CompartmentReportHDF5Sonata::_updateMapping(const GIDSet& gids)
     }
     _gids = std::move(intersection);
 
-    _subsetIndices = _computeSubsetIndices(_sourceGIDs, gids);
+    _subsetIndices = _computeSubsetIndices(_sourceGIDs, _gids);
     _targetMapping = _reduceMapping(_sourceMapping, _subsetIndices);
 }
 
