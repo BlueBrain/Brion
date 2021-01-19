@@ -486,20 +486,30 @@ struct Synapses::SonataImpl : public Synapses::InternalBaseImpl
          const bool afferent, const SynapsePrefetch prefetch)
         : Synapses::InternalBaseImpl(circuit, gids, filterGIDs, afferent, prefetch)
     {
-        _loadConnectivity(&gids, &filterGIDs);
+        GIDSet fixedGids;
+        for(const auto gid : gids)
+            fixedGids.insert(gid - 1);
+        GIDSet fixedFilters;
+        for(const auto gid : filterGIDs)
+            fixedFilters.insert(gid - 1);
+        _loadConnectivity(&fixedGids, &fixedFilters);
 
         if (int(prefetch) & int(SynapsePrefetch::attributes))
-            std::call_once(_attributeFlag, &SonataImpl::_loadAttributes, this, &gids,
-                           &filterGIDs);
+            std::call_once(_attributeFlag, &SonataImpl::_loadAttributes, this, &fixedGids,
+                           &fixedFilters);
         if (int(prefetch) & int(SynapsePrefetch::positions))
-            std::call_once(_positionFlag, &SonataImpl::_loadPositions, this, &gids,
-                           &filterGIDs);
+            std::call_once(_positionFlag, &SonataImpl::_loadPositions, this, &fixedGids,
+                           &fixedFilters);
     }
 
     SonataImpl(const Circuit& circuit, const GIDSet& gids, const std::string& source,
          const SynapsePrefetch prefetch)
         : Synapses::InternalBaseImpl(circuit, gids, source, prefetch)
     {
+        GIDSet fixedGids;
+        for(const auto gid : gids)
+            fixedGids.insert(gid - 1);
+
         const std::string projSourceFile = _circuit->getSynapseProjectionSource(source);
         const std::string& synapsePopulation = _circuit->getSynapseProjectionPopulation(source);
         // We don't have a summary file for projected afferent synapses.
@@ -522,7 +532,7 @@ struct Synapses::SonataImpl : public Synapses::InternalBaseImpl
         if (int(prefetch) & int(SynapsePrefetch::attributes))
         {
             GIDSet empty;
-            std::call_once(_attributeFlag, &SonataImpl::_loadAttributes, this, &gids,
+            std::call_once(_attributeFlag, &SonataImpl::_loadAttributes, this, &fixedGids,
                            &empty);
         }
     }
