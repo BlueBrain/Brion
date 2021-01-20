@@ -174,21 +174,29 @@ public:
             return URI(name);
 
         URI uri(getMorphologySource());
-        const auto h5 = uri.getPath() + "/" + name + ".h5";
-        if (!fs::exists(fs::path(h5)))
+
+        const std::string type = getMorphologyType();
+        if(!type.empty())
+            uri.setPath(uri.getPath() + "/" + name + "." + type);
+        else
         {
-            const auto swc = uri.getPath() + "/" + name + ".swc";
-            if (fs::exists(fs::path(swc)))
+            const auto h5 = uri.getPath() + "/" + name + ".h5";
+            if (!fs::exists(fs::path(h5)))
             {
-                uri.setPath(swc);
-                return uri;
+                const auto swc = uri.getPath() + "/" + name + ".swc";
+                if (fs::exists(fs::path(swc)))
+                {
+                    uri.setPath(swc);
+                    return uri;
+                }
             }
+            uri.setPath(h5);
         }
-        uri.setPath(h5);
         return uri;
     }
 
     virtual URI getMorphologySource() const = 0;
+    virtual std::string getMorphologyType() const = 0;
 
     virtual MorphologyCache* getMorphologyCache() const { return nullptr; }
     virtual std::string getSynapseSource() const = 0;
@@ -211,6 +219,7 @@ class BBPCircuit : public Circuit::Impl
 public:
     explicit BBPCircuit(const brion::BlueConfig& config)
         : _morphologySource(config.getMorphologySource())
+        , _morphologyType(config.getMorphologyType())
         , _synapseSource(config.getSynapseSource())
         , _synapsePopulation(config.getSynapsePopulation())
         , _targets(config)
@@ -238,6 +247,7 @@ public:
     }
 
     URI getMorphologySource() const final { return _morphologySource; }
+    std::string getMorphologyType() const final { return _morphologyType; }
     MorphologyCache* getMorphologyCache() const final
     {
         if (_morphologyCache)
@@ -375,6 +385,7 @@ public:
     }
 
     const brion::URI _morphologySource;
+    const std::string _morphologyType;
     const brion::URI _synapseSource;
     const std::string _synapsePopulation;
     std::unordered_map<std::string, brion::URI> _afferentProjectionSources;

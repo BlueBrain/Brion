@@ -399,6 +399,11 @@ URI BlueConfig::getMorphologySource() const
     return uri;
 }
 
+std::string BlueConfig::getMorphologyType() const
+{
+    return get(CONFIGSECTION_RUN, _impl->getRun(), BLUECONFIG_MORPHOLOGY_TYPE_KEY);
+}
+
 URI BlueConfig::getReportSource(const std::string& report) const
 {
     std::string format =
