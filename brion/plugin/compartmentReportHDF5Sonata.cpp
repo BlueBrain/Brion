@@ -680,10 +680,6 @@ void CompartmentReportHDF5Sonata::_updateMapping(const GIDSet& gids)
         return;
 
     const GIDSet intersection = _computeIntersection(_sourceGIDs, gids);
-    if (intersection.empty())
-    {
-        BRION_THROW("CompartmentReportBinary::updateMapping: GIDs out of range")
-    }
     if (intersection != gids)
     {
         _updateMapping(intersection);
