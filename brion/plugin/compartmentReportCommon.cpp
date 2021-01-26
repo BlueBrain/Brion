@@ -128,16 +128,18 @@ GIDSet CompartmentReportCommon::_computeIntersection(const GIDSet& all,
                           std::inserter(intersection, intersection.begin()));
     if (intersection != subset || intersection.empty())
     {
-        BRION_WARN << "Requested " << subset.size() << " GIDs [" << *subset.begin()
-                 << ":" << *subset.rbegin() << "] are not a subset of the "
-                 << all.size() << " GIDs in the report [" << *all.begin() << ":"
-                 << *all.rbegin();
+        std::stringstream ss;
+        ss << "Requested " << subset.size() << " GIDs [" << *subset.begin()
+           << ":" << *subset.rbegin() << "] are not a subset of the "
+           << all.size() << " GIDs in the report [" << *all.begin() << ":"
+           << *all.rbegin() << "]";
         if (intersection.empty())
-            BRION_WARN << " with no GIDs in common" << std::endl;
+            BRION_THROW(ss.str())
         else
-            BRION_WARN << "], using intersection size " << intersection.size()
-                     << " [" << *intersection.begin() << ":"
-                     << *intersection.rbegin() << "]" << std::endl;
+            BRION_WARN << ss.str() << std::endl
+                       << "Using intersection size " << intersection.size()
+                       << " [" << *intersection.begin() << ":"
+                       << *intersection.rbegin() << "]" << std::endl;
     }
     return intersection;
 }

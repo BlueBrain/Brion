@@ -585,10 +585,6 @@ void CompartmentReportBinary::updateMapping(const GIDSet& gids)
         return;
 
     const GIDSet intersection = _computeIntersection(_originalGIDs, _gids);
-    if (intersection.empty())
-    {
-        BRION_THROW("CompartmentReportBinary::updateMapping: GIDs out of range")
-    }
     if (intersection != _gids)
     {
         updateMapping(intersection);
