@@ -1,6 +1,25 @@
 Changelog {#Changelog}
 =========
 
+# Release 3.3.1
+
+* [314](https://github.com/BlueBrain/Brion/pull/314)
+  3.3.1 Release preparation
+* [313](https://github.com/BlueBrain/Brion/pull/313)
+  Improve error message for GIDs out of range in report
+* [312](https://github.com/BlueBrain/Brion/pull/312)
+  Handling MorphologyType from BlueConfig
+* [311](https://github.com/BlueBrain/Brion/pull/311)
+  Handle 0 based GIDs on sonata files
+* [310](https://github.com/BlueBrain/Brion/pull/310)
+  Miscelaneous fixes and updates
+* [309](https://github.com/BlueBrain/Brion/pull/309)
+  Use env vars for setting PYTHON3_ROOT_DIR (wheel distribution)
+* [307](https://github.com/BlueBrain/Brion/pull/307)
+  Fixes version number typo
+* [306](https://github.com/BlueBrain/Brion/pull/306)
+  Fix for wrongly load check in synapse positions
+
 # Release 3.3.0
 
 * [305](https://github.com/BlueBrain/Brion/pull/305)
