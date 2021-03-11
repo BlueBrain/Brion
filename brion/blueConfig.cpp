@@ -391,10 +391,13 @@ URI BlueConfig::getMorphologySource() const
     if (uri.getScheme().empty())
         uri.setScheme("file");
 
-    const fs::path barePath(uri.getPath());
-    const fs::path guessedPath = barePath / MORPHOLOGY_HDF5_FILES_SUBDIRECTORY;
-    if (fs::exists(guessedPath) && fs::is_directory(guessedPath))
-        uri.setPath(guessedPath.string());
+    // From
+    // https://bbpteam.epfl.ch/documentation/projects/Circuit Documentation/latest/blueconfig.html
+    //
+    // Location of morphology files. If MorphologyType is not specified, ‘/ascii’ is automatically
+    // appended to the path and morphology loading assumes ‘asc’ type (legacy handling).
+    if(getMorphologyType().empty())
+        uri.setPath(uri.getPath() + "/" + MORPHOLOGY_ASC_FILES_SUBDIRECTORY);
 
     return uri;
 }

@@ -173,26 +173,7 @@ public:
         if (boost::filesystem::path(name).is_absolute())
             return URI(name);
 
-        URI uri(getMorphologySource());
-
-        const std::string type = getMorphologyType();
-        if(!type.empty())
-            uri.setPath(uri.getPath() + "/" + name + "." + type);
-        else
-        {
-            const auto h5 = uri.getPath() + "/" + name + ".h5";
-            if (!fs::exists(fs::path(h5)))
-            {
-                const auto swc = uri.getPath() + "/" + name + ".swc";
-                if (fs::exists(fs::path(swc)))
-                {
-                    uri.setPath(swc);
-                    return uri;
-                }
-            }
-            uri.setPath(h5);
-        }
-        return uri;
+        return URI(getMorphologySource().getPath() + "/" + name + "." + getMorphologyType());
     }
 
     virtual URI getMorphologySource() const = 0;
@@ -219,7 +200,7 @@ class BBPCircuit : public Circuit::Impl
 public:
     explicit BBPCircuit(const brion::BlueConfig& config)
         : _morphologySource(config.getMorphologySource())
-        , _morphologyType(config.getMorphologyType())
+        , _morphologyType(config.getMorphologyType().empty()? "asc" : config.getMorphologyType())
         , _synapseSource(config.getSynapseSource())
         , _synapsePopulation(config.getSynapsePopulation())
         , _targets(config)

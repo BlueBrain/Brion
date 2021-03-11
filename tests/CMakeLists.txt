@@ -25,6 +25,7 @@ file(GLOB_RECURSE TEST_FILES RELATIVE ${CMAKE_CURRENT_LIST_DIR} *.cpp)
 # Will be re-enabled when a test data with the new standard becomes available.
 list(REMOVE_ITEM TEST_FILES brain/sonataCircuit.cpp)
 list(REMOVE_ITEM TEST_FILES brain/sonataSimulation.cpp)
+list(REMOVE_ITEM TEST_FILES perf/circuit.cpp)
 
 set(CPP_TEST_TARGETS)
 
