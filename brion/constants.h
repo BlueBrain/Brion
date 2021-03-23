@@ -31,6 +31,7 @@ const char* const CIRCUIT_FILE_MVD3 = "/circuit.mvd3";
 const char* const CIRCUIT_TARGET_FILE = "/start.target";
 
 const char* const MORPHOLOGY_HDF5_FILES_SUBDIRECTORY = "h5";
+const char* const MORPHOLOGY_ASC_FILES_SUBDIRECTORY = "ascii";
 
 const char* const BLUECONFIG_CIRCUIT_PATH_KEY = "CircuitPath";
 const char* const BLUECONFIG_CELLLIBRARY_PATH_KEY = "CellLibraryFile";

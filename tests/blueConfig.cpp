@@ -190,7 +190,7 @@ BOOST_AUTO_TEST_CASE(semantic_api)
         brion::URI(prefix +
                    "/local/circuits/18.10.10_600cell/ncsFunctionalCompare"));
     BOOST_CHECK_EQUAL(config.getMorphologySource(),
-                      brion::URI(prefix + "/local/morphologies/01.07.08/h5"));
+                      brion::URI(prefix + "/local/morphologies/01.07.08/ascii"));
 
     BOOST_CHECK_EQUAL(config.getReportSource("unknown"), brion::URI());
     const brion::URI allCompartments =
