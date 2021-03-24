@@ -49,11 +49,15 @@ public:
     /** Open given filepath to a BlueConfig or CircuitConfig for reading.
      *
      * @param source filepath to BlueConfig or CircuitConfig file
+     * @param default file section from which to extract path information (Default Run)
+     * @param default section name to identify a specific section (Default empty, pick the first)
      * @throw std::runtime_error if source is not a valid BlueConfig or
      *                           CircuitConfig file
      * @version 1.0
      */
-    BRION_API explicit BlueConfig(const std::string& source);
+    BRION_API explicit BlueConfig(const std::string& source,
+                                  const BlueConfigSection section = BlueConfigSection::CONFIGSECTION_RUN,
+                                  const std::string& sectionName = "");
 
     BRION_API BlueConfig(BlueConfig&&) = default;
     BRION_API BlueConfig& operator=(BlueConfig&&) = default;

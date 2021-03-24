@@ -128,8 +128,25 @@ size_t _parseCacheSizeOption(const URI& uri)
 GIDSet gidsToBase0(const GIDSet& src)
 {
     GIDSet result;
-    for(auto gid : src)
-        result.insert(gid - 1);
+    std::transform(src.begin(), src.end(), std::inserter(result, result.end()),
+    [](uint32_t gid) -> int
+    {
+        if(gid == 0)
+            throw std::runtime_error("Tried to substract 1 to 0 based GID");
+        return gid - 1;
+    });
+
+    return result;
+}
+
+GIDSet gidsToBase1(const GIDSet& src)
+{
+    GIDSet result;
+    std::transform(src.begin(), src.end(), std::inserter(result, result.end()),
+    [](uint32_t gid) -> int
+    {
+        return gid + 1;
+    });
 
     return result;
 }
@@ -209,7 +226,7 @@ size_t CompartmentReportHDF5Sonata::getCellCount() const
 
 const GIDSet& CompartmentReportHDF5Sonata::getGIDs() const
 {
-    return _subset ? _gids : _sourceGIDs;
+    return _subset ? _gids1based : _sourceGIDs1based;
 }
 
 const SectionOffsets& CompartmentReportHDF5Sonata::getOffsets() const
@@ -589,6 +606,7 @@ void CompartmentReportHDF5Sonata::_parseBasicCellInfo()
         }
         _sourceGIDs = GIDSet(sortedGIDs.begin(), sortedGIDs.end());
     }
+    _sourceGIDs1based = gidsToBase1(_sourceGIDs);
 }
 
 void CompartmentReportHDF5Sonata::_processMapping()
@@ -686,6 +704,7 @@ void CompartmentReportHDF5Sonata::_updateMapping(const GIDSet& gids)
         return;
     }
     _gids = std::move(intersection);
+    _gids1based = gidsToBase1(_gids);
 
     _subsetIndices = _computeSubsetIndices(_sourceGIDs, _gids);
     _targetMapping = _reduceMapping(_sourceMapping, _subsetIndices);

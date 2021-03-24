@@ -39,6 +39,8 @@ inline brion::BlueConfigSection lexical_cast(const std::string& s)
 {
     if (s == "Run")
         return brion::CONFIGSECTION_RUN;
+    if (s == "Circuit")
+        return brion::CONFIGSECTION_CIRCUIT;
     if (s == "Connection")
         return brion::CONFIGSECTION_CONNECTION;
     if (s == "Projection")
@@ -59,6 +61,8 @@ inline std::string lexical_cast(const brion::BlueConfigSection& b)
     {
     case brion::CONFIGSECTION_RUN:
         return "Run";
+    case brion::CONFIGSECTION_CIRCUIT:
+        return "Circuit";
     case brion::CONFIGSECTION_CONNECTION:
         return "Connection";
     case brion::CONFIGSECTION_PROJECTION:
@@ -114,8 +118,12 @@ namespace detail
 class BlueConfig
 {
 public:
-    explicit BlueConfig(const std::string& source_)
-        : source(source_)
+    explicit BlueConfig(const std::string& source_,
+                        const BlueConfigSection section,
+                        const std::string& sectionName)
+         : source(source_)
+        , defaultSection(section)
+        , defaultSectionName(sectionName)
     {
         sourceParentPath = source.substr(0, source.find_last_of("/"));
         std::ifstream file(source.c_str());
@@ -187,10 +195,19 @@ public:
             BRION_THROW(source + " not a valid BlueConfig file")
     }
 
-    std::string getRun()
+    const std::string& getDefaultSection()
     {
-        const brion::Strings& runs = names[brion::CONFIGSECTION_RUN];
-        return runs.empty() ? std::string() : runs.front();
+        if(!defaultSectionName.empty())
+            return defaultSectionName;
+
+        if(defaultSection == BlueConfigSection::CONFIGSECTION_RUN)
+        {
+            const brion::Strings& runs = names[brion::CONFIGSECTION_RUN];
+            if (!runs.empty())
+                return runs.front();
+        }
+
+        BRION_THROW("No sections found in BlueConfig/CircuitConfig file")
     }
 
     const std::string& get(const BlueConfigSection section,
@@ -213,7 +230,7 @@ public:
 
     const std::string getCircuitTarget()
     {
-        const std::string& ct = get(brion::CONFIGSECTION_RUN, getRun(),
+         const std::string& ct = get(defaultSection, getDefaultSection(),
                                 BLUECONFIG_CIRCUIT_TARGET_KEY);
         // Patch for sonata circuits, where the circuit target comes as
         // population_name:circuit_target
@@ -226,7 +243,7 @@ public:
 
     const std::string getCircuitPopulation()
     {
-        const std::string& ct = get(brion::CONFIGSECTION_RUN, getRun(),
+        const std::string& ct = get(defaultSection, getDefaultSection(),
                                     BLUECONFIG_CIRCUIT_TARGET_KEY);
         // Patch for sonata circuits, where the circuit target comes as
         // population_name:circuit_target
@@ -239,15 +256,15 @@ public:
 
     const std::string& getCurrentDir()
     {
-        return get(brion::CONFIGSECTION_RUN, getRun(), BLUECONFIG_CURRENT_DIR_KEY);
+        return get(defaultSection, getDefaultSection(), BLUECONFIG_CURRENT_DIR_KEY);
     }
 
     const std::string getOutputRoot()
     {
         return adjust_path(sourceParentPath,
                            getCurrentDir(),
-                           get(brion::CONFIGSECTION_RUN,
-                               getRun(),
+                           get(defaultSection,
+                               getDefaultSection(),
                                BLUECONFIG_OUTPUT_PATH_KEY));
     }
 
@@ -268,13 +285,17 @@ public:
 
     std::string source;
     std::string sourceParentPath;
+    BlueConfigSection defaultSection {BlueConfigSection::CONFIGSECTION_RUN};
+    std::string defaultSectionName;
     Strings names[CONFIGSECTION_ALL];
     ValueTable table[CONFIGSECTION_ALL];
 };
 } // namespace detail
 
-BlueConfig::BlueConfig(const std::string& source)
-    : _impl(new detail::BlueConfig(source))
+BlueConfig::BlueConfig(const std::string& source,
+                       const BlueConfigSection section,
+                       const std::string& sectionName)
+    : _impl(new detail::BlueConfig(source, section, sectionName))
 {
 }
 
@@ -312,7 +333,8 @@ URI BlueConfig::getCircuitSource() const
     const fs::path path(
         adjust_path(_impl->sourceParentPath,
                     _impl->getCurrentDir(),
-                    get(CONFIGSECTION_RUN, _impl->getRun(), BLUECONFIG_CIRCUIT_PATH_KEY)));
+                    get(_impl->defaultSection, _impl->getDefaultSection(),
+                        BLUECONFIG_CIRCUIT_PATH_KEY)));
     std::string filename = path.string();
     if (fs::exists(path) && !fs::is_regular_file(fs::canonical(path)))
     {
@@ -334,7 +356,8 @@ URI BlueConfig::getCellLibrarySource() const
     const fs::path path(
         adjust_path(_impl->sourceParentPath,
                     _impl->getCurrentDir(),
-                    get(CONFIGSECTION_RUN, _impl->getRun(), BLUECONFIG_CELLLIBRARY_PATH_KEY)));
+                    get(_impl->defaultSection, _impl->getDefaultSection(),
+                        BLUECONFIG_CELLLIBRARY_PATH_KEY)));
     URI uri;
     uri.setScheme("file");
     uri.setPath(path.string());
@@ -348,13 +371,15 @@ URI BlueConfig::getSynapseSource() const
     uri.setPath(
         adjust_path(_impl->sourceParentPath,
                     _impl->getCurrentDir(),
-                    get(CONFIGSECTION_RUN, _impl->getRun(), BLUECONFIG_NRN_PATH_KEY)));
+                    get(_impl->defaultSection, _impl->getDefaultSection(),
+                        BLUECONFIG_NRN_PATH_KEY)));
     return uri;
 }
 
 std::string BlueConfig::getSynapsePopulation() const
 {
-    const auto& synapseSource = get(CONFIGSECTION_RUN, _impl->getRun(), BLUECONFIG_NRN_PATH_KEY);
+    const auto& synapseSource = get(_impl->defaultSection, _impl->getDefaultSection(),
+                                    BLUECONFIG_NRN_PATH_KEY);
 
     // Extract population name from synapses path (nrnPath)
     auto colonPos = synapseSource.find(":");
@@ -386,7 +411,7 @@ URI BlueConfig::getMorphologySource() const
 {
     URI uri(adjust_path(_impl->sourceParentPath,
                         _impl->getCurrentDir(),
-                        get(CONFIGSECTION_RUN, _impl->getRun(),
+                        get(_impl->defaultSection, _impl->getDefaultSection(),
                             BLUECONFIG_MORPHOLOGY_PATH_KEY)));
     if (uri.getScheme().empty())
         uri.setScheme("file");
@@ -404,7 +429,7 @@ URI BlueConfig::getMorphologySource() const
 
 std::string BlueConfig::getMorphologyType() const
 {
-    return get(CONFIGSECTION_RUN, _impl->getRun(), BLUECONFIG_MORPHOLOGY_TYPE_KEY);
+    return get(_impl->defaultSection, _impl->getDefaultSection(), BLUECONFIG_MORPHOLOGY_TYPE_KEY);
 }
 
 URI BlueConfig::getReportSource(const std::string& report) const
@@ -436,7 +461,7 @@ URI BlueConfig::getSpikeSource() const
     std::string path =
         adjust_path(_impl->sourceParentPath,
                     _impl->getCurrentDir(),
-                    get(CONFIGSECTION_RUN, _impl->getRun(), BLUECONFIG_SPIKES_PATH_KEY));
+                    get(_impl->defaultSection, _impl->getDefaultSection(), BLUECONFIG_SPIKES_PATH_KEY));
     if (path.empty() || fs::is_directory(path))
         path = _impl->getOutputRoot() + SPIKE_FILE;
 
@@ -454,7 +479,7 @@ URI BlueConfig::getMeshSource() const
 {
     URI uri(adjust_path(_impl->sourceParentPath,
                         _impl->getCurrentDir(),
-                        get(CONFIGSECTION_RUN, _impl->getRun(), BLUECONFIG_MESH_PATH_KEY)));
+                        get(_impl->defaultSection, _impl->getDefaultSection(), BLUECONFIG_MESH_PATH_KEY)));
     if (uri.getScheme().empty())
         uri.setScheme("file");
     // Meshes are actually under a subdirectory named high/TXT, but the suffic
@@ -464,19 +489,19 @@ URI BlueConfig::getMeshSource() const
 
 brion::URIs BlueConfig::getTargetSources() const
 {
-    const std::string& run = _impl->getRun();
+    const std::string& run = _impl->getDefaultSection();
 
     URIs uris;
     auto nrnPath =
         adjust_path(_impl->sourceParentPath,
                     _impl->getCurrentDir(),
-                    get(brion::CONFIGSECTION_RUN, run, BLUECONFIG_NRN_PATH_KEY));
+                    get(_impl->defaultSection, run, BLUECONFIG_NRN_PATH_KEY));
     boost::trim_right_if(nrnPath, [](auto c) { return c == '/'; });
 
     auto circuitPath =
         adjust_path(_impl->sourceParentPath,
                     _impl->getCurrentDir(),
-                    get(brion::CONFIGSECTION_RUN, run, BLUECONFIG_CIRCUIT_PATH_KEY));
+                    get(_impl->defaultSection, run, BLUECONFIG_CIRCUIT_PATH_KEY));
     boost::trim_right_if(circuitPath, [](auto c) { return c == '/'; });
 
     // fs::is_directory may wrongly return true for symlinks
@@ -503,7 +528,7 @@ brion::URIs BlueConfig::getTargetSources() const
 
     // Finally, fetch any user defined target file
     const std::string& targetPath =
-        get(brion::CONFIGSECTION_RUN, run, BLUECONFIG_TARGET_FILE_KEY);
+        get(_impl->defaultSection, run, BLUECONFIG_TARGET_FILE_KEY);
     if (!targetPath.empty())
     {
         URI uri;
@@ -532,9 +557,9 @@ GIDSet BlueConfig::parseTarget(const std::string& target) const
 
 float BlueConfig::getTimestep() const
 {
-    const std::string& run = _impl->getRun();
+    const std::string& run = _impl->getDefaultSection();
     float timestep = std::numeric_limits<float>::quiet_NaN();
-    _impl->get<float>(brion::CONFIGSECTION_RUN, run, BLUECONFIG_DT_KEY,
+    _impl->get<float>(_impl->defaultSection, run, BLUECONFIG_DT_KEY,
                       timestep);
     return timestep;
 }

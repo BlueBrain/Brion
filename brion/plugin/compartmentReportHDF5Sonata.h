@@ -80,6 +80,8 @@ private:
     // Read API attributes
     GIDSet _gids;
     GIDSet _sourceGIDs;
+    GIDSet _gids1based;
+    GIDSet _sourceGIDs1based;
     bool _subset = false;
     std::vector<uint32_t> _subsetIndices;
     hsize_t _chunkDims[2] = {0, 0};
