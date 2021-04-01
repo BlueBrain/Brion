@@ -1,8 +1,7 @@
 # Brion
 
-![](doc/BBPLOGO350.jpg)
+[![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.4472528.svg)](https://doi.org/10.5281/zenodo.4472528)
 
-[![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.3909240.svg)](https://doi.org/10.5281/zenodo.3909240)
 
 Welcome to Brion, a C++ project for read and write access to Blue Brain data
 structures, including BlueConfig/CircuitConfig, Circuit, CompartmentReport,

@@ -40,7 +40,6 @@ class NodeGroup
 {
 public:
     friend class Nodes;
-    NodeGroup();
     NodeGroup(NodeGroup&&);
     ~NodeGroup();
 

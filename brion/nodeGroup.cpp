@@ -22,6 +22,8 @@
 #include <highfive/H5File.hpp>
 #include <highfive/H5Group.hpp>
 
+#include <memory>
+
 namespace
 {
 template <typename T>
@@ -55,16 +57,18 @@ namespace brion
 {
 struct NodeGroup::Impl
 {
-    HighFive::Group group;
+    Impl(const HighFive::Group& g)
+     : group(g)
+    {
+    }
+
+    const HighFive::Group group;
 };
 
 NodeGroup::NodeGroup(const HighFive::Group& group)
-    : impl(new NodeGroup::Impl())
+    : impl(new NodeGroup::Impl(group))
 {
-    impl->group = group;
 }
-NodeGroup::NodeGroup()
-    : impl(new NodeGroup::Impl()){};
 
 NodeGroup::~NodeGroup() = default;
 NodeGroup::NodeGroup(NodeGroup&&) = default;
