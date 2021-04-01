@@ -22,8 +22,6 @@
 #include <highfive/H5File.hpp>
 #include <highfive/H5Group.hpp>
 
-#include <memory>
-
 namespace
 {
 template <typename T>
