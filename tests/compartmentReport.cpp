@@ -679,7 +679,6 @@ BOOST_AUTO_TEST_CASE(test_convert_and_compare)
     const auto path = bbpTestData / "local/simulations/may17_2011/Control/";
     const brion::URI source(path.string() + "allCompartments.bbp");
 
-    BOOST_TEST_MESSAGE("TEST 1 >>>>>>>>>>>>>>>>>>>>>>>>>>>><");
     test_compare(source, brion::URI(path.string() + "allCompartments.h5"));
 
     const boost::filesystem::path& temp = createUniquePath();
@@ -701,7 +700,6 @@ BOOST_AUTO_TEST_CASE(test_convert_and_compare)
 
         if (convert(source, first)) // bootstrap first from source
         {
-            BOOST_TEST_MESSAGE("TEST 2 >>>>>>>>>>>>>>>>>>>>>>>>>>>><");
             test_compare(source, first);
             testPerf(first);
 
@@ -709,18 +707,11 @@ BOOST_AUTO_TEST_CASE(test_convert_and_compare)
             {
                 if (convert(source, second)) // bootstrap second from source
                 {
-                    BOOST_TEST_MESSAGE("TEST 3 >>>>>>>>>>>>>>>>>>>>>>>>>>>><");
                     test_compare(first, second);
                     if (convert(second, first))
-                    {
-                        BOOST_TEST_MESSAGE("TEST 4 >>>>>>>>>>>>>>>>>>>>>>>>>>>><");
                         test_compare(source, first);
-                    }
                     if (convert(first, second))
-                    {
-                        BOOST_TEST_MESSAGE("TEST 5 >>>>>>>>>>>>>>>>>>>>>>>>>>>><");
                         test_compare(source, second);
-                    }
                 }
             }
         }
