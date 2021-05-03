@@ -70,8 +70,11 @@ protected:
     virtual bool _loadFrames(size_t frameNumber, size_t frameCount,
                              float* buffer) const;
 
+    void _initializeFrameIndexMapping() const;
+
 private:
     size_ts _neuronCompartments;
+    mutable std::vector<std::pair<size_t, double>> _frameIndexMapping;
 };
 }
 }
