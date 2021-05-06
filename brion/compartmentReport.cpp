@@ -33,6 +33,7 @@ namespace
 {
 inline double _snapTimestamp(double t, double start, double timestep)
 {
+    t = std::nextafter(t, INFINITY);
     return start + timestep * (size_t)std::floor((t - start) / timestep);
 }
 }
