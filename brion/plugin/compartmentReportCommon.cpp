@@ -21,7 +21,6 @@
 
 #include "../log.h"
 
-//https://github.com/BlueBrain/libsonata/blob/master/src/report_reader.cpp
 #define EPSILON 1e-6
 
 namespace brion
@@ -46,46 +45,25 @@ size_t CompartmentReportCommon::getNumCompartments(const size_t index) const
     return _neuronCompartments[index];
 }
 
-//https://github.com/BlueBrain/libsonata/blob/master/src/report_reader.cpp
-void CompartmentReportCommon::_initializeFrameIndexMapping() const
-{
-    size_t i = 0;
-    const double tStart = getStartTime();
-    const double tEnd = getEndTime();
-    const double tStep = getTimestep();
-
-    for (double t = tStart; t < tEnd - EPSILON; t += tStep, ++i)
-    {
-        _frameIndexMapping.emplace_back(i, t);
-    }
-
-    if(_frameIndexMapping.empty())
-        throw std::runtime_error("The report has no frames");
-}
-
 size_t CompartmentReportCommon::_getFrameNumber(double timestamp) const
 {
-    if(_frameIndexMapping.empty())
-        _initializeFrameIndexMapping();
+    // Ensure the timestamp is on the right side of the round
+    // A timestamp of 0.42 will be represented as 0.420000000000121
+    // Due to precision errors, a timestamp of 0.43 will be represented as 0.4299999999999897
+    // When computing the integer frame index, both timestamps will return frame 42
+    // By increasing 1 single bit the fraction part of the double, we ensure it will fall in the
+    // correct side, and because it is a single bit increase, it will not affect already correct numbers:
+    // 0.4200000000121 will become something like 0.4200000000122
+    // 0.4299999999999897 will become something like 0.430000000000101
+    timestamp = std::nextafter(timestamp, INFINITY);
 
-    const auto startTime = getStartTime();
-    const auto endTime = getEndTime();
-    assert(endTime > startTime);
+    // Clamp the timestamp in the correct range
+    timestamp = std::max(std::min(timestamp,
+                                  std::nextafter(getEndTime(), -INFINITY)),
+                         getStartTime()) -
+            getStartTime();
 
-    timestamp = std::max(std::min(timestamp, std::nextafter(endTime, -INFINITY)), startTime);
-
-    size_t selected = _frameIndexMapping[0].first;
-    for(size_t i = 1; i < _frameIndexMapping.size(); ++i)
-    {
-        const auto& entry = _frameIndexMapping[i];
-        if(entry.second <= timestamp)
-            selected = entry.first;
-        else
-            break;
-    }
-
-    return selected;
-
+    return static_cast<size_t>(timestamp / getTimestep());
 }
 
 size_t CompartmentReportCommon::getFrameCount() const
@@ -112,7 +90,7 @@ Frames CompartmentReportCommon::loadFrames(double start, double end) const
 
     const double timestep = getTimestep();
     const size_t startFrame = _getFrameNumber(start);
-    end = end - EPSILON;//std::nextafter(end, -INFINITY);
+    end -= EPSILON;
     const size_t count = _getFrameNumber(end) - startFrame + 1;
 
     Frames frames;
