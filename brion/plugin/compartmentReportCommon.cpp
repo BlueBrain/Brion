@@ -21,6 +21,8 @@
 
 #include "../log.h"
 
+#define EPSILON 1e-6
+
 namespace brion
 {
 namespace plugin
@@ -45,18 +47,23 @@ size_t CompartmentReportCommon::getNumCompartments(const size_t index) const
 
 size_t CompartmentReportCommon::_getFrameNumber(double timestamp) const
 {
-    const auto startTime = getStartTime();
-    const auto endTime = getEndTime();
-    assert(endTime > startTime);
-    const auto step = getTimestep();
+    // Ensure the timestamp is on the right side of the round
+    // A timestamp of 0.42 will be represented as 0.420000000000121
+    // Due to precision errors, a timestamp of 0.43 will be represented as 0.4299999999999897
+    // When computing the integer frame index, both timestamps will return frame 42
+    // By increasing 1 single bit the fraction part of the double, we ensure it will fall in the
+    // correct side, and because it is a single bit increase, it will not affect already correct numbers:
+    // 0.4200000000121 will become something like 0.4200000000122
+    // 0.4299999999999897 will become something like 0.430000000000101
+    timestamp = std::nextafter(timestamp, INFINITY);
 
-    timestamp =
-        std::max(std::min(timestamp, std::nextafter(endTime, -INFINITY)),
-                 startTime) -
-        startTime;
+    // Clamp the timestamp in the correct range
+    timestamp = std::max(std::min(timestamp,
+                                  std::nextafter(getEndTime(), -INFINITY)),
+                         getStartTime()) -
+            getStartTime();
 
-    const double magnitude = round(1.0 / step);
-    return static_cast<size_t>(timestamp * magnitude);
+    return static_cast<size_t>(timestamp / getTimestep());
 }
 
 size_t CompartmentReportCommon::getFrameCount() const
@@ -83,7 +90,7 @@ Frames CompartmentReportCommon::loadFrames(double start, double end) const
 
     const double timestep = getTimestep();
     const size_t startFrame = _getFrameNumber(start);
-    end = std::nextafter(end, -INFINITY);
+    end -= EPSILON;
     const size_t count = _getFrameNumber(end) - startFrame + 1;
 
     Frames frames;

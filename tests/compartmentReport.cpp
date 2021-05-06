@@ -327,9 +327,7 @@ bool convert(const brion::URI& fromURI, const brion::URI& toURI)
 
         for (int n = 0; start + n * step < end; ++n)
         {
-            // Making the timestamp fall in the middle of the frame to avoid
-            // round-off errors.
-            const double time = start + n * step + step * 0.5;
+            const double time = start + n * step;
 
             brion::floatsPtr data = from.loadFrame(time).get().data;
             BOOST_CHECK(data);
