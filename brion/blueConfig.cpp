@@ -176,7 +176,7 @@ public:
                 if (line.empty())
                     continue;
 
-                const std::string::size_type pos = line.find(' ', 0);
+                const std::string::size_type pos = line.find_first_of(" \t");
                 if (pos == std::string::npos)
                 {
                     BRION_WARN << "Found invalid key-value pair '" << line
@@ -186,6 +186,7 @@ public:
 
                 std::string value = line.substr(pos + 1);
                 boost::trim(value);
+                boost::trim_if(value, boost::is_any_of("\t"));
                 table[type][name].insert(
                     std::make_pair(line.substr(0, pos), value));
             }
