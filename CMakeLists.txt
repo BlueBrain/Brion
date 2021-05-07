@@ -7,7 +7,7 @@
 
 # Base configuration
 cmake_minimum_required(VERSION 3.15 FATAL_ERROR)
-project(Brion VERSION 3.3.1)
+project(Brion VERSION 3.3.2)
 set(Brion_VERSION_ABI 10)
 
 # Enforce C++14 standard
