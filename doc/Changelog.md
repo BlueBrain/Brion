@@ -1,6 +1,21 @@
 Changelog {#Changelog}
 =========
 
+# Release 3.3.2
+
+* [321](https://github.com/BlueBrain/Brion/pull/321)
+  3.3.2 Release preparation
+* [320](https://github.com/BlueBrain/Brion/pull/320)
+  Allow tabs '\t' as key - value separator in BlueConfig
+* [319](https://github.com/BlueBrain/Brion/pull/319)
+  Fix wrong frame index calculation from report timestamp, drop support for python < 3.6
+* [318](https://github.com/BlueBrain/Brion/pull/318)
+  General submodule update
+* [317](https://github.com/BlueBrain/Brion/pull/317)
+  Custom BlueConfig file support for multipopulation
+* [316](https://github.com/BlueBrain/Brion/pull/316)
+  Fix BlueConfig class to follow documentation about morphology type
+
 # Release 3.3.1
 
 * [314](https://github.com/BlueBrain/Brion/pull/314)

@@ -22,7 +22,7 @@ from ._brion import *
 
 from . import neuron
 
-__version__ = '3.3.1'
+__version__ = '3.3.2'
 
 # Import the test helper module if present
 try:

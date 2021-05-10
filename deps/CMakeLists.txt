@@ -98,7 +98,7 @@ if(NOT MorphIO_FOUND AND NOT TARGET MorphIO::morphio_shared)
     add_subdirectory(MorphIO/3rdparty/GSL_LITE)
     target_include_directories(gsl-lite SYSTEM INTERFACE)
     add_library(lexertl INTERFACE)
-    target_include_directories(lexertl SYSTEM INTERFACE MorphIO/3rdparty/lexertl)
+    target_include_directories(lexertl SYSTEM INTERFACE MorphIO/3rdparty/lexertl14/include)
 
     # Retrieve version
     set(MORPHIO_VERSION_STRING "2.3.10")
