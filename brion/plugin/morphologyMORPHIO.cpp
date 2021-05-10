@@ -132,9 +132,7 @@ void MorphologyMORPHIO::load()
             break;
         default:
             // handle MorphIO enum overload
-            if(morphio::SectionType::SECTION_GLIA_ENDFOOT == section.type())
-                brionSectionType = SectionType::SECTION_GLIA_ENDFOOT;
-            else if(morphio::SectionType::SECTION_GLIA_PROCESS == section.type())
+            if(morphio::SectionType::SECTION_GLIA_PROCESS == section.type())
                 brionSectionType = SectionType::SECTION_GLIA_PROCESS;
             else
                 brionSectionType = SectionType::SECTION_UNDEFINED;
