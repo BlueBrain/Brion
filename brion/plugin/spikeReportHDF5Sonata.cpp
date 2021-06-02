@@ -35,13 +35,13 @@ namespace plugin
 {
 namespace
 {
-
 class PluginRegisterer
 {
 public:
     PluginRegisterer()
     {
-        auto& pluginManager = PluginLibrary::instance().getManager<SpikeReportPlugin>();
+        auto& pluginManager =
+            PluginLibrary::instance().getManager<SpikeReportPlugin>();
         pluginManager.registerFactory<SpikeReportHDF5Sonata>();
     }
 };
@@ -67,6 +67,10 @@ SpikeReportHDF5Sonata::SpikeReportHDF5Sonata(const PluginInitData& initData)
         }
     }())
 {
+    BRION_WARN << "The SONATA format support is experimental and not "
+                  "officially supported. "
+               << "It is encouraged to use libsonata instead" << std::endl;
+
     const auto group = _file.getGroup("/spikes");
     const auto allG = group.getGroup("All");
     const auto setGids = allG.getDataSet("node_ids");
@@ -98,16 +102,17 @@ bool SpikeReportHDF5Sonata::handles(const PluginInitData& initData)
     try
     {
         HighFive::SilenceHDF5 silence;
-        std::unique_ptr<HighFive::File> temp (new HighFive::File(initData.getURI().getPath()));
+        std::unique_ptr<HighFive::File> temp(
+            new HighFive::File(initData.getURI().getPath()));
 
-        if(!temp->exist("/spikes"))
+        if (!temp->exist("/spikes"))
             return false;
 
         const auto group = temp->getGroup("/spikes");
-        if(!group.exist("All"))
+        if (!group.exist("All"))
             return false;
     }
-    catch(...)
+    catch (...)
     {
         return false;
     }

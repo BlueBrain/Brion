@@ -51,6 +51,10 @@ and writing files which store the Blue Brain data model.
 * Basic [data types](@ref brion/types.h) to work with the loaded data using
   [Boost](http://www.boost.org/doc/libs),
   [GLM](https://github.com/g-truc/glm).
+  
+#### Disclaimer
+
+Although Brion is capable of reading SONATA format nodes, edges and reports, the use is experimental and not supported officially. To read the SONATA format, it is encouraged the usage of libsonata (https://github.com/BlueBrain/libsonata)
 
 ### High level library
 

@@ -53,8 +53,6 @@
 #include <unordered_map>
 #include <unordered_set>
 
-
-
 namespace fs = boost::filesystem;
 using boost::lexical_cast;
 
@@ -97,7 +95,8 @@ void _assign(const ::MVD3::Range& range, const GIDSet& gids, SrcArray& src,
         *j++ = assignOp(src[gid - range.offset - 1]);
 }
 
-glm::vec3 _toVector3f(const ::MVD3::Positions::const_subarray<1>::type& subarray)
+glm::vec3 _toVector3f(
+    const ::MVD3::Positions::const_subarray<1>::type& subarray)
 {
     return glm::vec3(subarray[0], subarray[1], subarray[2]);
 }
@@ -105,9 +104,9 @@ glm::vec3 _toVector3f(const ::MVD3::Positions::const_subarray<1>::type& subarray
 glm::quat _toQuaternion(
     const ::MVD3::Rotations::const_subarray<1>::type& subarray)
 {
-    return glm::quat(static_cast<float>(subarray[3]), 
-                     static_cast<float>(subarray[0]), 
-                     static_cast<float>(subarray[1]), 
+    return glm::quat(static_cast<float>(subarray[3]),
+                     static_cast<float>(subarray[0]),
+                     static_cast<float>(subarray[1]),
                      static_cast<float>(subarray[2]));
 }
 
@@ -148,7 +147,8 @@ public:
                          const size_t* seed = nullptr) const
     {
         if (fraction < 0.f || fraction > 1.f)
-            BRAIN_THROW("Fraction for getRandomGIDs() must be in the range [0,1]")
+            BRAIN_THROW(
+                "Fraction for getRandomGIDs() must be in the range [0,1]")
 
         return randomSet(target.empty() ? getGIDs() : getGIDs(target), fraction,
                          seed);
@@ -160,8 +160,8 @@ public:
     virtual size_ts getETypes(const GIDSet& gids) const = 0;
     virtual Strings getElectrophysiologyTypeNames() const = 0;
     virtual Quaternionfs getRotations(const GIDSet& gids) const = 0;
-    virtual std::vector<std::string> getLayers(const GIDSet& gids,
-                                               const std::string& tsvSrc = "") const = 0;
+    virtual std::vector<std::string> getLayers(
+        const GIDSet& gids, const std::string& tsvSrc = "") const = 0;
     virtual Strings getMorphologyNames(const GIDSet& gids) const = 0;
     virtual std::vector<bool> getRecenter(const GIDSet&) const
     {
@@ -173,7 +173,8 @@ public:
         if (boost::filesystem::path(name).is_absolute())
             return URI(name);
 
-        return URI(getMorphologySource().getPath() + "/" + name + "." + getMorphologyType());
+        return URI(getMorphologySource().getPath() + "/" + name + "." +
+                   getMorphologyType());
     }
 
     virtual URI getMorphologySource() const = 0;
@@ -182,8 +183,10 @@ public:
     virtual MorphologyCache* getMorphologyCache() const { return nullptr; }
     virtual std::string getSynapseSource() const = 0;
     virtual const std::string& getSynapsePopulation() const = 0;
-    virtual std::string getSynapseProjectionSource(const std::string& name) const = 0;
-    virtual std::string getSynapseProjectionPopulation(const std::string& name) const = 0;
+    virtual std::string getSynapseProjectionSource(
+        const std::string& name) const = 0;
+    virtual std::string getSynapseProjectionPopulation(
+        const std::string& name) const = 0;
     virtual SynapseCache* getSynapseCache() const { return nullptr; }
     virtual const brion::SynapseSummary& getSynapseSummary() const = 0;
     virtual const brion::Synapse& getSynapseAttributes(
@@ -200,7 +203,9 @@ class BBPCircuit : public Circuit::Impl
 public:
     explicit BBPCircuit(const brion::BlueConfig& config)
         : _morphologySource(config.getMorphologySource())
-        , _morphologyType(config.getMorphologyType().empty()? "asc" : config.getMorphologyType())
+        , _morphologyType(config.getMorphologyType().empty()
+                              ? "asc"
+                              : config.getMorphologyType())
         , _synapseSource(config.getSynapseSource())
         , _synapsePopulation(config.getSynapsePopulation())
         , _targets(config)
@@ -236,10 +241,7 @@ public:
         return nullptr;
     }
 
-    std::string getSynapseSource() const
-    {
-        return _synapseSource.getPath();
-    }
+    std::string getSynapseSource() const { return _synapseSource.getPath(); }
 
     const std::string& getSynapsePopulation() const
     {
@@ -249,14 +251,14 @@ public:
     std::string getSynapseProjectionSource(const std::string& name) const
     {
         auto it = _afferentProjectionSources.find(name);
-        if(it == _afferentProjectionSources.end())
+        if (it == _afferentProjectionSources.end())
             BRAIN_THROW("Projection " + name + " not found")
 
         auto synapseSource = it->second.getPath();
 
         // demangle population name from projected synapses file path
         auto colonPos = synapseSource.find(":");
-        if(colonPos != std::string::npos)
+        if (colonPos != std::string::npos)
             return synapseSource.substr(0, colonPos);
 
         return synapseSource;
@@ -265,14 +267,14 @@ public:
     std::string getSynapseProjectionPopulation(const std::string& name) const
     {
         auto it = _afferentProjectionSources.find(name);
-        if(it == _afferentProjectionSources.end())
+        if (it == _afferentProjectionSources.end())
             BRAIN_THROW("Projection " + name + " not found")
 
         auto synapseSource = it->second.getPath();
 
         // Extract population name from projection path entry
         auto colonPos = synapseSource.find(":");
-        if(colonPos != std::string::npos)
+        if (colonPos != std::string::npos)
             return synapseSource.substr(colonPos + 1);
 
         return std::string();
@@ -392,7 +394,8 @@ public:
         std::unique_ptr<brion::Synapse> _synapse;
         std::mutex _mtx;
     };
-    mutable std::unordered_map<std::string, ExternalAfferent> _externalAfferents;
+    mutable std::unordered_map<std::string, ExternalAfferent>
+        _externalAfferents;
 };
 
 class MVD2 : public BBPCircuit
@@ -430,7 +433,7 @@ public:
                 GIDSet::const_iterator gid = gids.begin();
                 std::advance(gid, i);
                 BRAIN_WARN << "Error parsing circuit position for gid " << *gid
-                         << std::endl;
+                           << std::endl;
             }
         }
         return positions;
@@ -501,22 +504,23 @@ public:
             {
                 GIDSet::const_iterator gid = gids.begin();
                 std::advance(gid, i);
-                BRAIN_WARN << "Error parsing circuit orientation for gid " << *gid
-                         << std::endl;
+                BRAIN_WARN << "Error parsing circuit orientation for gid "
+                           << *gid << std::endl;
             }
         }
         return rotations;
     }
 
-    std::vector<std::string> getLayers(const GIDSet& gids, const std::string&) const final
+    std::vector<std::string> getLayers(const GIDSet& gids,
+                                       const std::string&) const final
     {
-        if(gids.empty())
+        if (gids.empty())
             return std::vector<std::string>();
         brion::NeuronMatrix data = _circuit.get(gids, brion::NEURON_LAYER);
-        std::vector<std::string> layers (gids.size());
+        std::vector<std::string> layers(gids.size());
 
 #pragma omp parallel for
-        for(size_t i = 0; i < gids.size(); ++i)
+        for (size_t i = 0; i < gids.size(); ++i)
             layers[i] = data[i][0];
 
         return layers;
@@ -648,8 +652,8 @@ struct MVD3 : public BBPCircuit
         }
     }
 
-    std::vector<std::string>
-    getLayers(const GIDSet& gids, const std::string& tsvSource) const final
+    std::vector<std::string> getLayers(const GIDSet& gids,
+                                       const std::string& tsvSource) const final
     {
         std::vector<std::string> mvd3Result;
         if (gids.empty() || tsvSource.empty())
@@ -665,16 +669,18 @@ struct MVD3 : public BBPCircuit
         }
         catch (const HighFive::Exception& e)
         {
-            BRAIN_WARN << "Circuit layers not available: " + std::string(e.what()) << std::endl;
+            BRAIN_WARN << "Circuit layers not available: " +
+                              std::string(e.what())
+                       << std::endl;
         }
 
         std::vector<std::string> result;
         result.reserve(gids.size());
         uint32_t gidStart = *gids.begin();
-        for(const auto& gid : gids)
+        for (const auto& gid : gids)
         {
             auto index = gid - gidStart;
-            if(index > mvd3Result.size())
+            if (index > mvd3Result.size())
                 BRAIN_THROW("MVD3 Layer array out of bounds")
 
             result.push_back(mvd3Result[index]);
@@ -700,7 +706,8 @@ struct MVD3 : public BBPCircuit
         }
         catch (const HighFive::Exception& e)
         {
-            BRAIN_THROW("Exception in getMorphologyNames(): " + std::string(e.what()))
+            BRAIN_THROW("Exception in getMorphologyNames(): " +
+                        std::string(e.what()))
         }
     }
 
@@ -713,8 +720,12 @@ struct SonataCircuit : public BBPCircuit
     SonataCircuit(const brion::BlueConfig& config)
         : BBPCircuit(config)
     {
+        BRAIN_WARN << "The SONATA format support is experimental and not "
+                      "officially supported. "
+                   << "It is encouraged to use libsonata instead" << std::endl;
         _circuit = std::make_unique<::MVD::SonataFile>(
-                    config.getCellLibrarySource().getPath(), config.getCircuitPopulation());
+            config.getCellLibrarySource().getPath(),
+            config.getCircuitPopulation());
     }
 
     size_t getNumNeurons() const final { return _circuit->getNbNeuron(); }
@@ -814,8 +825,8 @@ struct SonataCircuit : public BBPCircuit
         }
     }
 
-    std::vector<std::string>
-    getLayers(const GIDSet& gids, const std::string& tsvSource) const final
+    std::vector<std::string> getLayers(const GIDSet& gids,
+                                       const std::string& tsvSource) const final
     {
         if (gids.empty() || tsvSource.empty())
             return std::vector<std::string>();
@@ -830,7 +841,9 @@ struct SonataCircuit : public BBPCircuit
         }
         catch (const HighFive::Exception& e)
         {
-            BRAIN_WARN << "Circuit layers not available: " + std::string(e.what()) << std::endl;
+            BRAIN_WARN << "Circuit layers not available: " +
+                              std::string(e.what())
+                       << std::endl;
         }
 
         return std::vector<std::string>();
@@ -853,7 +866,8 @@ struct SonataCircuit : public BBPCircuit
         }
         catch (const HighFive::Exception& e)
         {
-            BRAIN_THROW("Exception in getMorphologyNames(): " + std::string(e.what()))
+            BRAIN_THROW("Exception in getMorphologyNames(): " +
+                        std::string(e.what()))
         }
     }
 

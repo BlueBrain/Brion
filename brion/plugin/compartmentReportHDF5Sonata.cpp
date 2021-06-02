@@ -50,15 +50,16 @@ class PluginRegisterer
 public:
     PluginRegisterer()
     {
-        auto& pluginManager = PluginLibrary::instance().getManager<CompartmentReportPlugin>();
+        auto& pluginManager =
+            PluginLibrary::instance().getManager<CompartmentReportPlugin>();
         pluginManager.registerFactory<CompartmentReportHDF5Sonata>();
     }
 };
 
 PluginRegisterer registerer;
 
-//constexpr uint32_t _sonataMagic = 0x0A7A;
-//constexpr uint32_t _currentVersion[] = {0, 1};
+// constexpr uint32_t _sonataMagic = 0x0A7A;
+// constexpr uint32_t _currentVersion[] = {0, 1};
 
 constexpr size_t _autoCacheSize = std::numeric_limits<size_t>::max();
 
@@ -129,12 +130,12 @@ GIDSet gidsToBase0(const GIDSet& src)
 {
     GIDSet result;
     std::transform(src.begin(), src.end(), std::inserter(result, result.end()),
-    [](uint32_t gid) -> int
-    {
-        if(gid == 0)
-            throw std::runtime_error("Tried to substract 1 to 0 based GID");
-        return gid - 1;
-    });
+                   [](uint32_t gid) -> int {
+                       if (gid == 0)
+                           throw std::runtime_error(
+                               "Tried to substract 1 to 0 based GID");
+                       return gid - 1;
+                   });
 
     return result;
 }
@@ -143,10 +144,7 @@ GIDSet gidsToBase1(const GIDSet& src)
 {
     GIDSet result;
     std::transform(src.begin(), src.end(), std::inserter(result, result.end()),
-    [](uint32_t gid) -> int
-    {
-        return gid + 1;
-    });
+                   [](uint32_t gid) -> int { return gid + 1; });
 
     return result;
 }
@@ -161,6 +159,10 @@ CompartmentReportHDF5Sonata::CompartmentReportHDF5Sonata(
     , _file(new HighFive::File(
           openFile(initData.getURI().getPath(), initData.getAccessMode())))
 {
+    BRION_WARN << "The SONATA format support is experimental and not "
+                  "officially supported. "
+               << "It is encouraged to use libsonata instead" << std::endl;
+
     HighFive::SilenceHDF5 silence;
     std::lock_guard<std::mutex> mutex(detail::hdf5Mutex());
 
@@ -189,7 +191,8 @@ CompartmentReportHDF5Sonata::~CompartmentReportHDF5Sonata()
     _file.reset();
 }
 
-bool CompartmentReportHDF5Sonata::handles(const CompartmentReportInitData& initData)
+bool CompartmentReportHDF5Sonata::handles(
+    const CompartmentReportInitData& initData)
 {
     const auto& uri = initData.getURI();
     if (!isHDF5File(uri))
@@ -201,8 +204,8 @@ bool CompartmentReportHDF5Sonata::handles(const CompartmentReportInitData& initD
 
     std::lock_guard<std::mutex> mutex(detail::hdf5Mutex());
     HighFive::SilenceHDF5 silence;
-    std::unique_ptr<HighFive::File> temp
-            (new HighFive::File(openFile(initData.getURI().getPath(), MODE_READ, false)));
+    std::unique_ptr<HighFive::File> temp(new HighFive::File(
+        openFile(initData.getURI().getPath(), MODE_READ, false)));
     return temp->exist("report");
 }
 
@@ -234,7 +237,8 @@ const SectionOffsets& CompartmentReportHDF5Sonata::getOffsets() const
     return (_subset ? _targetMapping : _sourceMapping).offsets;
 }
 
-const CompartmentCounts& CompartmentReportHDF5Sonata::getCompartmentCounts() const
+const CompartmentCounts& CompartmentReportHDF5Sonata::getCompartmentCounts()
+    const
 {
     return (_subset ? _targetMapping : _sourceMapping).counts;
 }
@@ -258,13 +262,14 @@ void CompartmentReportHDF5Sonata::updateMapping(const GIDSet& gids)
 }
 
 void CompartmentReportHDF5Sonata::writeHeader(const double startTime,
-                                        const double endTime,
-                                        const double timestep,
-                                        const std::string& dunit,
-                                        const std::string& tunit)
+                                              const double endTime,
+                                              const double timestep,
+                                              const std::string& dunit,
+                                              const std::string& tunit)
 {
-    std::string assertMessage ("Invalid report time " + std::to_string(startTime) + ".."
-                               + std::to_string(endTime) + "/" + std::to_string(timestep));
+    std::string assertMessage(
+        "Invalid report time " + std::to_string(startTime) + ".." +
+        std::to_string(endTime) + "/" + std::to_string(timestep));
     BRION_ASSERT_INFO(endTime - startTime >= timestep, assertMessage.c_str())
 
     if (timestep <= 0.f)
@@ -281,7 +286,7 @@ void CompartmentReportHDF5Sonata::writeHeader(const double startTime,
 }
 
 bool CompartmentReportHDF5Sonata::writeCompartments(const uint32_t gid,
-                                              const uint16_ts& counts)
+                                                    const uint16_ts& counts)
 {
     // Storing the mapping data temporarily until the first frame is inserted
     _GIDlist.push_back(gid);
@@ -300,9 +305,10 @@ bool CompartmentReportHDF5Sonata::writeCompartments(const uint32_t gid,
     return true;
 }
 
-bool CompartmentReportHDF5Sonata::writeFrame(const uint32_t gid, const float* values,
-                                       const size_t /*size*/,
-                                       const double timestamp)
+bool CompartmentReportHDF5Sonata::writeFrame(const uint32_t gid,
+                                             const float* values,
+                                             const size_t /*size*/,
+                                             const double timestamp)
 {
     std::lock_guard<std::mutex> mutex(detail::hdf5Mutex());
 
@@ -327,16 +333,17 @@ bool CompartmentReportHDF5Sonata::writeFrame(const uint32_t gid, const float* va
     }
     catch (const HighFive::Exception& e)
     {
-        BRION_ERROR << "CompartmentReportHDF5Sonata: error writing frame: " << e.what()
-                  << std::endl;
+        BRION_ERROR << "CompartmentReportHDF5Sonata: error writing frame: "
+                    << e.what() << std::endl;
         return false;
     }
     return true;
 }
 
-bool CompartmentReportHDF5Sonata::writeFrame(const GIDSet& gids, const float* values,
-                                       const size_ts& sizes,
-                                       const double timestamp)
+bool CompartmentReportHDF5Sonata::writeFrame(const GIDSet& gids,
+                                             const float* values,
+                                             const size_ts& sizes,
+                                             const double timestamp)
 {
     if (gids.empty())
         return true;
@@ -369,8 +376,8 @@ bool CompartmentReportHDF5Sonata::writeFrame(const GIDSet& gids, const float* va
     }
     catch (const HighFive::Exception& e)
     {
-        BRION_ERROR << "CompartmentReportHDF5Sonata: error writing frame: " << e.what()
-                  << std::endl;
+        BRION_ERROR << "CompartmentReportHDF5Sonata: error writing frame: "
+                    << e.what() << std::endl;
         return false;
     }
     return true;
@@ -384,7 +391,7 @@ bool CompartmentReportHDF5Sonata::flush()
 }
 
 bool CompartmentReportHDF5Sonata::_loadFrame(const size_t frameNumber,
-                                       float* buffer) const
+                                             float* buffer) const
 {
     std::lock_guard<std::mutex> mutex(detail::hdf5Mutex());
 
@@ -421,8 +428,9 @@ bool CompartmentReportHDF5Sonata::_loadFrame(const size_t frameNumber,
     return true;
 }
 
-bool CompartmentReportHDF5Sonata::_loadFrames(size_t frameNumber, size_t frameCount,
-                                        float* buffer) const
+bool CompartmentReportHDF5Sonata::_loadFrames(size_t frameNumber,
+                                              size_t frameCount,
+                                              float* buffer) const
 {
     std::lock_guard<std::mutex> mutex(detail::hdf5Mutex());
 
@@ -468,16 +476,18 @@ void CompartmentReportHDF5Sonata::_readMetaData()
 {
     try
     {
-        if(!_file->exist("report"))
-            BRION_THROW("Error opening compartment report: No \"report\" group found")
+        if (!_file->exist("report"))
+            BRION_THROW(
+                "Error opening compartment report: No \"report\" group found")
 
         const HighFive::Group reportGroup = _file->getGroup("report");
 
         auto objectNameList = reportGroup.listObjectNames();
-        if(objectNameList.empty())
+        if (objectNameList.empty())
         {
-            BRION_THROW("Error opening compartment report: "
-                      "No population found within report group")
+            BRION_THROW(
+                "Error opening compartment report: "
+                "No population found within report group")
         }
         auto firstPopulation = *objectNameList.begin();
 
@@ -523,7 +533,8 @@ void CompartmentReportHDF5Sonata::_readMetaData()
     }
     catch (std::exception& e)
     {
-        BRION_THROW(std::string("Error opening compartment report: ") + std::string(e.what()));
+        BRION_THROW(std::string("Error opening compartment report: ") +
+                    std::string(e.what()));
     }
 }
 
@@ -531,10 +542,11 @@ void CompartmentReportHDF5Sonata::_parseBasicCellInfo()
 {
     const HighFive::Group reportGroup = _file->getGroup("report");
     auto objectNameList = reportGroup.listObjectNames();
-    if(objectNameList.empty())
+    if (objectNameList.empty())
     {
-        BRION_THROW("Error opening compartment report: "
-                  "No population found within report group")
+        BRION_THROW(
+            "Error opening compartment report: "
+            "No population found within report group")
     }
     auto firstPopulation = *objectNameList.begin();
 
@@ -613,10 +625,11 @@ void CompartmentReportHDF5Sonata::_processMapping()
 {
     const HighFive::Group reportGroup = _file->getGroup("report");
     auto objectNameList = reportGroup.listObjectNames();
-    if(objectNameList.empty())
+    if (objectNameList.empty())
     {
-        BRION_THROW("Error opening compartment report: "
-                  "No population found within report group")
+        BRION_THROW(
+            "Error opening compartment report: "
+            "No population found within report group")
     }
     auto firstPopulation = *objectNameList.begin();
 
@@ -628,7 +641,7 @@ void CompartmentReportHDF5Sonata::_processMapping()
     {
         mapping.getDataSet("element_pos");
         BRION_WARN << "Unsupported mapping attribute in compartment "
-                 << "report: element_pos" << std::endl;
+                   << "report: element_pos" << std::endl;
     }
     catch (...)
     {
@@ -665,7 +678,8 @@ void CompartmentReportHDF5Sonata::_processMapping()
             {
                 if (offsets.size() <= current)
                 {
-                    offsets.resize(current + 1, std::numeric_limits<uint64_t>().max());
+                    offsets.resize(current + 1,
+                                   std::numeric_limits<uint64_t>().max());
                     counts.resize(current + 1, 0);
                 }
 
@@ -787,7 +801,7 @@ void CompartmentReportHDF5Sonata::_writeMetadataAndMapping()
 
     auto offsetSet = mapping.createDataSet<uint64_t>(
         "index_pointers", HighFive::DataSpace(std::vector<size_t>{
-                             _targetMapping.cellOffsets.size()}));
+                              _targetMapping.cellOffsets.size()}));
     offsetSet.write(_targetMapping.cellOffsets);
 }
 
@@ -795,10 +809,11 @@ void CompartmentReportHDF5Sonata::_allocateDataSet()
 {
     HighFive::Group reportG = _file->getGroup("report");
     auto objectNameList = reportG.listObjectNames();
-    if(objectNameList.empty())
+    if (objectNameList.empty())
     {
-        BRION_THROW("Error opening compartment report: "
-                  "No population found within report group")
+        BRION_THROW(
+            "Error opening compartment report: "
+            "No population found within report group")
     }
     auto firstPopulation = *objectNameList.begin();
 
@@ -947,10 +962,11 @@ void CompartmentReportHDF5Sonata::_reopenDataSet(size_t cacheSizeHint)
     accessProps.add(HighFive::Caching(numSlots, cacheSizeHint));
     HighFive::Group reportG = _file->getGroup("report");
     auto objectNameList = reportG.listObjectNames();
-    if(objectNameList.empty())
+    if (objectNameList.empty())
     {
-        BRION_THROW("Error opening compartment report: "
-                  "No population found within report group")
+        BRION_THROW(
+            "Error opening compartment report: "
+            "No population found within report group")
     }
     auto firstPopulation = *objectNameList.begin();
     HighFive::Group allG = reportG.getGroup(firstPopulation);
