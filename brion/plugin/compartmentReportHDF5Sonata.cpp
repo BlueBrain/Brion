@@ -395,31 +395,56 @@ bool CompartmentReportHDF5Sonata::_loadFrame(const size_t frameNumber,
 {
     std::lock_guard<std::mutex> mutex(detail::hdf5Mutex());
 
+    std::vector<std::pair<size_t, size_t>> intervals;
     // Considering the case of full frames first
     if (!_subset)
     {
+        // TEMP. DO NOT READ THE FILE DIRECTLY. SORT INTERVALS BY NODE ID AND
+        // READ
+        /*
         _data->select({frameNumber, 0}, {1, _sourceMapping.frameSize})
             .read(buffer);
         return true;
+        */
+        intervals.reserve(_sourceMapping.cellOffsets.size());
+        for (size_t i = 0; i < _sourceMapping.cellOffsets.size(); ++i)
+        {
+            const auto start = _sourceMapping.cellOffsets[i];
+            intervals.emplace_back(start, start + _sourceMapping.cellSizes[i]);
+        }
     }
-
-    // Computing the slices of data to be read
-    boost::icl::interval_set<size_t> intervals;
-    for (const auto index : _subsetIndices)
+    else
     {
-        auto start = _sourceMapping.cellOffsets[index];
-        auto end = start + _sourceMapping.cellSizes[index];
-        auto interval = boost::icl::interval<size_t>::right_open(start, end);
-        intervals.insert(interval);
+        intervals.reserve(_subsetIndices.size());
+        for (const auto index : _subsetIndices)
+        {
+            const auto start = _sourceMapping.cellOffsets[index];
+            const auto end = start + _sourceMapping.cellSizes[index];
+            intervals.emplace_back(start, end);
+            // auto interval = boost::icl::interval<size_t>::right_open(start,
+            // end); intervals.insert(interval);
+        }
     }
-
+    /*
+        // Computing the slices of data to be read
+        boost::icl::interval_set<size_t> intervals;
+        for (const auto index : _subsetIndices)
+        {
+            auto start = _sourceMapping.cellOffsets[index];
+            auto end = start + _sourceMapping.cellSizes[index];
+            auto interval = boost::icl::interval<size_t>::right_open(start,
+       end); intervals.insert(interval);
+        }
+    */
     // Reading slice by slice and processing all cells contained in a given
     // slice
     size_t targetOffset = 0;
     for (const auto interval : intervals)
     {
-        const auto sourceOffset = boost::icl::lower(interval);
-        const auto count = boost::icl::upper(interval) - sourceOffset;
+        // const auto sourceOffset = boost::icl::lower(interval);
+        // const auto count = boost::icl::upper(interval) - sourceOffset;
+        const auto sourceOffset = interval.first;
+        const auto count = interval.second - sourceOffset;
         const auto& slice =
             _data->select({frameNumber, sourceOffset}, {1, count});
         slice.read(buffer + targetOffset);
@@ -428,6 +453,7 @@ bool CompartmentReportHDF5Sonata::_loadFrame(const size_t frameNumber,
     return true;
 }
 
+/*
 bool CompartmentReportHDF5Sonata::_loadFrames(size_t frameNumber,
                                               size_t frameCount,
                                               float* buffer) const
@@ -471,7 +497,7 @@ bool CompartmentReportHDF5Sonata::_loadFrames(size_t frameNumber,
     return CompartmentReportCommon::_loadFrames(frameNumber, frameCount,
                                                 buffer);
 }
-
+*/
 void CompartmentReportHDF5Sonata::_readMetaData()
 {
     try
