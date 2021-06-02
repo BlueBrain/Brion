@@ -713,6 +713,8 @@ struct SonataCircuit : public BBPCircuit
     SonataCircuit(const brion::BlueConfig& config)
         : BBPCircuit(config)
     {
+        BRAIN_WARN << "The SONATA format support is experimental and not officially supported. "
+                   << "It is encouraged to use libsonata instead" << std::endl;
         _circuit = std::make_unique<::MVD::SonataFile>(
                     config.getCellLibrarySource().getPath(), config.getCircuitPopulation());
     }

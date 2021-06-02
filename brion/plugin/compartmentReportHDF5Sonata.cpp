@@ -161,6 +161,9 @@ CompartmentReportHDF5Sonata::CompartmentReportHDF5Sonata(
     , _file(new HighFive::File(
           openFile(initData.getURI().getPath(), initData.getAccessMode())))
 {
+    BRION_WARN << "The SONATA format support is experimental and not officially supported. "
+                   << "It is encouraged to use libsonata instead" << std::endl;
+
     HighFive::SilenceHDF5 silence;
     std::lock_guard<std::mutex> mutex(detail::hdf5Mutex());
 

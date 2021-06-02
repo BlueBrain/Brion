@@ -486,6 +486,9 @@ struct Synapses::SonataImpl : public Synapses::InternalBaseImpl
          const bool afferent, const SynapsePrefetch prefetch)
         : Synapses::InternalBaseImpl(circuit, gids, filterGIDs, afferent, prefetch)
     {
+        BRAIN_WARN << "The SONATA format support is experimental and not officially supported. "
+                   << "It is encouraged to use libsonata instead" << std::endl;
+                   
         GIDSet fixedGids;
         for(const auto gid : gids)
             fixedGids.insert(gid - 1);
@@ -506,6 +509,9 @@ struct Synapses::SonataImpl : public Synapses::InternalBaseImpl
          const SynapsePrefetch prefetch)
         : Synapses::InternalBaseImpl(circuit, gids, source, prefetch)
     {
+        BRAIN_WARN << "The SONATA format support is experimental and not officially supported. "
+                   << "It is encouraged to use libsonata instead" << std::endl;
+                   
         GIDSet fixedGids;
         for(const auto gid : gids)
             fixedGids.insert(gid - 1);

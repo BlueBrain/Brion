@@ -67,6 +67,9 @@ SpikeReportHDF5Sonata::SpikeReportHDF5Sonata(const PluginInitData& initData)
         }
     }())
 {
+    BRION_WARN << "The SONATA format support is experimental and not officially supported. "
+                   << "It is encouraged to use libsonata instead" << std::endl;
+
     const auto group = _file.getGroup("/spikes");
     const auto allG = group.getGroup("All");
     const auto setGids = allG.getDataSet("node_ids");
