@@ -50,7 +50,7 @@ void _allocate(T& data, const size_t size)
     if (posix_memalign(&ptr, 32, size * sizeof(typename T::element_type)))
     {
         BRAIN_WARN << "Memory alignment failed. Trying normal allocation"
-                 << std::endl;
+                   << std::endl;
         ptr = calloc(size, sizeof(typename T::element_type));
         if (!ptr)
             BRAIN_THROW_IMPL(std::bad_alloc())
@@ -58,12 +58,13 @@ void _allocate(T& data, const size_t size)
     data.reset((typename T::element_type*)ptr);
     // cppcheck-suppress memleak
 }
-}
+} // namespace
 
 struct Synapses::InternalBaseImpl : public Synapses::BaseImpl
 {
-    InternalBaseImpl(const Circuit& circuit, const GIDSet& gids, const GIDSet& filterGIDs,
-         const bool afferent, const SynapsePrefetch prefetch)
+    InternalBaseImpl(const Circuit& circuit, const GIDSet& gids,
+                     const GIDSet& filterGIDs, const bool afferent,
+                     const SynapsePrefetch prefetch)
         : _circuit(circuit._impl)
         , _gids(prefetch != SynapsePrefetch::all ? gids : GIDSet())
         , _filterGIDs(prefetch != SynapsePrefetch::all ? filterGIDs : GIDSet())
@@ -72,8 +73,8 @@ struct Synapses::InternalBaseImpl : public Synapses::BaseImpl
     {
     }
 
-    InternalBaseImpl(const Circuit& circuit, const GIDSet& gids, const std::string& source,
-         const SynapsePrefetch prefetch)
+    InternalBaseImpl(const Circuit& circuit, const GIDSet& gids,
+                     const std::string& source, const SynapsePrefetch prefetch)
         : _circuit(circuit._impl)
         , _gids(prefetch != SynapsePrefetch::all ? gids : GIDSet())
         , _afferent(true)
@@ -88,9 +89,12 @@ struct Synapses::InternalBaseImpl : public Synapses::BaseImpl
 
     virtual ~InternalBaseImpl() {}
 
-    virtual void _loadConnectivity(const GIDSet* gids, const GIDSet* filterGIDs) const = 0;
-    virtual void _loadAttributes(const GIDSet* gids, const GIDSet* filterGIDs) const = 0;
-    virtual void _loadPositions(const GIDSet* gids, const GIDSet* filterGIDs) const = 0;
+    virtual void _loadConnectivity(const GIDSet* gids,
+                                   const GIDSet* filterGIDs) const = 0;
+    virtual void _loadAttributes(const GIDSet* gids,
+                                 const GIDSet* filterGIDs) const = 0;
+    virtual void _loadPositions(const GIDSet* gids,
+                                const GIDSet* filterGIDs) const = 0;
     virtual void _ensureGIDs() const = 0;
     virtual void _ensureAttributes() const = 0;
     virtual void _ensurePositions() const = 0;
@@ -215,7 +219,8 @@ struct Synapses::Impl : public Synapses::InternalBaseImpl
 {
     Impl(const Circuit& circuit, const GIDSet& gids, const GIDSet& filterGIDs,
          const bool afferent, const SynapsePrefetch prefetch)
-        : Synapses::InternalBaseImpl(circuit, gids, filterGIDs, afferent, prefetch)
+        : Synapses::InternalBaseImpl(circuit, gids, filterGIDs, afferent,
+                                     prefetch)
     {
         _loadConnectivity(&gids, &filterGIDs);
 
@@ -357,7 +362,9 @@ struct Synapses::Impl : public Synapses::InternalBaseImpl
         std::lock_guard<std::mutex> lock(_mutex);
 
         if (!_externalSource.empty())
-            BRAIN_THROW("Synapse positions are not available for external projection synapses")
+            BRAIN_THROW(
+                "Synapse positions are not available for external projection "
+                "synapses")
 
         if (_preCenterPositionX)
             return;
@@ -467,70 +474,81 @@ struct Synapses::Impl : public Synapses::InternalBaseImpl
         // Until C++17 call_once is using decay_copy
         std::call_once(_positionFlag, &Impl::_loadPositions, this, &_gids,
                        &_filterGIDs);
-    }  
+    }
 };
 
 struct Synapses::SonataImpl : public Synapses::InternalBaseImpl
 {
-
 #define TRY_GET_ATTRIBUTE(buffer, source, type, name, selection) \
-    try { \
-        buffer = source.getAttribute<type>(name, selection); \
-    } catch(...) { }
+    try                                                          \
+    {                                                            \
+        buffer = source.getAttribute<type>(name, selection);     \
+    }                                                            \
+    catch (...)                                                  \
+    {                                                            \
+    }
 
 #define ADD_TO_STORAGE(storage, storageIndex, source, sourceIndex) \
-    if(!source.empty()) \
+    if (!source.empty())                                           \
         storage.get()[storageIndex] = source[sourceIndex];
 
-    SonataImpl(const Circuit& circuit, const GIDSet& gids, const GIDSet& filterGIDs,
-         const bool afferent, const SynapsePrefetch prefetch)
-        : Synapses::InternalBaseImpl(circuit, gids, filterGIDs, afferent, prefetch)
+    SonataImpl(const Circuit& circuit, const GIDSet& gids,
+               const GIDSet& filterGIDs, const bool afferent,
+               const SynapsePrefetch prefetch)
+        : Synapses::InternalBaseImpl(circuit, gids, filterGIDs, afferent,
+                                     prefetch)
     {
-        BRAIN_WARN << "The SONATA format support is experimental and not officially supported. "
+        BRAIN_WARN << "The SONATA format support is experimental and not "
+                      "officially supported. "
                    << "It is encouraged to use libsonata instead" << std::endl;
-                   
+
         GIDSet fixedGids;
-        for(const auto gid : gids)
+        for (const auto gid : gids)
             fixedGids.insert(gid - 1);
         GIDSet fixedFilters;
-        for(const auto gid : filterGIDs)
+        for (const auto gid : filterGIDs)
             fixedFilters.insert(gid - 1);
         _loadConnectivity(&fixedGids, &fixedFilters);
 
         if (int(prefetch) & int(SynapsePrefetch::attributes))
-            std::call_once(_attributeFlag, &SonataImpl::_loadAttributes, this, &fixedGids,
-                           &fixedFilters);
+            std::call_once(_attributeFlag, &SonataImpl::_loadAttributes, this,
+                           &fixedGids, &fixedFilters);
         if (int(prefetch) & int(SynapsePrefetch::positions))
-            std::call_once(_positionFlag, &SonataImpl::_loadPositions, this, &fixedGids,
-                           &fixedFilters);
+            std::call_once(_positionFlag, &SonataImpl::_loadPositions, this,
+                           &fixedGids, &fixedFilters);
     }
 
-    SonataImpl(const Circuit& circuit, const GIDSet& gids, const std::string& source,
-         const SynapsePrefetch prefetch)
+    SonataImpl(const Circuit& circuit, const GIDSet& gids,
+               const std::string& source, const SynapsePrefetch prefetch)
         : Synapses::InternalBaseImpl(circuit, gids, source, prefetch)
     {
-        BRAIN_WARN << "The SONATA format support is experimental and not officially supported. "
+        BRAIN_WARN << "The SONATA format support is experimental and not "
+                      "officially supported. "
                    << "It is encouraged to use libsonata instead" << std::endl;
-                   
+
         GIDSet fixedGids;
-        for(const auto gid : gids)
+        for (const auto gid : gids)
             fixedGids.insert(gid - 1);
 
-        const std::string projSourceFile = _circuit->getSynapseProjectionSource(source);
-        const std::string& synapsePopulation = _circuit->getSynapseProjectionPopulation(source);
+        const std::string projSourceFile =
+            _circuit->getSynapseProjectionSource(source);
+        const std::string& synapsePopulation =
+            _circuit->getSynapseProjectionPopulation(source);
         // We don't have a summary file for projected afferent synapses.
         // But at least we have to figure out the size of the container.
-        const bbp::sonata::EdgeStorage edgeStorage (projSourceFile);
-        if(!synapsePopulation.empty())
+        const bbp::sonata::EdgeStorage edgeStorage(projSourceFile);
+        if (!synapsePopulation.empty())
         {
-            const bbp::sonata::EdgePopulation edges (projSourceFile, "", synapsePopulation);
+            const bbp::sonata::EdgePopulation edges(projSourceFile, "",
+                                                    synapsePopulation);
             _size += edges.size();
         }
         else
         {
-            for(const auto& popName : edgeStorage.populationNames())
+            for (const auto& popName : edgeStorage.populationNames())
             {
-                const bbp::sonata::EdgePopulation edges (projSourceFile, "", popName);
+                const bbp::sonata::EdgePopulation edges(projSourceFile, "",
+                                                        popName);
                 _size += edges.size();
             }
         }
@@ -538,8 +556,8 @@ struct Synapses::SonataImpl : public Synapses::InternalBaseImpl
         if (int(prefetch) & int(SynapsePrefetch::attributes))
         {
             GIDSet empty;
-            std::call_once(_attributeFlag, &SonataImpl::_loadAttributes, this, &fixedGids,
-                           &empty);
+            std::call_once(_attributeFlag, &SonataImpl::_loadAttributes, this,
+                           &fixedGids, &empty);
         }
     }
 
@@ -549,40 +567,41 @@ struct Synapses::SonataImpl : public Synapses::InternalBaseImpl
 
         std::set<uint64_t> uniqueIds;
         // Input ids must be decreased by 1
-        for(uint32_t oldId : *gids)
+        for (uint32_t oldId : *gids)
         {
-            if(oldId > 0)
+            if (oldId > 0)
                 uniqueIds.insert(oldId - 1);
         }
 
         uint32_ts filteredPreGids, filteredPostGids;
-        const std::vector<uint64_t> nodeIds (uniqueIds.begin(), uniqueIds.end());
-        const bbp::sonata::EdgeStorage edgeStorage (synapseFilePath);
+        const std::vector<uint64_t> nodeIds(uniqueIds.begin(), uniqueIds.end());
+        const bbp::sonata::EdgeStorage edgeStorage(synapseFilePath);
 
-        auto synapseGIDsFunc = [&](const std::string& populationName)
-        {
-            const bbp::sonata::EdgePopulation edges (synapseFilePath, "", populationName);
-            const bbp::sonata::Selection s = _afferent? edges.afferentEdges(nodeIds)
-                                                      : edges.efferentEdges(nodeIds);
+        auto synapseGIDsFunc = [&](const std::string& populationName) {
+            const bbp::sonata::EdgePopulation edges(synapseFilePath, "",
+                                                    populationName);
+            const bbp::sonata::Selection s = _afferent
+                                                 ? edges.afferentEdges(nodeIds)
+                                                 : edges.efferentEdges(nodeIds);
 
             const std::vector<uint64_t> preGidsTemp = edges.sourceNodeIDs(s);
             const std::vector<uint64_t> postGidsTemp = edges.targetNodeIDs(s);
 
             // Result ids must be incremented by one to return in the same
             // range as the input source GIDs
-            for(size_t i = 0; i < preGidsTemp.size(); i++)
+            for (size_t i = 0; i < preGidsTemp.size(); i++)
             {
                 uint32_t preN = static_cast<uint32_t>(preGidsTemp[i]);
                 FILTER(preN)
 
                 filteredPreGids.push_back(preN + 1);
                 filteredPostGids.push_back(
-                            static_cast<uint32_t>(postGidsTemp[i]) + 1);
+                    static_cast<uint32_t>(postGidsTemp[i]) + 1);
             }
         };
 
         const std::string& synapsePopulation = _circuit->getSynapsePopulation();
-        if(!synapsePopulation.empty())
+        if (!synapsePopulation.empty())
             synapseGIDsFunc(synapsePopulation);
         else
             synapseGIDsFunc(*edgeStorage.populationNames().begin());
@@ -591,7 +610,8 @@ struct Synapses::SonataImpl : public Synapses::InternalBaseImpl
         _allocate(_preGID, _size);
         _allocate(_postGID, _size);
         memcpy(_preGID.get(), filteredPreGids.data(), _size * sizeof(uint32_t));
-        memcpy(_postGID.get(), filteredPostGids.data(), _size * sizeof(uint32_t));
+        memcpy(_postGID.get(), filteredPostGids.data(),
+               _size * sizeof(uint32_t));
     }
 
     void _loadAttributes(const GIDSet* gids, const GIDSet* filterGIDs) const
@@ -603,26 +623,28 @@ struct Synapses::SonataImpl : public Synapses::InternalBaseImpl
 
         std::string synapseFilePath;
         std::string synapsePop;
-        if(_externalSource.empty())
+        if (_externalSource.empty())
         {
             synapseFilePath = _circuit->getSynapseSource();
             synapsePop = _circuit->getSynapsePopulation();
         }
         else
         {
-            synapseFilePath = _circuit->getSynapseProjectionSource(_externalSource);
-            synapsePop = _circuit->getSynapseProjectionPopulation(_externalSource);
+            synapseFilePath =
+                _circuit->getSynapseProjectionSource(_externalSource);
+            synapsePop =
+                _circuit->getSynapseProjectionPopulation(_externalSource);
         }
 
         std::set<uint64_t> uniqueIds;
         // Input ids must be decreased by 1
-        for(uint32_t oldId : *gids)
+        for (uint32_t oldId : *gids)
         {
-            if(oldId > 0)
+            if (oldId > 0)
                 uniqueIds.insert(oldId - 1);
         }
-        const std::vector<uint64_t> nodeIds (uniqueIds.begin(), uniqueIds.end());
-        const bbp::sonata::EdgeStorage edgeStorage (synapseFilePath);
+        const std::vector<uint64_t> nodeIds(uniqueIds.begin(), uniqueIds.end());
+        const bbp::sonata::EdgeStorage edgeStorage(synapseFilePath);
 
         // For external afferent projections we haven't had the chance to
         // get the connectivity.
@@ -635,11 +657,12 @@ struct Synapses::SonataImpl : public Synapses::InternalBaseImpl
 
         _allocateAttributes(_size, _afferent);
 
-        auto synapsePropFunc = [&](const std::string& popName)
-        {
-            const bbp::sonata::EdgePopulation edges (synapseFilePath, "", popName);
-            const bbp::sonata::Selection s = _afferent? edges.afferentEdges(nodeIds)
-                                                      : edges.efferentEdges(nodeIds);
+        auto synapsePropFunc = [&](const std::string& popName) {
+            const bbp::sonata::EdgePopulation edges(synapseFilePath, "",
+                                                    popName);
+            const bbp::sonata::Selection s = _afferent
+                                                 ? edges.afferentEdges(nodeIds)
+                                                 : edges.efferentEdges(nodeIds);
 
             const auto preGIDs = edges.sourceNodeIDs(s);
             const auto postGIDs = edges.targetNodeIDs(s);
@@ -655,23 +678,30 @@ struct Synapses::SonataImpl : public Synapses::InternalBaseImpl
             std::vector<float> depressions;
             TRY_GET_ATTRIBUTE(delays, edges, float, "delay", s)
             TRY_GET_ATTRIBUTE(decayTimes, edges, float, "decay_time", s)
-            TRY_GET_ATTRIBUTE(preSegmentIds, edges, uint32_t, "afferent_segment_id", s)
-            TRY_GET_ATTRIBUTE(preSectionIds, edges, uint32_t, "afferent_section_id", s)
-            TRY_GET_ATTRIBUTE(postSegmentIds, edges, uint32_t, "efferent_segment_id", s)
-            TRY_GET_ATTRIBUTE(postSectionIds, edges, uint32_t, "efferent_section_id", s)
+            TRY_GET_ATTRIBUTE(preSegmentIds, edges, uint32_t,
+                              "afferent_segment_id", s)
+            TRY_GET_ATTRIBUTE(preSectionIds, edges, uint32_t,
+                              "afferent_section_id", s)
+            TRY_GET_ATTRIBUTE(postSegmentIds, edges, uint32_t,
+                              "efferent_segment_id", s)
+            TRY_GET_ATTRIBUTE(postSectionIds, edges, uint32_t,
+                              "efferent_section_id", s)
             TRY_GET_ATTRIBUTE(conductances, edges, float, "conductance", s)
-            TRY_GET_ATTRIBUTE(facilitations, edges, float, "facilitation_time", s)
+            TRY_GET_ATTRIBUTE(facilitations, edges, float, "facilitation_time",
+                              s)
             TRY_GET_ATTRIBUTE(depressions, edges, float, "depression_time", s)
 
-            for(size_t j = 0; j < preGIDs.size(); j++)
+            for (size_t j = 0; j < preGIDs.size(); j++)
             {
                 FILTER(static_cast<uint32_t>(preGIDs[j] + 1));
-                if(!haveGIDs)
+                if (!haveGIDs)
                 {
-                    if(preGIDs.size() > j)
-                        _preGID.get()[j] = static_cast<uint32_t>(preGIDs[j] + 1);
-                    if(postGIDs.size() > j)
-                        _postGID.get()[j] = static_cast<uint32_t>(postGIDs[j] + 1);
+                    if (preGIDs.size() > j)
+                        _preGID.get()[j] =
+                            static_cast<uint32_t>(preGIDs[j] + 1);
+                    if (postGIDs.size() > j)
+                        _postGID.get()[j] =
+                            static_cast<uint32_t>(postGIDs[j] + 1);
                 }
 
                 ADD_TO_STORAGE(_delay, j, delays, j)
@@ -686,12 +716,12 @@ struct Synapses::SonataImpl : public Synapses::InternalBaseImpl
             }
         };
 
-        if(!synapsePop.empty())
+        if (!synapsePop.empty())
             synapsePropFunc(synapsePop);
         else
             synapsePropFunc(*edgeStorage.populationNames().begin());
 
-        if(!_afferent)
+        if (!_afferent)
         {
             swap(_preGID, _postGID);
         }
@@ -702,7 +732,9 @@ struct Synapses::SonataImpl : public Synapses::InternalBaseImpl
         std::lock_guard<std::mutex> lock(_mutex);
 
         if (!_externalSource.empty())
-            BRAIN_THROW("Synapse positions are not available for external projection synapses")
+            BRAIN_THROW(
+                "Synapse positions are not available for external projection "
+                "synapses")
 
         if (_preCenterPositionX)
             return;
@@ -711,21 +743,21 @@ struct Synapses::SonataImpl : public Synapses::InternalBaseImpl
 
         std::set<uint64_t> uniqueIds;
         // Input ids must be decreased by 1
-        for(uint32_t oldId : *gids)
+        for (uint32_t oldId : *gids)
         {
-            if(oldId > 0)
+            if (oldId > 0)
                 uniqueIds.insert(oldId - 1);
         }
-        const std::vector<uint64_t> nodeIds (uniqueIds.begin(), uniqueIds.end());
-        const bbp::sonata::EdgeStorage edgeStorage (synapseFilePath);
+        const std::vector<uint64_t> nodeIds(uniqueIds.begin(), uniqueIds.end());
+        const bbp::sonata::EdgeStorage edgeStorage(synapseFilePath);
 
         _allocatePositions(_size);
 
-        auto synapsePosFunc = [&](const std::string& name)
-        {
-            const bbp::sonata::EdgePopulation edges (synapseFilePath, "", name);
-            const bbp::sonata::Selection s = _afferent? edges.afferentEdges(nodeIds)
-                                                      : edges.efferentEdges(nodeIds);
+        auto synapsePosFunc = [&](const std::string& name) {
+            const bbp::sonata::EdgePopulation edges(synapseFilePath, "", name);
+            const bbp::sonata::Selection s = _afferent
+                                                 ? edges.afferentEdges(nodeIds)
+                                                 : edges.efferentEdges(nodeIds);
 
             const auto preGids = edges.sourceNodeIDs(s);
             const auto postGids = edges.targetNodeIDs(s);
@@ -735,20 +767,32 @@ struct Synapses::SonataImpl : public Synapses::InternalBaseImpl
             std::vector<double> postCenterXs, postCenterYs, postCenterZs;
             std::vector<double> postSurfaceXs, postSurfaceYs, postSurfaceZs;
 
-            TRY_GET_ATTRIBUTE(preCenterXs, edges, double, "afferent_center_x", s)
-            TRY_GET_ATTRIBUTE(preCenterYs, edges, double, "afferent_center_y", s)
-            TRY_GET_ATTRIBUTE(preCenterZs, edges, double, "afferent_center_z", s)
-            TRY_GET_ATTRIBUTE(preSurfaceXs, edges, double, "afferent_surface_x", s)
-            TRY_GET_ATTRIBUTE(preSurfaceYs, edges, double, "afferent_surface_y", s)
-            TRY_GET_ATTRIBUTE(preSurfaceZs, edges, double, "afferent_surface_z", s)
-            TRY_GET_ATTRIBUTE(postCenterXs, edges, double, "efferent_center_x", s)
-            TRY_GET_ATTRIBUTE(postCenterYs, edges, double, "efferent_center_y", s)
-            TRY_GET_ATTRIBUTE(postCenterZs, edges, double, "efferent_center_z", s)
-            TRY_GET_ATTRIBUTE(postSurfaceXs, edges, double, "efferent_surface_x", s)
-            TRY_GET_ATTRIBUTE(postSurfaceYs, edges, double, "efferent_surface_y", s)
-            TRY_GET_ATTRIBUTE(postSurfaceZs, edges, double, "efferent_surface_z", s)
+            TRY_GET_ATTRIBUTE(preCenterXs, edges, double, "afferent_center_x",
+                              s)
+            TRY_GET_ATTRIBUTE(preCenterYs, edges, double, "afferent_center_y",
+                              s)
+            TRY_GET_ATTRIBUTE(preCenterZs, edges, double, "afferent_center_z",
+                              s)
+            TRY_GET_ATTRIBUTE(preSurfaceXs, edges, double, "afferent_surface_x",
+                              s)
+            TRY_GET_ATTRIBUTE(preSurfaceYs, edges, double, "afferent_surface_y",
+                              s)
+            TRY_GET_ATTRIBUTE(preSurfaceZs, edges, double, "afferent_surface_z",
+                              s)
+            TRY_GET_ATTRIBUTE(postCenterXs, edges, double, "efferent_center_x",
+                              s)
+            TRY_GET_ATTRIBUTE(postCenterYs, edges, double, "efferent_center_y",
+                              s)
+            TRY_GET_ATTRIBUTE(postCenterZs, edges, double, "efferent_center_z",
+                              s)
+            TRY_GET_ATTRIBUTE(postSurfaceXs, edges, double,
+                              "efferent_surface_x", s)
+            TRY_GET_ATTRIBUTE(postSurfaceYs, edges, double,
+                              "efferent_surface_y", s)
+            TRY_GET_ATTRIBUTE(postSurfaceZs, edges, double,
+                              "efferent_surface_z", s)
 
-            for(size_t j = 0; j < preGids.size(); j++)
+            for (size_t j = 0; j < preGids.size(); j++)
             {
                 FILTER(static_cast<uint32_t>(preGids[j] + 1))
 
@@ -768,12 +812,12 @@ struct Synapses::SonataImpl : public Synapses::InternalBaseImpl
         };
 
         const auto& synapsePop = _circuit->getSynapsePopulation();
-        if(!synapsePop.empty())
+        if (!synapsePop.empty())
             synapsePosFunc(synapsePop);
         else
             synapsePosFunc(*edgeStorage.populationNames().begin());
 
-        if(!_afferent)
+        if (!_afferent)
         {
             swap(_preCenterPositionX, _postCenterPositionX);
             swap(_preCenterPositionY, _postCenterPositionY);
@@ -790,15 +834,15 @@ struct Synapses::SonataImpl : public Synapses::InternalBaseImpl
             return;
 
         // Until C++17 call_once is using decay_copy
-        std::call_once(_attributeFlag, &SonataImpl::_loadAttributes, this, &_gids,
-                       &_filterGIDs);
+        std::call_once(_attributeFlag, &SonataImpl::_loadAttributes, this,
+                       &_gids, &_filterGIDs);
     }
 
     void _ensureAttributes() const
     {
         // Until C++17 call_once is using decay_copy
-        std::call_once(_attributeFlag, &SonataImpl::_loadAttributes, this, &_gids,
-                       &_filterGIDs);
+        std::call_once(_attributeFlag, &SonataImpl::_loadAttributes, this,
+                       &_gids, &_filterGIDs);
     }
 
     void _ensurePositions() const
@@ -813,64 +857,67 @@ Synapses::Synapses(const Circuit& circuit, const GIDSet& gids,
                    const GIDSet& filterGIDs, const bool afferent,
                    const SynapsePrefetch prefetch)
 {
-    if(circuit._impl->getSynapseSource().find("sonata") != std::string::npos)
-        _impl = std::shared_ptr<Synapses::BaseImpl>(new SonataImpl(circuit, gids, filterGIDs, afferent, prefetch));
+    if (circuit._impl->getSynapseSource().find("sonata") != std::string::npos)
+        _impl = std::shared_ptr<Synapses::BaseImpl>(
+            new SonataImpl(circuit, gids, filterGIDs, afferent, prefetch));
     else
-        _impl = std::shared_ptr<Synapses::BaseImpl>(new Impl(circuit, gids, filterGIDs, afferent, prefetch));
+        _impl = std::shared_ptr<Synapses::BaseImpl>(
+            new Impl(circuit, gids, filterGIDs, afferent, prefetch));
 }
 
 Synapses::Synapses(const Circuit& circuit, const GIDSet& gids,
                    const std::string& source, const SynapsePrefetch prefetch)
 {
-    if(circuit._impl->getSynapseSource().find("sonata") != std::string::npos)
-        _impl = std::shared_ptr<Synapses::BaseImpl>(new SonataImpl(circuit, gids, source, prefetch));
+    if (circuit._impl->getSynapseSource().find("sonata") != std::string::npos)
+        _impl = std::shared_ptr<Synapses::BaseImpl>(
+            new SonataImpl(circuit, gids, source, prefetch));
     else
-        _impl = std::shared_ptr<Synapses::BaseImpl>(new Impl(circuit, gids, source, prefetch));
+        _impl = std::shared_ptr<Synapses::BaseImpl>(
+            new Impl(circuit, gids, source, prefetch));
 }
 
-Synapses::~Synapses()
-{
-}
+Synapses::~Synapses() {}
 
 Synapses::Synapses(const SynapsesStream& stream)
 {
-    if(stream._impl->_externalSource.empty())
+    if (stream._impl->_externalSource.empty())
     {
-        if(stream._impl->_circuit._impl->getSynapseSource().find("sonata") != std::string::npos)
+        if (stream._impl->_circuit._impl->getSynapseSource().find("sonata") !=
+            std::string::npos)
             _impl = std::shared_ptr<Synapses::BaseImpl>(
-                        new SonataImpl(
-                            stream._impl->_circuit, stream._impl->_gids,
-                            stream._impl->_filterGIDs, stream._impl->_afferent,
-                            stream._impl->_prefetch));
+                new SonataImpl(stream._impl->_circuit, stream._impl->_gids,
+                               stream._impl->_filterGIDs,
+                               stream._impl->_afferent,
+                               stream._impl->_prefetch));
         else
             _impl = std::shared_ptr<Synapses::BaseImpl>(
-                           new Impl(
-                               stream._impl->_circuit, stream._impl->_gids,
-                               stream._impl->_filterGIDs, stream._impl->_afferent,
-                               stream._impl->_prefetch));
+                new Impl(stream._impl->_circuit, stream._impl->_gids,
+                         stream._impl->_filterGIDs, stream._impl->_afferent,
+                         stream._impl->_prefetch));
     }
     else
     {
-        if(stream._impl->_circuit._impl->getSynapseSource().find("sonata") != std::string::npos)
+        if (stream._impl->_circuit._impl->getSynapseSource().find("sonata") !=
+            std::string::npos)
             _impl = std::shared_ptr<Synapses::BaseImpl>(
-                           new SonataImpl(
-                               stream._impl->_circuit, stream._impl->_gids,
+                new SonataImpl(stream._impl->_circuit, stream._impl->_gids,
                                stream._impl->_externalSource,
                                stream._impl->_prefetch));
         else
             _impl = std::shared_ptr<Synapses::BaseImpl>(
-                           new Impl(
-                               stream._impl->_circuit, stream._impl->_gids,
-                               stream._impl->_externalSource,
-                               stream._impl->_prefetch));
+                new Impl(stream._impl->_circuit, stream._impl->_gids,
+                         stream._impl->_externalSource,
+                         stream._impl->_prefetch));
     }
 }
 
-Synapses::Synapses(const Synapses& rhs) noexcept : _impl(rhs._impl)
+Synapses::Synapses(const Synapses& rhs) noexcept
+    : _impl(rhs._impl)
 {
 }
 
-Synapses::Synapses(Synapses&& rhs) noexcept : _impl(std::move(rhs._impl))
+Synapses::Synapses(Synapses&& rhs) noexcept
+    : _impl(std::move(rhs._impl))
 {
 }
 
@@ -1111,4 +1158,4 @@ const int* Synapses::efficacies() const
     impl._ensureAttributes();
     return impl._efficacy.get();
 }
-}
+} // namespace brain
