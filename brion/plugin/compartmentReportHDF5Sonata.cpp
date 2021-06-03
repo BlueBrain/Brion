@@ -424,8 +424,6 @@ bool CompartmentReportHDF5Sonata::_loadFrame(const size_t frameNumber,
     size_t targetOffset = 0;
     for (const auto interval : intervals)
     {
-        // const auto sourceOffset = boost::icl::lower(interval);
-        // const auto count = boost::icl::upper(interval) - sourceOffset;
         const auto sourceOffset = interval.first;
         const auto count = interval.second - sourceOffset;
         const auto& slice =

@@ -1,6 +1,17 @@
 Changelog {#Changelog}
 =========
 
+# Release 3.3.3
+
+* [325](https://github.com/BlueBrain/Brion/pull/325)
+  3.3.3 Release preparation
+* [324](https://github.com/BlueBrain/Brion/pull/324)
+  Sort returned SONATA report values by node ID
+* [323](https://github.com/BlueBrain/Brion/pull/323)
+  Adds warning message about using Brion to read SONATA format
+* [322](https://github.com/BlueBrain/Brion/pull/322)
+  Update copyright and funding notice
+
 # Release 3.3.2
 
 * [321](https://github.com/BlueBrain/Brion/pull/321)
