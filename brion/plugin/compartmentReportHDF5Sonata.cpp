@@ -82,6 +82,9 @@ std::vector<hsize_t> _computeChunkDims(const std::vector<uint32_t>& cellSizes,
         frameSize += size;
     const auto valuesPerChunk = chunkSize / sizeof(float);
 
+    if (frameSize == 0)
+        throw std::runtime_error("Frame size is 0");
+
     auto frames = hsize_t(
         std::floor(std::sqrt(valuesPerChunk / median / cellsToFramesRatio)));
     // Exceptionally, if the number of frames choosen doesn't fill properly
@@ -395,22 +398,25 @@ bool CompartmentReportHDF5Sonata::_loadFrame(const size_t frameNumber,
 {
     std::lock_guard<std::mutex> mutex(detail::hdf5Mutex());
 
-    // Considering the case of full frames first
+    std::vector<std::pair<size_t, size_t>> intervals;
     if (!_subset)
     {
-        _data->select({frameNumber, 0}, {1, _sourceMapping.frameSize})
-            .read(buffer);
-        return true;
+        intervals.reserve(_sourceMapping.cellOffsets.size());
+        for (size_t i = 0; i < _sourceMapping.cellOffsets.size(); ++i)
+        {
+            const auto start = _sourceMapping.cellOffsets[i];
+            intervals.emplace_back(start, start + _sourceMapping.cellSizes[i]);
+        }
     }
-
-    // Computing the slices of data to be read
-    boost::icl::interval_set<size_t> intervals;
-    for (const auto index : _subsetIndices)
+    else
     {
-        auto start = _sourceMapping.cellOffsets[index];
-        auto end = start + _sourceMapping.cellSizes[index];
-        auto interval = boost::icl::interval<size_t>::right_open(start, end);
-        intervals.insert(interval);
+        intervals.reserve(_subsetIndices.size());
+        for (const auto index : _subsetIndices)
+        {
+            const auto start = _sourceMapping.cellOffsets[index];
+            const auto end = start + _sourceMapping.cellSizes[index];
+            intervals.emplace_back(start, end);
+        }
     }
 
     // Reading slice by slice and processing all cells contained in a given
@@ -418,58 +424,16 @@ bool CompartmentReportHDF5Sonata::_loadFrame(const size_t frameNumber,
     size_t targetOffset = 0;
     for (const auto interval : intervals)
     {
-        const auto sourceOffset = boost::icl::lower(interval);
-        const auto count = boost::icl::upper(interval) - sourceOffset;
+        // const auto sourceOffset = boost::icl::lower(interval);
+        // const auto count = boost::icl::upper(interval) - sourceOffset;
+        const auto sourceOffset = interval.first;
+        const auto count = interval.second - sourceOffset;
         const auto& slice =
             _data->select({frameNumber, sourceOffset}, {1, count});
         slice.read(buffer + targetOffset);
         targetOffset += count;
     }
     return true;
-}
-
-bool CompartmentReportHDF5Sonata::_loadFrames(size_t frameNumber,
-                                              size_t frameCount,
-                                              float* buffer) const
-{
-    std::lock_guard<std::mutex> mutex(detail::hdf5Mutex());
-
-    // Considering first the cases where the read operation is on a single
-    // slice of the input file full frames or single cell traces first
-    if (!_subset || _gids.size() == 1)
-    {
-        const size_t offset =
-            _gids.size() == 1 ? _sourceMapping.cellOffsets[_subsetIndices[0]]
-                              : 0;
-        const auto& slice =
-            _data->select({frameNumber, offset}, {frameCount, getFrameSize()});
-        slice.read(buffer);
-        return true;
-    }
-
-    // Checking if the target GIDs are a single slice in the source file.
-    // Cells do not overlap, so the verification is just comparing the
-    // difference of the range extrema to the total size to read.
-    size_t start = std::numeric_limits<size_t>::max();
-    size_t end = 0;
-    for (const auto i : _subsetIndices)
-    {
-        const auto offset = _sourceMapping.cellOffsets[i];
-        const auto size = _sourceMapping.cellSizes[i];
-        start = std::min(start, offset);
-        end = std::max(end, offset + size);
-    }
-    if (_targetMapping.frameSize == end - start)
-    {
-        const auto& slice =
-            _data->select({frameNumber, start},
-                          {frameCount, _targetMapping.frameSize});
-        slice.read(buffer);
-        return true;
-    }
-
-    return CompartmentReportCommon::_loadFrames(frameNumber, frameCount,
-                                                buffer);
 }
 
 void CompartmentReportHDF5Sonata::_readMetaData()

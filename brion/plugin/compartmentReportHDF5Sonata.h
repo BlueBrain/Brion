@@ -38,7 +38,8 @@ namespace plugin
 class CompartmentReportHDF5Sonata : public CompartmentReportCommon
 {
 public:
-    explicit CompartmentReportHDF5Sonata(const CompartmentReportInitData& initData);
+    explicit CompartmentReportHDF5Sonata(
+        const CompartmentReportInitData& initData);
     virtual ~CompartmentReportHDF5Sonata();
 
     static bool handles(const CompartmentReportInitData& initData);
@@ -98,9 +99,6 @@ private:
     MappingInfo _targetMapping;
 
     bool _loadFrame(size_t timestamp, float* buffer) const final;
-    // Overriden for better efficiency in single cell traces.
-    bool _loadFrames(size_t frameNumber, size_t frameCount,
-                     float* buffer) const final;
 
     void _updateMapping(const GIDSet& gids);
 
@@ -116,7 +114,7 @@ private:
 
     void _parseWriteOptions(const URI& uri);
 };
-}
-}
+} // namespace plugin
+} // namespace brion
 
 #endif
