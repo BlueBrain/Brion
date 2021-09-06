@@ -882,37 +882,34 @@ Synapses::Synapses(const SynapsesStream& stream)
 {
     const auto synapseSource = stream._impl->_circuit._impl->getSynapseSource();
     // Do some AMAZING CHECKS to guess wether its SONATA or not
-    if(stream._impl->_externalSource.empty())
+    if (stream._impl->_externalSource.empty())
     {
-        if(synapseSource.find("sonata") != std::string::npos ||
-                synapseSource.find("edges.h5") != std::string::npos)
+        if (synapseSource.find("sonata") != std::string::npos ||
+            synapseSource.find("edges.h5") != std::string::npos)
             _impl = std::shared_ptr<Synapses::BaseImpl>(
-                        new SonataImpl(
-                            stream._impl->_circuit, stream._impl->_gids,
-                            stream._impl->_filterGIDs, stream._impl->_afferent,
-                            stream._impl->_prefetch));
+                new SonataImpl(stream._impl->_circuit, stream._impl->_gids,
+                               stream._impl->_filterGIDs,
+                               stream._impl->_afferent,
+                               stream._impl->_prefetch));
         else
             _impl = std::shared_ptr<Synapses::BaseImpl>(
-                           new Impl(
-                               stream._impl->_circuit, stream._impl->_gids,
-                               stream._impl->_filterGIDs, stream._impl->_afferent,
-                               stream._impl->_prefetch));
+                new Impl(stream._impl->_circuit, stream._impl->_gids,
+                         stream._impl->_filterGIDs, stream._impl->_afferent,
+                         stream._impl->_prefetch));
     }
     else
     {
-        if(synapseSource.find("sonata") != std::string::npos ||
-                synapseSource.find("edges.h5") != std::string::npos)
+        if (synapseSource.find("sonata") != std::string::npos ||
+            synapseSource.find("edges.h5") != std::string::npos)
             _impl = std::shared_ptr<Synapses::BaseImpl>(
-                           new SonataImpl(
-                               stream._impl->_circuit, stream._impl->_gids,
+                new SonataImpl(stream._impl->_circuit, stream._impl->_gids,
                                stream._impl->_externalSource,
                                stream._impl->_prefetch));
         else
             _impl = std::shared_ptr<Synapses::BaseImpl>(
-                           new Impl(
-                               stream._impl->_circuit, stream._impl->_gids,
-                               stream._impl->_externalSource,
-                               stream._impl->_prefetch));
+                new Impl(stream._impl->_circuit, stream._impl->_gids,
+                         stream._impl->_externalSource,
+                         stream._impl->_prefetch));
     }
 }
 
