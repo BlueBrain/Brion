@@ -880,10 +880,12 @@ Synapses::~Synapses() {}
 
 Synapses::Synapses(const SynapsesStream& stream)
 {
+    const auto synapseSource = stream._impl->_circuit._impl->getSynapseSource();
+    // Do some AMAZING CHECKS to guess wether its SONATA or not
     if (stream._impl->_externalSource.empty())
     {
-        if (stream._impl->_circuit._impl->getSynapseSource().find("sonata") !=
-            std::string::npos)
+        if (synapseSource.find("sonata") != std::string::npos ||
+            synapseSource.find("edges.h5") != std::string::npos)
             _impl = std::shared_ptr<Synapses::BaseImpl>(
                 new SonataImpl(stream._impl->_circuit, stream._impl->_gids,
                                stream._impl->_filterGIDs,
@@ -897,8 +899,8 @@ Synapses::Synapses(const SynapsesStream& stream)
     }
     else
     {
-        if (stream._impl->_circuit._impl->getSynapseSource().find("sonata") !=
-            std::string::npos)
+        if (synapseSource.find("sonata") != std::string::npos ||
+            synapseSource.find("edges.h5") != std::string::npos)
             _impl = std::shared_ptr<Synapses::BaseImpl>(
                 new SonataImpl(stream._impl->_circuit, stream._impl->_gids,
                                stream._impl->_externalSource,
