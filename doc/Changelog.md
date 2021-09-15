@@ -1,6 +1,13 @@
 Changelog {#Changelog}
 =========
 
+# Release 3.3.4
+
+* [327](https://github.com/BlueBrain/Brion/pull/327)
+  3.3.4 Release preparation
+* [326](https://github.com/BlueBrain/Brion/pull/326)
+  Add extra checks to choose the appropiate synapse handling class
+
 # Release 3.3.3
 
 * [325](https://github.com/BlueBrain/Brion/pull/325)
