@@ -1,0 +1,18 @@
+Stefan Eilemann
+Juan Bautista Hernando Vieites
+Jonas Karlsson
+Daniel Nachbaur
+Pawel Jozef Podhajski
+Nadir Roman Guerrero
+
+Grigori Chevtchenko (contributor)
+Nicolas Cornu (contributor)
+Adrien Devresse (contributor)
+Raphael Dumusc (contributor)
+Cyrille Favreau (contributor)
+Michael Emiel Gevaert (contributor)
+Mohamed Ghaith Kaabi (contributor)
+Judit Planas Carbonell (contributor)
+Arseniy Povolotskiy (contributor)
+Pablo Toharia (contributor)
+Jafet Villafranca Diaz (contributor)
