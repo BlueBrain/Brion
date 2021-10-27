@@ -54,7 +54,9 @@ and writing files which store the Blue Brain data model.
   
 #### Disclaimer
 
-Although Brion is capable of reading SONATA format nodes, edges and reports, the use is experimental and not supported officially. To read the SONATA format, it is encouraged the usage of libsonata (https://github.com/BlueBrain/libsonata)
+Although Brion is capable of reading SONATA format nodes, edges and reports, the use is
+experimental and not supported officially. To read the SONATA format, it is encouraged
+the usage of libsonata (https://github.com/BlueBrain/libsonata)
 
 ### High level library
 
@@ -85,17 +87,35 @@ Building from source is as simple as:
 
 ## Funding & Acknowledgment
 
-The development of this software was supported by funding to the Blue Brain Project, a research center of the École polytechnique fédérale de Lausanne (EPFL), from the Swiss government’s ETH Board of the Swiss Federal Institutes of Technology
+The development of this software was supported by funding to the Blue Brain Project,
+a research center of the École polytechnique fédérale de Lausanne (EPFL), from the
+Swiss government’s ETH Board of the Swiss Federal Institutes of Technology.
+
+This project has received funding from the European Union’s FP7-ICT programme
+under Grant Agreement No. 604102 (Human Brain Project RUP).
+
+This project has received funding from the European Union's Horizon 2020 Framework
+Programme for Research and Innovation under the Specific Grant Agreement No. 720270
+(Human Brain Project SGA1).
+
+This project is based upon work supported by the King Abdullah University of Science
+and Technology (KAUST) Office of Sponsored Research (OSR) under Award No. OSR-2017-CRG6-3438.
 
 ## License
 
-Brion is licensed under the LGPL, unless noted otherwise, e.g., for external dependencies. See file LICENSE.txt for the full license.
+Brion is licensed under the LGPL, unless noted otherwise, e.g., for external dependencies.
+See file LICENSE.txt for the full license.
 
 Copyright (c) 2008-2021 Blue Brain Project/EPFL
 
-This library is free software; you can redistribute it and/or modify it under the terms of the GNU Lesser General Public License version 3 as published by the Free Software Foundation.
+This library is free software; you can redistribute it and/or modify it under the terms of the
+GNU Lesser General Public License version 3 as published by the Free Software Foundation.
 
-This library is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU Lesser General Public License for more details.
+This library is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY;
+without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+See the GNU Lesser General Public License for more details.
 
-You should have received a copy of the GNU Lesser General Public License along with this library; if not, write to the Free Software Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA
+You should have received a copy of the GNU Lesser General Public License along with this library;
+if not, write to the Free Software Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston,
+MA 02110-1301 USA
 
