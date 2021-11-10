@@ -204,11 +204,3 @@ install(
   FILE BrionConfig.cmake
   DESTINATION share/Brion/CMake
 )
-
-export(
-    EXPORT Brion-targets
-    FILE "share/Brion/CMake/BrionConfig.cmake"
-)
-
-export(PACKAGE Brion)
-export(PACKAGE Brain)
