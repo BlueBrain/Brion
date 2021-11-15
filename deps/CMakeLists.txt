@@ -1,4 +1,4 @@
-# Mandatory dependencis not found in the system will be built
+# Mandatory dependencies not found in the system will be built
 # from submodules
 
 include(FetchContent)
