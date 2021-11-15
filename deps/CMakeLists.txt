@@ -75,7 +75,7 @@ endif()
 # =============================================================================
 # MorphIO
 # =============================================================================
-if(NOT MorphIO_FOUND AND NOT TARGET MorphIO::morphio_shared)
+if(NOT MorphIO_FOUND AND NOT TARGET MorphIO::morphio)
     if(NOT EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/MorphIO")
         message(STATUS "Downloading MorphIO from submodules")
         FetchContent_Declare(
