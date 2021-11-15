@@ -13,6 +13,8 @@ function(compile_options TARGET_NAME)
                                 -Winvalid-pch
                                 -Winit-self
                                 -Wno-unknown-pragmas
+                                -Wno-deprecated-copy
+                                -Wno-error=unused-function
                                 -Wshadow
                                 -Werror
                                 -fPIC

@@ -1,97 +1,97 @@
-include(ExternalProject)
-
-# Mandatory dependencis not found in the system will be built
+# Mandatory dependencies not found in the system will be built
 # from submodules
 
-# --------------------------------------------------------------------------------
+include(FetchContent)
+
+# =============================================================================
 # GLM
-# --------------------------------------------------------------------------------
+# =============================================================================
 if(NOT glm_FOUND AND NOT TARGET glm)
-    message(STATUS "Gathering GLM from submodules")
-
-    add_library(glm INTERFACE)
-    target_include_directories(glm INTERFACE
-        $<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}>
-        $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/glm>)
-
-    # Export target
-    install(TARGETS glm
-        EXPORT Brion-targets
-        LIBRARY DESTINATION lib
-        ARCHIVE DESTINATION lib
-        INCLUDES DESTINATION include
-    )
-    install(TARGETS glm
-        EXPORT Brain-targets
-        LIBRARY DESTINATION lib
-        ARCHIVE DESTINATION lib
-        INCLUDES DESTINATION include
-    )
-
-    install(DIRECTORY glm/glm DESTINATION include)
-endif()
-
-# WAR for https://github.com/g-truc/glm/issues/854
-add_compile_definitions(GLM_FORCE_CXX14)
-if(CMAKE_COMPILER_IS_GNUCXX AND NOT CMAKE_CXX_COMPILER_VERSION VERSION_LESS 8.0)
-  target_compile_options(glm INTERFACE -Wno-error=class-memaccess)
-endif()
-# Disable warnings
-target_compile_options(glm INTERFACE -w)
-
-# --------------------------------------------------------------------------------
-# sonata (which also brings HighFive)
-# --------------------------------------------------------------------------------
-if(NOT sonata_FOUND AND NOT TARGET sonata::sonata_shared)
-    message(STATUS "Gathering sonata from submodules")
-    # Sonata links against gcov, but on Apple this library is not included
-    # on the library path
-    if(APPLE)
-        add_library(gcov INTERFACE)
-        # Export target
-        install(TARGETS gcov EXPORT gcov-targets)
-        install(EXPORT gcov-targets DESTINATION share/gcov/CMake)
-        set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -fprofile-instr-generate -fcoverage-mapping")
-        set(CMAKE_C_FLAGS_DEBUG "${CMAKE_C_FLAGS_DEBUG} -fprofile-instr-generate -fcoverage-mapping")
+    if(NOT EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/glm")
+        message(STATUS "Downloading GLM from submodules")
+        FetchContent_Declare(
+            glm
+            GIT_REPOSITORY https://github.com/g-truc/glm.git
+            GIT_TAG        9749727c2db4742369219e1d452f43e918734b4e
+            GIT_SHALLOW ON
+            GIT_SUBMODULES_RECURSE OFF
+            SOURCE_DIR ${CMAKE_CURRENT_SOURCE_DIR}/glm
+        )
+        FetchContent_Populate(glm)
     endif()
-    set(SONATA_VERSION "0.1.8")
-    add_subdirectory(libsonata)
-    add_library(sonatainter INTERFACE)
-    target_include_directories(sonatainter INTERFACE ${CMAKE_CURRENT_LIST_DIR}/libsonata/include)
-    target_link_libraries(sonatainter INTERFACE sonata_shared)
-    add_library(sonata::sonata_shared ALIAS sonatainter)
+    option(GLM_QUIET "No CMake Message" ON)
+    option(GLM_TEST_ENABLE "Build unit tests" OFF)
+    option(GLM_TEST_ENABLE_CXX_14 "Enable C++ 14" ON)
+    set(CMAKE_EXPORT_NO_PACKAGE_REGISTRY ON)
+    set(CMAKE_INSTALL_LIBDIR lib)
+    add_subdirectory(glm)
+
+    # WAR for https://github.com/g-truc/glm/issues/854
+    target_compile_options(glm INTERFACE -Wno-class-memaccess -Wno-error=class-memaccess)
 endif()
 
-# --------------------------------------------------------------------------------
-# HighFive (If sonata came from a package but HighFive was not found)
-# --------------------------------------------------------------------------------
+# =============================================================================
+# libsonata
+# =============================================================================
+if(NOT sonata_FOUND AND NOT TARGET sonata::sonata_shared)
+    if(NOT EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/libsonata")
+        message(STATUS "Downloading libsonata from submodules")
+        FetchContent_Declare(
+            libsonata
+            GIT_REPOSITORY https://github.com/BlueBrain/libsonata.git
+            GIT_TAG        v0.1.9
+            GIT_SHALLOW OFF # Required for its own CMakeLists.txt not to fail
+            GIT_SUBMODULES_RECURSE ON
+            SOURCE_DIR ${CMAKE_CURRENT_SOURCE_DIR}/libsonata
+        )
+        FetchContent_Populate(libsonata)
+    endif()
+
+    set(EXTLIB_FROM_SUBMODULES ON CACHE BOOL "" FORCE)
+    set(SONATA_TESTS OFF CACHE BOOL "" FORCE)
+    add_subdirectory(libsonata)
+    add_library(sonata::sonata_shared ALIAS sonata_shared)
+endif()
+
+# =============================================================================
+# HighFive
+# =============================================================================
 if(NOT HighFive_FOUND AND NOT TARGET HighFive)
-    message(STATUS "Gathering HighFive from submodules")
+    if(NOT EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/HighFive")
+        message(STATUS "Downloading HighFive from submodules")
+        FetchContent_Declare(
+            HighFive
+            GIT_REPOSITORY https://github.com/BlueBrain/HighFive.git
+            GIT_TAG        v2.3.1
+            GIT_SHALLOW ON
+            GIT_SUBMODULES_RECURSE OFF
+            SOURCE_DIR ${CMAKE_CURRENT_SOURCE_DIR}/HighFive
+        )
+        FetchContent_Populate(HighFive)
+    endif()
     add_subdirectory(HighFive)
 endif()
 
-# --------------------------------------------------------------------------------
-# MVDTool
-# --------------------------------------------------------------------------------
-if(NOT MVDTool_FOUND AND NOT TARGET MVDTool)
-    message(STATUS "Gathering MVDTool from submodules")
-    find_package(Boost 1.41 QUIET REQUIRED COMPONENTS system)
-    find_package(HDF5 QUIET REQUIRED)
-
-    add_library(MVDTool INTERFACE)
-
-    target_include_directories(MVDTool SYSTEM INTERFACE
-          $<BUILD_INTERFACE:${CMAKE_CURRENT_LIST_DIR}/MVDTool/include>
-          $<INSTALL_INTERFACE:include>)
-    target_include_directories(MVDTool SYSTEM INTERFACE ${Boost_INCLUDE_DIR})
-    target_link_libraries(MVDTool INTERFACE HighFive)
-    target_compile_definitions(MVDTool INTERFACE -DH5_USE_BOOST)
-endif()
-
-# --------------------------------------------------------------------------------
+# =============================================================================
 # MorphIO
-# --------------------------------------------------------------------------------
+# =============================================================================
 if(NOT MorphIO_FOUND AND NOT TARGET MorphIO::morphio_shared)
+    if(NOT EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/MorphIO")
+        message(STATUS "Downloading MorphIO from submodules")
+        FetchContent_Declare(
+            MorphIO
+            GIT_REPOSITORY https://github.com/BlueBrain/MorphIO.git
+            GIT_TAG        v3.3.2
+            GIT_SHALLOW ON
+            GIT_SUBMODULES_RECURSE ON
+            SOURCE_DIR ${CMAKE_CURRENT_SOURCE_DIR}/MorphIO
+        )
+        FetchContent_Populate(MorphIO)
+    endif()
+
+    set(BUILD_BINDINGS OFF CACHE BOOL "" FORCE)
+    set(MORPHIO_TESTS OFF CACHE BOOL "" FORCE)
+
     set(MORPHIO_INCLUDE_DIR ${CMAKE_CURRENT_SOURCE_DIR}/MorphIO/include/)
 
     # Deps
@@ -101,14 +101,42 @@ if(NOT MorphIO_FOUND AND NOT TARGET MorphIO::morphio_shared)
     target_include_directories(lexertl SYSTEM INTERFACE MorphIO/3rdparty/lexertl14/include)
 
     # Retrieve version
-    set(MORPHIO_VERSION_STRING "2.3.10")
-    set(MorphIO_VERSION_MAJOR 2)
+    set(MORPHIO_VERSION_STRING "3.3.2")
+    set(MorphIO_VERSION_MAJOR 3)
     set(MorphIO_VERSION_MINOR 3)
-    set(MorphIO_VERSION_PATCH 10)
+    set(MorphIO_VERSION_PATCH 2)
     # Morphio
     add_subdirectory(MorphIO/src)
     add_library(morphiointer INTERFACE)
     target_include_directories(morphiointer INTERFACE ${CMAKE_CURRENT_LIST_DIR}/MorphIO/include)
     target_link_libraries(morphiointer INTERFACE morphio_shared)
-    add_library(MorphIO::morphio_shared ALIAS morphiointer)
+    add_library(MorphIO::morphio ALIAS morphiointer)
+endif()
+
+# =============================================================================
+# MVDTool
+# =============================================================================
+if(NOT MVDTool_FOUND AND NOT TARGET MVDTool)
+    if(NOT EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/MVDTool")
+        message(STATUS "Downloading MVDTool from submodules")
+        FetchContent_Declare(
+            MVDTool
+            GIT_REPOSITORY https://github.com/BlueBrain/MVDTool.git
+            GIT_TAG        v2.4.2
+            GIT_SHALLOW ON
+            #GIT_SUBMODULES # Empty string from 3.16 onwards will not clone submodules
+            GIT_SUBMODULES_RECURSE OFF
+            SOURCE_DIR ${CMAKE_CURRENT_SOURCE_DIR}/MVDTool
+        )
+        FetchContent_Populate(MVDTool)
+    endif()
+
+    add_library(MVDTool INTERFACE)
+
+    target_include_directories(MVDTool SYSTEM INTERFACE
+          $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/MVDTool/include>
+          $<INSTALL_INTERFACE:include>)
+    target_include_directories(MVDTool SYSTEM INTERFACE ${Boost_INCLUDE_DIR})
+    target_link_libraries(MVDTool INTERFACE HighFive)
+    target_compile_definitions(MVDTool INTERFACE -DH5_USE_BOOST)
 endif()
