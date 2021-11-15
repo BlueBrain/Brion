@@ -133,7 +133,7 @@ target_include_directories(Brion SYSTEM PUBLIC ${Boost_INCLUDE_DIRS})
 # Link libraries
 target_link_libraries(Brion PUBLIC glm)
 target_link_libraries(Brion PRIVATE HighFive)
-target_link_libraries(Brion PRIVATE MorphIO::morphio_shared)
+target_link_libraries(Brion PRIVATE MorphIO::morphio)
 target_link_libraries(Brion PRIVATE ${Boost_FILESYSTEM_LIBRARIES})
 target_link_libraries(Brion PRIVATE ${Boost_REGEX_LIBRARIES})
 target_link_libraries(Brion PRIVATE ${Boost_IOSTREAMS_LIBRARIES})
