@@ -69,7 +69,7 @@ float Soma::getMeanRadius() const
 
     const auto centroid = _computeCentroid(points);
     float radius = 0;
-    for (const auto point : points)
+    for (const auto& point : points)
         radius += glm::length(glm::vec3(point) - centroid);
     return radius /= float(points.size());
 }

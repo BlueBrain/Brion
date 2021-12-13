@@ -149,7 +149,7 @@ std::string SimulationConfig::getSpikesFilepath() const
 Strings SimulationConfig::getCompartmentReportNames() const
 {
     Strings names;
-    for (const auto item : _impl->reportFilepaths)
+    for (const auto& item : _impl->reportFilepaths)
         names.push_back(item.first);
     return names;
 }
