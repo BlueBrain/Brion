@@ -1,6 +1,11 @@
 Changelog {#Changelog}
 =========
 
+# Release 3.3.5
+
+* [332](https://github.com/BlueBrain/Brion/pull/332)
+  Improves submodule handling. Fix morphio target aliasing
+
 # Release 3.3.4
 
 * [327](https://github.com/BlueBrain/Brion/pull/327)
