@@ -35,7 +35,7 @@ glm::vec3 _computeCentroid(const Vector4fs& points)
     centroid /= static_cast<float>(points.size());
     return centroid;
 }
-}
+} // namespace
 
 Soma::Soma(Morphology::ImplPtr morphology)
     : _morphology(morphology)
@@ -105,5 +105,5 @@ Sections Soma::getChildren() const
         result.push_back(Section(id, _morphology));
     return result;
 }
-}
-}
+} // namespace neuron
+} // namespace brain
