@@ -69,9 +69,6 @@ else()
     set(BRION_USE_CUSTOM_LIB_DIR ON)
 endif()
 
-# Configure used python version
-set(USE_PYTHON_VERSION 3)
-
 # Python wheels needed variables
 set(BRION_DESCRIPTION "The Blue Brain C++ I/O library")
 set(BRION_MAINTAINER_NAME "Blue Brain Project")
