@@ -422,7 +422,7 @@ bool CompartmentReportHDF5Sonata::_loadFrame(const size_t frameNumber,
     // Reading slice by slice and processing all cells contained in a given
     // slice
     size_t targetOffset = 0;
-    for (const auto interval : intervals)
+    for (const auto& interval : intervals)
     {
         const auto sourceOffset = interval.first;
         const auto count = interval.second - sourceOffset;
