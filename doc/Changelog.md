@@ -3,6 +3,11 @@ Changelog {#Changelog}
 
 # Release 3.3.5
 
+* [339](https://github.com/BlueBrain/Brion/pull/339)
+  Set numpy minimun version to 1.19.5 and release preparation
+
+# Release 3.3.5
+
 * [332](https://github.com/BlueBrain/Brion/pull/332)
   Improves submodule handling. Fix morphio target aliasing
 
