@@ -13,7 +13,7 @@ from setuptools.command.test import test
 from distutils.version import LooseVersion
 
 
-REQUIRED_NUMPY_VERSION = "numpy>=1.7.0"
+REQUIRED_NUMPY_VERSION = "numpy>=1.19.5"
 MIN_CPU_CORES = 2
 
 
