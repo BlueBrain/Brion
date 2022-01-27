@@ -1,6 +1,13 @@
 Changelog {#Changelog}
 =========
 
+# Release 3.3.7
+
+* [342](https://github.com/BlueBrain/Brion/pull/342)
+  3.3.7 Release preparation
+* [341](https://github.com/BlueBrain/Brion/pull/341)
+  Updates GLM submodules from 0.9.9.3 to 0.9.9.8
+
 # Release 3.3.6
 
 * [339](https://github.com/BlueBrain/Brion/pull/339)
