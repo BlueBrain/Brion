@@ -46,7 +46,7 @@ if(NOT sonata_FOUND AND NOT TARGET sonata::sonata_shared)
         FetchContent_Declare(
             libsonata
             GIT_REPOSITORY https://github.com/BlueBrain/libsonata.git
-            GIT_TAG        v0.1.9
+            GIT_TAG        v0.1.11
             GIT_SHALLOW OFF # Required for its own CMakeLists.txt not to fail
             GIT_SUBMODULES_RECURSE ON
             SOURCE_DIR ${CMAKE_CURRENT_SOURCE_DIR}/libsonata
@@ -88,7 +88,7 @@ if(NOT MorphIO_FOUND AND NOT TARGET MorphIO::morphio)
         FetchContent_Declare(
             MorphIO
             GIT_REPOSITORY https://github.com/BlueBrain/MorphIO.git
-            GIT_TAG        v3.3.2
+            GIT_TAG        v3.3.3
             GIT_SHALLOW ON
             GIT_SUBMODULES_RECURSE ON
             SOURCE_DIR ${CMAKE_CURRENT_SOURCE_DIR}/MorphIO
@@ -108,10 +108,10 @@ if(NOT MorphIO_FOUND AND NOT TARGET MorphIO::morphio)
     target_include_directories(lexertl SYSTEM INTERFACE MorphIO/3rdparty/lexertl14/include)
 
     # Retrieve version
-    set(MORPHIO_VERSION_STRING "3.3.2")
+    set(MORPHIO_VERSION_STRING "3.3.3")
     set(MorphIO_VERSION_MAJOR 3)
     set(MorphIO_VERSION_MINOR 3)
-    set(MorphIO_VERSION_PATCH 2)
+    set(MorphIO_VERSION_PATCH 3)
     # Morphio
     add_subdirectory(MorphIO/src)
     add_library(morphiointer INTERFACE)
@@ -129,7 +129,7 @@ if(NOT MVDTool_FOUND AND NOT TARGET MVDTool)
         FetchContent_Declare(
             MVDTool
             GIT_REPOSITORY https://github.com/BlueBrain/MVDTool.git
-            GIT_TAG        v2.4.2
+            GIT_TAG        v2.4.4
             GIT_SHALLOW ON
             #GIT_SUBMODULES # Empty string from 3.16 onwards will not clone submodules
             GIT_SUBMODULES_RECURSE OFF
