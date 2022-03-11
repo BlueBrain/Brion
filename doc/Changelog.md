@@ -1,6 +1,13 @@
 Changelog {#Changelog}
 =========
 
+# Release 3.3.8
+
+* [344](https://github.com/BlueBrain/Brion/pull/344)
+  3.3.8 Release preparation
+* [343](https://github.com/BlueBrain/Brion/pull/343)
+  Update dependencies to latest version and fixes legacy HDF5 compartment reader
+
 # Release 3.3.7
 
 * [342](https://github.com/BlueBrain/Brion/pull/342)
