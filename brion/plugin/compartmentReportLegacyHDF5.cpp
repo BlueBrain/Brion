@@ -163,7 +163,7 @@ bool CompartmentReportLegacyHDF5::handles(
         CompartmentReportLegacyHDF5(
             CompartmentReportInitData(initData.getURI()));
     }
-    catch (const std::runtime_error&)
+    catch (const std::runtime_error& e)
     {
         return false;
     }
@@ -506,21 +506,28 @@ void CompartmentReportLegacyHDF5::_readMetaData(const HighFive::File& file)
         uint32_t gid;
         tmp >> gid;
 
+
         auto dataset = _openDataset(*_file, gid);
         dataset.getAttribute(dataAttributes[1]).read(_startTime);
         dataset.getAttribute(dataAttributes[2]).read(_endTime);
         dataset.getAttribute(dataAttributes[3]).read(_timestep);
+
         try
         {
-            dataset.getAttribute(dataAttributes[4]).read(_dunit);
+            char dunit[0xff]; // Just to make sure it will have room..
+            dataset.getAttribute(dataAttributes[4]).read(dunit);
+            _dunit = std::string(dunit);
         }
         catch (const HighFive::AttributeException&)
         {
             _dunit = "mV";
         }
+
         try
         {
-            dataset.getAttribute(dataAttributes[5]).read(_tunit);
+            char tunit[0xff];
+            dataset.getAttribute(dataAttributes[5]).read(tunit);
+            _tunit = std::string(tunit);
         }
         catch (const HighFive::AttributeException&)
         {

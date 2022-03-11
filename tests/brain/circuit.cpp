@@ -235,32 +235,6 @@ BOOST_AUTO_TEST_CASE(brain_empty_gids_lists)
     BOOST_CHECK(mvd3.getElectrophysiologyTypes(nil).empty());
 }
 
-namespace
-{
-void _checkMorphology(const brain::neuron::Morphology& morphology,
-                      const std::string& other)
-{
-    const brion::Morphology reference{brain::URI{
-        BBP_TESTDATA + ("/local/morphologies/01.07.08/h5/" + other)}};
-    BOOST_CHECK(morphology.getPoints() == reference.getPoints());
-}
-void _checkMorphology(const brain::neuron::Morphology& morphology,
-                      const std::string& other,
-                      const glm::mat4& transform)
-{
-    const brain::neuron::Morphology reference{
-        brain::URI{BBP_TESTDATA + ("/local/morphologies/01.07.08/h5/" + other)},
-        transform};
-    const auto& p = morphology.getPoints();
-    const auto& q = reference.getPoints();
-    BOOST_REQUIRE(reference.getTransformation() == transform);
-
-    BOOST_REQUIRE(p.size() == q.size());
-    for (size_t i = 0; i != p.size(); ++i)
-        BOOST_CHECK_SMALL(glm::length(p[i] - q[i]), 0.0002f);
-}
-}
-
 BOOST_AUTO_TEST_CASE(test_gid_out_of_range)
 {
     typedef boost::shared_ptr<const brain::Circuit> CircuitPtr;

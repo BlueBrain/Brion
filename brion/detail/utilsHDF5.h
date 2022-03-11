@@ -24,6 +24,7 @@
 
 #include <highfive/H5Attribute.hpp>
 #include <highfive/H5DataType.hpp>
+#include <highfive/bits/H5Converter_misc.hpp>
 
 namespace HighFive
 {
@@ -31,88 +32,57 @@ class File;
 
 namespace details
 {
-// ARRAY SIZES
-// -------------------------------------------------------
+
 template <typename T>
-struct array_dims<std::vector<glm::tvec1<T>>>
-{
-    static const size_t value = 2;
+struct inspector<std::vector<glm::tvec1<T>>> {
+    using type = std::vector<T>;
+    using value_type = T;
+    using base_type = typename inspector<value_type>::base_type;
+
+    static constexpr size_t ndim = 2;
+    static constexpr size_t recursive_ndim = ndim + inspector<value_type>::recursive_ndim;
 };
 
 template <typename T>
-struct array_dims<std::vector<glm::tvec2<T>>>
-{
-    static const size_t value = 2;
+struct inspector<std::vector<glm::tvec2<T>>> {
+    using type = std::vector<T>;
+    using value_type = T;
+    using base_type = typename inspector<value_type>::base_type;
+
+    static constexpr size_t ndim = 2;
+    static constexpr size_t recursive_ndim = ndim + inspector<value_type>::recursive_ndim;
 };
 
 template <typename T>
-struct array_dims<std::vector<glm::tvec3<T>>>
-{
-    static const size_t value = 2;
+struct inspector<std::vector<glm::tvec3<T>>> {
+    using type = std::vector<T>;
+    using value_type = T;
+    using base_type = typename inspector<value_type>::base_type;
+
+    static constexpr size_t ndim = 2;
+    static constexpr size_t recursive_ndim = ndim + inspector<value_type>::recursive_ndim;
 };
 
 template <typename T>
-struct array_dims<std::vector<glm::tvec4<T>>>
-{
-    static const size_t value = 2;
-};
+struct inspector<std::vector<glm::tvec4<T>>> {
+    using type = std::vector<T>;
+    using value_type = T;
+    using base_type = typename inspector<value_type>::base_type;
 
-// ARRAY TYPES
-// -------------------------------------------------------
-template <typename T>
-struct type_of_array<std::vector<glm::tvec1<T>>>
-{
-    typedef T type;
-};
-
-template <typename T>
-struct type_of_array<std::vector<glm::tvec2<T>>>
-{
-    typedef T type;
-};
-
-template <typename T>
-struct type_of_array<std::vector<glm::tvec3<T>>>
-{
-    typedef T type;
-};
-
-template <typename T>
-struct type_of_array<std::vector<glm::tvec4<T>>>
-{
-    typedef T type;
-};
-
-template <typename T>
-struct type_of_array<glm::tvec1<T>>
-{
-    typedef T type;
-};
-
-template <typename T>
-struct type_of_array<glm::tvec2<T>>
-{
-    typedef T type;
-};
-
-template <typename T>
-struct type_of_array<glm::tvec3<T>>
-{
-    typedef T type;
-};
-
-template <typename T>
-struct type_of_array<glm::tvec4<T>>
-{
-    typedef T type;
+    static constexpr size_t ndim = 2;
+    static constexpr size_t recursive_ndim = ndim + inspector<value_type>::recursive_ndim;
 };
 
 // DATA CONVERTERS
 // -------------------------------------------------------
+
 template <typename T>
-struct data_converter<std::vector<glm::tvec1<T>>>
+struct container_converter<std::vector<glm::tvec1<T>>, T>
 {
-    inline data_converter(const DataSpace&) noexcept {}
+    inline container_converter(const DataSpace&) noexcept
+    {
+    }
+
     inline T* transform_read(std::vector<glm::tvec1<T>>& vector) const
     {
         _buf = std::vector<T>(vector.size(), T());
@@ -140,9 +110,12 @@ struct data_converter<std::vector<glm::tvec1<T>>>
 };
 
 template <typename T>
-struct data_converter<std::vector<glm::tvec2<T>>>
+struct container_converter<std::vector<glm::tvec2<T>>, T>
 {
-    inline data_converter(const DataSpace&) noexcept {}
+    inline container_converter(const DataSpace&) noexcept
+    {
+    }
+
     inline T* transform_read(std::vector<glm::tvec2<T>>& vector) const
     {
         _buf = std::vector<T>(vector.size() * 2, T());
@@ -176,16 +149,19 @@ struct data_converter<std::vector<glm::tvec2<T>>>
 };
 
 template <typename T>
-struct data_converter<std::vector<glm::tvec3<T>>>
+struct container_converter<std::vector<glm::tvec3<T>>, T>
 {
-    inline data_converter(const DataSpace&) noexcept {}
+    inline container_converter(const DataSpace&)
+    {
+    }
+
     inline T* transform_read(std::vector<glm::tvec3<T>>& vector) const
     {
         _buf = std::vector<T>(vector.size() * 3, T());
         return reinterpret_cast<T*>(_buf.data());
     }
 
-    inline const T* transform_write(const std::vector<glm::tvec3<T>>& vector) const
+    inline const T* transform_write(const std::vector<glm::tvec3<T>>& vector) const noexcept
     {
         _buf = std::vector<T>(vector.size() * 3, T());
         //#pragma omp parallel for
@@ -213,9 +189,12 @@ struct data_converter<std::vector<glm::tvec3<T>>>
 };
 
 template <typename T>
-struct data_converter<std::vector<glm::tvec4<T>>>
+struct container_converter<std::vector<glm::tvec4<T>>, T>
 {
-    inline data_converter(const DataSpace&) noexcept {}
+    inline container_converter(const DataSpace&) noexcept
+    {
+    }
+
     inline T* transform_read(std::vector<glm::tvec4<T>>& vector) const
     {
         _buf = std::vector<T>(vector.size() * 4, T());
@@ -252,44 +231,6 @@ struct data_converter<std::vector<glm::tvec4<T>>>
 };
 
 }// namespace details
-
-template <>
-inline AtomicType<brion::SectionType>::AtomicType()
-{
-    _hid = H5Tcopy(H5T_NATIVE_INT);
-}
-
-template <>
-inline AtomicType<brion::MorphologyVersion>::AtomicType()
-{
-    _hid = H5Tcopy(H5T_NATIVE_INT);
-}
-
-
-template<>
-inline AtomicType<glm::ivec2>::AtomicType()
-{
-    _hid = H5Tcopy(H5T_NATIVE_INT);
-}
-
-template<>
-inline AtomicType<glm::vec2>::AtomicType()
-{
-    _hid = H5Tcopy(H5T_NATIVE_INT);
-}
-
-template<>
-inline AtomicType<glm::vec3>::AtomicType()
-{
-    _hid = H5Tcopy(H5T_NATIVE_INT);
-}
-
-template<>
-inline AtomicType<glm::vec4>::AtomicType()
-{
-    _hid = H5Tcopy(H5T_NATIVE_INT);
-}
-
 } // namespace HighFive
 
 namespace brion

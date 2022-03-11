@@ -52,7 +52,6 @@ set(BRION_HEADERS
   detail/mesh.h
   detail/meshBinary.h
   detail/meshHDF5.h
-  detail/morphologyHDF5.h
   detail/skipWhiteSpace.h
   detail/utils.h
   detail/utilsHDF5.h

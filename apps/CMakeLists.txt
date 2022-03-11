@@ -20,16 +20,6 @@ install(TARGETS spikeConverter
     RUNTIME DESTINATION bin
 )
 
-add_executable(morphologyConverter morphologyConverter.cpp)
-target_link_libraries(morphologyConverter PRIVATE Brion)
-target_link_libraries(morphologyConverter PRIVATE HighFive)
-target_link_libraries(morphologyConverter PRIVATE ${Boost_PROGRAM_OPTIONS_LIBRARY})
-
-install(TARGETS morphologyConverter
-    EXPORT morphologyConverter-targets
-    RUNTIME DESTINATION bin
-)
-
 add_executable(compartmentConverter compartmentConverter.cpp)
 target_link_libraries(compartmentConverter PRIVATE Brion)
 target_link_libraries(compartmentConverter PRIVATE ${Boost_SYSTEM_LIBRARIES})
