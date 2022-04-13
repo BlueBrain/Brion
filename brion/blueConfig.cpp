@@ -255,9 +255,15 @@ public:
         return std::string();
     }
 
-    const std::string& getCurrentDir()
+    const std::string getCurrentDir()
     {
-        return get(defaultSection, getDefaultSection(), BLUECONFIG_CURRENT_DIR_KEY);
+        std::string ret = get(defaultSection, getDefaultSection(), BLUECONFIG_CURRENT_DIR_KEY);
+
+        if(ret.empty()) {
+            ret = fs::system_complete(sourceParentPath).parent_path().string();
+        }
+
+        return ret;
     }
 
     const std::string getOutputRoot()
