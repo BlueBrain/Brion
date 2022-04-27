@@ -106,7 +106,7 @@ and Technology (KAUST) Office of Sponsored Research (OSR) under Award No. OSR-20
 Brion is licensed under the LGPL, unless noted otherwise, e.g., for external dependencies.
 See file LICENSE.txt for the full license.
 
-Copyright (c) 2008-2021 Blue Brain Project/EPFL
+Copyright (c) 2008-2022 Blue Brain Project/EPFL
 
 This library is free software; you can redistribute it and/or modify it under the terms of the
 GNU Lesser General Public License version 3 as published by the Free Software Foundation.
