@@ -1,6 +1,15 @@
 Changelog {#Changelog}
 =========
 
+# Release 3.3.9
+
+* [350](https://github.com/BlueBrain/Brion/pull/350)
+  3.3.9 Release preparation
+* [349](https://github.com/BlueBrain/Brion/pull/349)
+  Update libsonata and Highfive to latest releases. Removes meshHDF5
+* [345](https://github.com/BlueBrain/Brion/pull/345)
+  Fix currentDir handling
+
 # Release 3.3.8
 
 * [344](https://github.com/BlueBrain/Brion/pull/344)
