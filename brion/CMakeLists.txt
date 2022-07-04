@@ -1,5 +1,5 @@
 # Copyright (c) 2013-2017, EPFL/Blue Brain Project
-#                          Daniel Nachbaur <daniel.nachbaur@epfl.ch>
+# Daniel Nachbaur <daniel.nachbaur@epfl.ch>
 #
 # This file is part of Brion <https://github.com/BlueBrain/Brion>
 #
@@ -13,7 +13,7 @@ if(CPPCHECK_VERSION VERSION_LESS 1.78)
 endif()
 
 configure_file(version.h.in
-               ${CMAKE_BINARY_DIR}/include/brion/version.h)
+  ${CMAKE_BINARY_DIR}/include/brion/version.h)
 
 set(BRION_PUBLIC_HEADERS
   api.h
@@ -43,7 +43,7 @@ set(BRION_PUBLIC_HEADERS
   log.h
   uint128_t.h
   uri.h
-  )
+)
 
 set(BRION_HEADERS
   constants.h
@@ -51,7 +51,6 @@ set(BRION_HEADERS
   detail/json.hpp
   detail/mesh.h
   detail/meshBinary.h
-  detail/meshHDF5.h
   detail/skipWhiteSpace.h
   detail/utils.h
   detail/utilsHDF5.h
@@ -72,7 +71,7 @@ set(BRION_HEADERS
   plugin/utilsHDF5.h
   serializable.h
   threadPool.h
-  )
+)
 
 set(BRION_SOURCES
   blueConfig.cpp
@@ -110,14 +109,15 @@ set(BRION_SOURCES
   uint128_t.cpp
   uri.cpp
   version.cpp
-  )
+)
 
 # Create library target
 add_library(Brion SHARED ${BRION_PUBLIC_HEADERS} ${BRION_HEADERS} ${BRION_SOURCES})
 
 # Compile options (CMake/CompileOptions.cmake)
 compile_options(Brion)
-#target_compile_options(Brion PRIVATE -Werror -O3)# -fno-strict-aliasing)
+
+# target_compile_options(Brion PRIVATE -Werror -O3)# -fno-strict-aliasing)
 if(MSVC)
   target_compile_definitions(Brion PUBLIC /wd4251) # missing dll-interface for H5::Exception
 endif()
@@ -125,8 +125,8 @@ endif()
 # Include directories
 # Normal includes
 target_include_directories(Brion PUBLIC
-                            "$<BUILD_INTERFACE:${PROJECT_SOURCE_DIR};${PROJECT_SOURCE_DIR}/brion/plugin;${CMAKE_BINARY_DIR}/include>"
-                            "$<INSTALL_INTERFACE:include;include/brion>")
+  "$<BUILD_INTERFACE:${PROJECT_SOURCE_DIR};${PROJECT_SOURCE_DIR}/brion/plugin;${CMAKE_BINARY_DIR}/include>"
+  "$<INSTALL_INTERFACE:include;include/brion>")
 target_include_directories(Brion SYSTEM PUBLIC ${Boost_INCLUDE_DIRS})
 
 # Link libraries
@@ -137,33 +137,33 @@ target_link_libraries(Brion PRIVATE ${Boost_FILESYSTEM_LIBRARIES})
 target_link_libraries(Brion PRIVATE ${Boost_REGEX_LIBRARIES})
 target_link_libraries(Brion PRIVATE ${Boost_IOSTREAMS_LIBRARIES})
 target_link_libraries(Brion PRIVATE ${CMAKE_THREADS_LIB_INIT})
+
 if(UNIX AND NOT APPLE)
-    target_link_libraries(Brion PRIVATE dl)
-    target_link_libraries(Brion PRIVATE rt)
+  target_link_libraries(Brion PRIVATE dl)
+  target_link_libraries(Brion PRIVATE rt)
 endif()
 
 set_target_properties(Brion
-    PROPERTIES
-        VERSION ${BRION_VERSION_STRING}
-        SOVERSION ${BRION_VERSION_MAJOR}.${BRION_VERSION_MINOR}
+  PROPERTIES
+  VERSION ${BRION_VERSION_STRING}
+  SOVERSION ${BRION_VERSION_MAJOR}.${BRION_VERSION_MINOR}
 )
 
 # Export target
 install(TARGETS Brion
-    EXPORT Brion-targets
-    LIBRARY DESTINATION lib
-    ARCHIVE DESTINATION lib
-    INCLUDES DESTINATION include
+  EXPORT Brion-targets
+  LIBRARY DESTINATION lib
+  ARCHIVE DESTINATION lib
+  INCLUDES DESTINATION include
 )
 
 install(FILES ${CMAKE_BINARY_DIR}/include/brion/version.h
-        DESTINATION include/brion)
+  DESTINATION include/brion)
 
 install(DIRECTORY ${PROJECT_SOURCE_DIR}/brion
-        DESTINATION include
-        FILES_MATCHING PATTERN "*.h")
+  DESTINATION include
+  FILES_MATCHING PATTERN "*.h")
 
 install(DIRECTORY ${PROJECT_SOURCE_DIR}/brion
-        DESTINATION include
-        FILES_MATCHING PATTERN "*.ipp")
-
+  DESTINATION include
+  FILES_MATCHING PATTERN "*.ipp")

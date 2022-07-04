@@ -56,8 +56,7 @@ enum MeshStructure
 /** The supported formats for mesh files. */
 enum MeshFormat
 {
-    MESHFORMAT_BINARY,
-    MESHFORMAT_HDF5
+    MESHFORMAT_BINARY
 };
 
 /** The supported versions for mesh files. */
@@ -263,7 +262,7 @@ enum AccessMode
     MODE_READWRITE = MODE_READ | MODE_WRITE,
     MODE_READOVERWRITE = MODE_READ | MODE_OVERWRITE
 };
-}
-}
+} // namespace enums
+} // namespace brion
 
 #endif
