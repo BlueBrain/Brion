@@ -19,14 +19,13 @@
 
 #include "mesh.h"
 #include "detail/meshBinary.h"
-#include "detail/meshHDF5.h"
 #include "log.h"
 
 #include <boost/filesystem.hpp>
 
-#define ASSERT_WRITE                                             \
-    if (!_impl->_write)                                          \
-        BRION_THROW("Cannot not write read-only mesh file " + _impl->_source) \
+#define ASSERT_WRITE    \
+    if (!_impl->_write) \
+    BRION_THROW("Cannot not write read-only mesh file " + _impl->_source)
 
 namespace brion
 {
@@ -41,11 +40,6 @@ Mesh::Mesh(const std::string& source)
         _impl = new detail::MeshBinary(source);
         return;
     }
-    if (ext == ".h5" || ext == ".hdf5")
-    {
-        _impl = new detail::MeshHDF5(source);
-        return;
-    }
     BRION_THROW(source + " not a valid mesh file")
 }
 
@@ -58,9 +52,6 @@ Mesh::Mesh(const std::string& source, const MeshFormat format,
 
     switch (format)
     {
-    case MESHFORMAT_HDF5:
-        _impl = new detail::MeshHDF5(source, overwrite, version);
-        return;
     case MESHFORMAT_BINARY:
     default:
         _impl = new detail::MeshBinary(source, version);
@@ -236,4 +227,4 @@ void Mesh::flush()
     ASSERT_WRITE;
     _impl->flush();
 }
-}
+} // namespace brion

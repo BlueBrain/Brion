@@ -12,19 +12,19 @@ if(NOT glm_FOUND AND NOT TARGET glm)
         FetchContent_Declare(
             glm
             GIT_REPOSITORY https://github.com/g-truc/glm.git
-            GIT_TAG        0.9.9.8
+            GIT_TAG 0.9.9.8
             GIT_SHALLOW ON
             GIT_SUBMODULES_RECURSE OFF
             SOURCE_DIR ${CMAKE_CURRENT_SOURCE_DIR}/glm
         )
         FetchContent_Populate(glm)
     endif()
-    
+
     add_library(glm INTERFACE)
     target_include_directories(glm SYSTEM INTERFACE
-            $<BUILD_INTERFACE:${CMAKE_CURRENT_LIST_DIR}/glm>
-            $<INSTALL_INTERFACE:include>)
-            
+        $<BUILD_INTERFACE:${CMAKE_CURRENT_LIST_DIR}/glm>
+        $<INSTALL_INTERFACE:include>)
+
     install(TARGETS glm
         EXPORT Brion-targets
         LIBRARY DESTINATION lib
@@ -33,8 +33,7 @@ if(NOT glm_FOUND AND NOT TARGET glm)
     )
 
     install(DIRECTORY ${CMAKE_CURRENT_LIST_DIR}/glm/glm
-            DESTINATION include)
-            
+        DESTINATION include)
 endif()
 
 # =============================================================================
@@ -46,7 +45,7 @@ if(NOT sonata_FOUND AND NOT TARGET sonata::sonata_shared)
         FetchContent_Declare(
             libsonata
             GIT_REPOSITORY https://github.com/BlueBrain/libsonata.git
-            GIT_TAG        v0.1.11
+            GIT_TAG v0.1.13
             GIT_SHALLOW OFF # Required for its own CMakeLists.txt not to fail
             GIT_SUBMODULES_RECURSE ON
             SOURCE_DIR ${CMAKE_CURRENT_SOURCE_DIR}/libsonata
@@ -69,13 +68,14 @@ if(NOT HighFive_FOUND AND NOT TARGET HighFive)
         FetchContent_Declare(
             HighFive
             GIT_REPOSITORY https://github.com/BlueBrain/HighFive.git
-            GIT_TAG        v2.3.1
+            GIT_TAG v2.4.0
             GIT_SHALLOW ON
             GIT_SUBMODULES_RECURSE OFF
             SOURCE_DIR ${CMAKE_CURRENT_SOURCE_DIR}/HighFive
         )
         FetchContent_Populate(HighFive)
     endif()
+
     add_subdirectory(HighFive)
 endif()
 
@@ -88,7 +88,7 @@ if(NOT MorphIO_FOUND AND NOT TARGET MorphIO::morphio)
         FetchContent_Declare(
             MorphIO
             GIT_REPOSITORY https://github.com/BlueBrain/MorphIO.git
-            GIT_TAG        v3.3.3
+            GIT_TAG v3.3.3
             GIT_SHALLOW ON
             GIT_SUBMODULES_RECURSE ON
             SOURCE_DIR ${CMAKE_CURRENT_SOURCE_DIR}/MorphIO
@@ -112,6 +112,7 @@ if(NOT MorphIO_FOUND AND NOT TARGET MorphIO::morphio)
     set(MorphIO_VERSION_MAJOR 3)
     set(MorphIO_VERSION_MINOR 3)
     set(MorphIO_VERSION_PATCH 3)
+
     # Morphio
     add_subdirectory(MorphIO/src)
     add_library(morphiointer INTERFACE)
@@ -129,9 +130,10 @@ if(NOT MVDTool_FOUND AND NOT TARGET MVDTool)
         FetchContent_Declare(
             MVDTool
             GIT_REPOSITORY https://github.com/BlueBrain/MVDTool.git
-            GIT_TAG        v2.4.4
+            GIT_TAG v2.4.4
             GIT_SHALLOW ON
-            #GIT_SUBMODULES # Empty string from 3.16 onwards will not clone submodules
+
+            # GIT_SUBMODULES # Empty string from 3.16 onwards will not clone submodules
             GIT_SUBMODULES_RECURSE OFF
             SOURCE_DIR ${CMAKE_CURRENT_SOURCE_DIR}/MVDTool
         )
@@ -141,8 +143,8 @@ if(NOT MVDTool_FOUND AND NOT TARGET MVDTool)
     add_library(MVDTool INTERFACE)
 
     target_include_directories(MVDTool SYSTEM INTERFACE
-          $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/MVDTool/include>
-          $<INSTALL_INTERFACE:include>)
+        $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/MVDTool/include>
+        $<INSTALL_INTERFACE:include>)
     target_include_directories(MVDTool SYSTEM INTERFACE ${Boost_INCLUDE_DIR})
     target_link_libraries(MVDTool INTERFACE HighFive)
     target_compile_definitions(MVDTool INTERFACE -DH5_USE_BOOST)

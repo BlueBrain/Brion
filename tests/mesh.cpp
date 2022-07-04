@@ -40,8 +40,6 @@ BOOST_AUTO_TEST_CASE(test_invalid_open)
 
     BOOST_CHECK_THROW(brion::Mesh(path.string(), brion::MESHFORMAT_BINARY),
                       std::runtime_error);
-    BOOST_CHECK_THROW(brion::Mesh(path.string(), brion::MESHFORMAT_HDF5),
-                      std::runtime_error);
 }
 
 BOOST_AUTO_TEST_CASE(test_illegal_write)
