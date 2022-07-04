@@ -43,3 +43,5 @@ Pression/
 *.includes
 *.creator
 *.creator.user
+
+.vscode/
