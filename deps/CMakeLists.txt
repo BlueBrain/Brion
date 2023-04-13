@@ -20,8 +20,8 @@ if(NOT glm_FOUND AND NOT TARGET glm)
         FetchContent_Populate(glm)
     endif()
 
-    add_library(glm INTERFACE)
-    target_include_directories(glm SYSTEM INTERFACE
+     add_library(glm INTERFACE)
+     target_include_directories(glm SYSTEM INTERFACE
         $<BUILD_INTERFACE:${CMAKE_CURRENT_LIST_DIR}/glm>
         $<INSTALL_INTERFACE:include>)
 
@@ -34,6 +34,8 @@ if(NOT glm_FOUND AND NOT TARGET glm)
 
     install(DIRECTORY ${CMAKE_CURRENT_LIST_DIR}/glm/glm
         DESTINATION include)
+
+    add_library(glm::glm ALIAS glm)
 endif()
 
 # =============================================================================
