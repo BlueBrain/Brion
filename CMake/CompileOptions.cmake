@@ -14,6 +14,7 @@ function(compile_options TARGET_NAME)
                                 -Winit-self
                                 -Wno-unknown-pragmas
                                 -Wno-deprecated-copy
+                                -Wno-deprecated-declarations
                                 -Wno-error=unused-function
                                 -Wshadow
                                 -Werror
