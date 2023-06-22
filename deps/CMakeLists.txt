@@ -3,6 +3,8 @@
 
 include(FetchContent)
 
+find_package(Git REQUIRED)
+
 # =============================================================================
 # GLM
 # =============================================================================
@@ -47,16 +49,36 @@ if(NOT sonata_FOUND AND NOT TARGET sonata::sonata_shared)
         FetchContent_Declare(
             libsonata
             GIT_REPOSITORY https://github.com/BlueBrain/libsonata.git
-            GIT_TAG v0.1.20
-            GIT_SHALLOW OFF # Required for its own CMakeLists.txt not to fail
+            GIT_TAG v0.1.21
+            GIT_SHALLOW ON
             GIT_SUBMODULES_RECURSE ON
             SOURCE_DIR ${CMAKE_CURRENT_SOURCE_DIR}/libsonata
         )
         FetchContent_Populate(libsonata)
     endif()
 
+    # MorphIO requires latest version of HighFive. (2.7.1)
+    # libsonata version of HighFive is 2.4.0
+    # We have to use libsonata version of HighFive because libsonata CMakeLists.txt both adds
+    # the dependency and compiles the library.
+    # MorphIO separates this in two CMakeLists, so we can build the library and use libsonata HighFive.
+    # TL;DR WE CANNOT MAKE LIBSONATA USE A DIFFERENT HIGHTFIVE THAN ITS OWN. WE NEED TO UPDATE IT TO BE
+    # VALID FOR MORPHIO AS WELL.
+    message(STATUS "> Updating libsonata's HighFive to v2.7.1")
+    execute_process(
+        COMMAND ${GIT_EXECUTABLE} checkout v2.7.1
+        WORKING_DIRECTORY ${CMAKE_CURRENT_LIST_DIR}/libsonata/extlib/HighFive
+        RESULT_VARIABLE GIT_SUBMOD_RESULT
+        OUTPUT_QUIET)
+    if(NOT GIT_SUBMOD_RESULT EQUAL "0")
+        message(FATAL_ERROR "Could not update libsonata's HighFive dependency")
+    endif()
+
     set(EXTLIB_FROM_SUBMODULES ON CACHE BOOL "" FORCE)
     set(SONATA_TESTS OFF CACHE BOOL "" FORCE)
+    SET(SONATA_CXX_WARNINGS OFF CACHE BOOL "" FORCE)
+    set(CMAKE_CXX_STANDARD 14 CACHE STRING "" FORCE)
+
     add_subdirectory(libsonata)
     add_library(sonata::sonata_shared ALIAS sonata_shared)
 endif()
@@ -90,7 +112,7 @@ if(NOT MorphIO_FOUND AND NOT TARGET MorphIO::morphio)
         FetchContent_Declare(
             MorphIO
             GIT_REPOSITORY https://github.com/BlueBrain/MorphIO.git
-            GIT_TAG v3.3.3
+            GIT_TAG v3.3.5
             GIT_SHALLOW ON
             GIT_SUBMODULES_RECURSE ON
             SOURCE_DIR ${CMAKE_CURRENT_SOURCE_DIR}/MorphIO
@@ -109,11 +131,14 @@ if(NOT MorphIO_FOUND AND NOT TARGET MorphIO::morphio)
     add_library(lexertl INTERFACE)
     target_include_directories(lexertl SYSTEM INTERFACE MorphIO/3rdparty/lexertl14/include)
 
+    add_library(ghc_filesystem INTERFACE)
+    target_include_directories(ghc_filesystem SYSTEM INTERFACE MorphIO/3rdparty/ghc_filesystem/include)
+
     # Retrieve version
-    set(MORPHIO_VERSION_STRING "3.3.3")
+    set(MORPHIO_VERSION_STRING "3.3.5")
     set(MorphIO_VERSION_MAJOR 3)
     set(MorphIO_VERSION_MINOR 3)
-    set(MorphIO_VERSION_PATCH 3)
+    set(MorphIO_VERSION_PATCH 5)
 
     # Morphio
     add_subdirectory(MorphIO/src)

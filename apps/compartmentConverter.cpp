@@ -26,7 +26,6 @@
 
 #include <boost/filesystem.hpp>
 #include <boost/program_options.hpp>
-#include <boost/progress.hpp>
 
 #include <chrono>
 
@@ -62,7 +61,7 @@ void requireEqualCollections(const T& a, const T& b)
     REQUIRE_EQUAL(i, a.end());
     REQUIRE_EQUAL(j, b.end());
 }
-}
+} // namespace
 
 /**
  * Convert a compartment report to an HDF5 report.
@@ -108,16 +107,13 @@ int main(const int argc, char** argv)
 
     if (vm.count("help") || vm.count("input") == 0)
     {
-        std::cout << "Usage: " << argv[0]
-                  << " input-uri [output-uri=dummy://] [options]" << std::endl
+        std::cout << "Usage: " << argv[0] << " input-uri [output-uri=dummy://] [options]" << std::endl
                   << std::endl
                   << "Supported input and output URIs:" << std::endl
-                  << brion::CompartmentReport::getDescriptions()
-                  << std::endl
+                  << brion::CompartmentReport::getDescriptions() << std::endl
 #ifdef BRION_USE_BBPTESTDATA
                   << std::endl
-                  << "    Test data set (only for input):\n        test:"
-                  << std::endl
+                  << "    Test data set (only for input):\n        test:" << std::endl
 #endif
                   << std::endl
                   << options << std::endl;
@@ -125,8 +121,7 @@ int main(const int argc, char** argv)
     }
     if (vm.count("version"))
     {
-        std::cout << "Brion compartment report converter "
-                  << brion::Version::getString() << std::endl;
+        std::cout << "Brion compartment report converter " << brion::Version::getString() << std::endl;
         return EXIT_SUCCESS;
     }
 
@@ -136,8 +131,7 @@ int main(const int argc, char** argv)
     }
     catch (const po::error& e)
     {
-        std::cerr << "Command line parse error: " << e.what() << std::endl
-                  << options << std::endl;
+        std::cerr << "Command line parse error: " << e.what() << std::endl << options << std::endl;
         return EXIT_FAILURE;
     }
 
@@ -151,29 +145,25 @@ int main(const int argc, char** argv)
         return EXIT_FAILURE;
     }
 
-    const size_t maxFrames = vm.count("maxFrames") == 1
-                                 ? vm["maxFrames"].as<size_t>()
-                                 : std::numeric_limits<size_t>::max();
+    const size_t maxFrames =
+        vm.count("maxFrames") == 1 ? vm["maxFrames"].as<size_t>() : std::numeric_limits<size_t>::max();
 
     std::string input = vm["input"].as<std::string>();
 #ifdef BRION_USE_BBPTESTDATA
     if (input == "test:")
     {
-        input = std::string(BBP_TESTDATA) +
-                "/circuitBuilding_1000neurons/Neurodamus_output/voltages.bbp";
+        input = std::string(BBP_TESTDATA) + "/circuitBuilding_1000neurons/Neurodamus_output/voltages.bbp";
     }
 #endif
     if (input == vm["output"].as<std::string>())
     {
-        std::cerr << "Cowardly refusing to convert " << input << " onto itself"
-                  << std::endl;
+        std::cerr << "Cowardly refusing to convert " << input << " onto itself" << std::endl;
         return EXIT_FAILURE;
     }
 
     brion::URI inURI(input);
     brion::CompartmentReport in(inURI, brion::MODE_READ);
-    const std::chrono::high_resolution_clock::time_point loadTime1 
-                    = std::chrono::high_resolution_clock::now();
+    const std::chrono::high_resolution_clock::time_point loadTime1 = std::chrono::high_resolution_clock::now();
 
     const double start = in.getStartTime();
     const double step = in.getTimestep();
@@ -182,9 +172,8 @@ int main(const int argc, char** argv)
     if (vm.count("dump"))
     {
         std::cout << "Compartment report " << inURI << ":" << std::endl
-                  << "  " << (end - start) / step << " frames: " << start
-                  << ".." << end << " / " << step << " " << in.getTimeUnit()
-                  << std::endl
+                  << "  " << (end - start) / step << " frames: " << start << ".." << end << " / " << step << " "
+                  << in.getTimeUnit() << std::endl
                   << "  " << in.getGIDs().size() << " neurons" << std::endl
                   << "  " << in.getFrameSize() << " compartments" << std::endl;
         return EXIT_SUCCESS;
@@ -209,8 +198,7 @@ int main(const int argc, char** argv)
     {
         try
         {
-            outURI.setPath(
-                boost::filesystem::canonical(inURI.getPath()).generic_string());
+            outURI.setPath(boost::filesystem::canonical(inURI.getPath()).generic_string());
         }
         catch (const boost::filesystem::filesystem_error&)
         {
@@ -219,14 +207,12 @@ int main(const int argc, char** argv)
         }
     }
 
-    const std::chrono::high_resolution_clock::time_point loadTime2 
-                    = std::chrono::high_resolution_clock::now();
-    const std::chrono::duration<float> loadTimeSpan 
-                    = std::chrono::duration_cast<std::chrono::duration<float>>(loadTime2 - loadTime1);
+    const std::chrono::high_resolution_clock::time_point loadTime2 = std::chrono::high_resolution_clock::now();
+    const std::chrono::duration<float> loadTimeSpan =
+        std::chrono::duration_cast<std::chrono::duration<float>>(loadTime2 - loadTime1);
     float loadTime = loadTimeSpan.count();
 
-    const std::chrono::high_resolution_clock::time_point writeTime1
-                    = std::chrono::high_resolution_clock::now();
+    const std::chrono::high_resolution_clock::time_point writeTime1 = std::chrono::high_resolution_clock::now();
 
     brion::CompartmentReport to(outURI, brion::MODE_OVERWRITE);
     to.writeHeader(start, end, step, in.getDataUnit(), in.getTimeUnit());
@@ -257,23 +243,20 @@ int main(const int argc, char** argv)
         }
     }
 
-    const std::chrono::high_resolution_clock::time_point writeTime2 
-                    = std::chrono::high_resolution_clock::now();
+    const std::chrono::high_resolution_clock::time_point writeTime2 = std::chrono::high_resolution_clock::now();
 
-    const std::chrono::duration<float> writeTimeSpan 
-                    = std::chrono::duration_cast<std::chrono::duration<float>>(writeTime2 - writeTime1);
+    const std::chrono::duration<float> writeTimeSpan =
+        std::chrono::duration_cast<std::chrono::duration<float>>(writeTime2 - writeTime1);
     float writeTime = writeTimeSpan.count();
     // Adding step / 2 to the window to avoid off by 1 errors during truncation
     const size_t nFrames = (end - start + step * 0.5) / step;
-    boost::progress_display progress(nFrames);
 
     for (size_t frameIndex = 0; frameIndex < nFrames; ++frameIndex)
     {
         // Making the timestamp fall in the middle of the frame
         const double timestamp = start + frameIndex * step + step * 0.5;
 
-        const std::chrono::high_resolution_clock::time_point loadPivot1 
-                    = std::chrono::high_resolution_clock::now();
+        const std::chrono::high_resolution_clock::time_point loadPivot1 = std::chrono::high_resolution_clock::now();
 
         brion::floatsPtr data;
         try
@@ -286,10 +269,9 @@ int main(const int argc, char** argv)
             ::exit(EXIT_FAILURE);
         }
 
-        const std::chrono::high_resolution_clock::time_point loadPivot2 
-                    = std::chrono::high_resolution_clock::now();
-        const std::chrono::duration<float> loadPivotSpan 
-                    = std::chrono::duration_cast<std::chrono::duration<float>>(loadPivot2 - loadPivot1);
+        const std::chrono::high_resolution_clock::time_point loadPivot2 = std::chrono::high_resolution_clock::now();
+        const std::chrono::duration<float> loadPivotSpan =
+            std::chrono::duration_cast<std::chrono::duration<float>>(loadPivot2 - loadPivot1);
         loadTime += loadPivotSpan.count();
 
         if (!data)
@@ -300,8 +282,7 @@ int main(const int argc, char** argv)
 
         const brion::floats& values = *data.get();
 
-        const std::chrono::high_resolution_clock::time_point witePivot1 
-            = std::chrono::high_resolution_clock::now();
+        const std::chrono::high_resolution_clock::time_point witePivot1 = std::chrono::high_resolution_clock::now();
 
         if (isFrameSorted)
         {
@@ -329,31 +310,24 @@ int main(const int argc, char** argv)
                 return EXIT_FAILURE;
         }
 
-        const std::chrono::high_resolution_clock::time_point witePivot2 
-            = std::chrono::high_resolution_clock::now();
-        const std::chrono::duration<float> writePivotSpan 
-                    = std::chrono::duration_cast<std::chrono::duration<float>>(witePivot2 - witePivot1);
+        const std::chrono::high_resolution_clock::time_point witePivot2 = std::chrono::high_resolution_clock::now();
+        const std::chrono::duration<float> writePivotSpan =
+            std::chrono::duration_cast<std::chrono::duration<float>>(witePivot2 - witePivot1);
         writeTime += writePivotSpan.count();
-        ++progress;
     }
 
-    const std::chrono::high_resolution_clock::time_point flushPivot1 
-            = std::chrono::high_resolution_clock::now();
+    const std::chrono::high_resolution_clock::time_point flushPivot1 = std::chrono::high_resolution_clock::now();
     to.flush();
-    const std::chrono::high_resolution_clock::time_point flushPivot2 
-            = std::chrono::high_resolution_clock::now();
-    const std::chrono::duration<float> flushPivotSpan 
-                    = std::chrono::duration_cast<std::chrono::duration<float>>(flushPivot2 - flushPivot1);
+    const std::chrono::high_resolution_clock::time_point flushPivot2 = std::chrono::high_resolution_clock::now();
+    const std::chrono::duration<float> flushPivotSpan =
+        std::chrono::duration_cast<std::chrono::duration<float>>(flushPivot2 - flushPivot1);
     writeTime += flushPivotSpan.count();
 
-    std::cout << "Converted " << inURI << " to " << outURI << " (in "
-              << size_t(loadTime) << " out " << size_t(writeTime) << " ms, "
-              << gids.size() << " cells X " << nFrames << " frames)"
-              << std::endl;
+    std::cout << "Converted " << inURI << " to " << outURI << " (in " << size_t(loadTime) << " out "
+              << size_t(writeTime) << " ms, " << gids.size() << " cells X " << nFrames << " frames)" << std::endl;
 
     if (vm.count("compare"))
     {
-        progress.restart(nFrames);
         brion::CompartmentReport result(outURI, brion::MODE_READ);
 
         REQUIRE_EQUAL(in.getStartTime(), result.getStartTime());
@@ -396,7 +370,6 @@ int main(const int argc, char** argv)
                         REQUIRE_EQUAL((*frame1)[o1], (*frame2)[o2]);
                 }
             }
-            ++progress;
         }
     }
 

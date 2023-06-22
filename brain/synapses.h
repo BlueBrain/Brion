@@ -219,10 +219,13 @@ public:
     /** @internal */
     struct BaseImpl
     {
-        virtual ~BaseImpl(){}
+        virtual ~BaseImpl() {}
+        virtual void _ensureGIDs() = 0;
+        virtual void _ensureAttributes() = 0;
+        virtual void _ensurePositions() = 0;
     };
     /** @internal */
-    std::shared_ptr<const BaseImpl> _impl;
+    std::shared_ptr<BaseImpl> _impl;
 
 private:
     struct InternalBaseImpl;
@@ -230,11 +233,9 @@ private:
     struct SonataImpl;
 
     friend struct detail::SynapsesStream;
-    Synapses(const Circuit& circuit, const GIDSet& gids,
-             const GIDSet& filterGIDs, bool afferent, SynapsePrefetch prefetch);
-    Synapses(const Circuit& circuit, const GIDSet& gids,
-             const std::string& source, SynapsePrefetch prefetch);
+    Synapses(const Circuit& circuit, const GIDSet& gids, bool afferent, SynapsePrefetch prefetch);
+    Synapses(const Circuit& circuit, const GIDSet& gids, const std::string& source, SynapsePrefetch prefetch);
 };
-}
+} // namespace brain
 
 #endif
