@@ -72,7 +72,7 @@ target_include_directories(Brain SYSTEM PUBLIC ${Boost_INCLUDE_DIRS})
 
 # Link libraries
 target_link_libraries(Brain PUBLIC Brion)
-target_link_libraries(Brain PUBLIC glm::glm)
+target_link_libraries(Brain PUBLIC ${GLM_TARGET})
 target_link_libraries(Brain PRIVATE sonata::sonata_shared)
 target_link_libraries(Brain PRIVATE HighFive)
 target_link_libraries(Brain PRIVATE ${Boost_FILESYSTEM_LIBRARIES})

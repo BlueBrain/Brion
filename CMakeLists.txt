@@ -141,6 +141,11 @@ enable_testing()
 # Compile dependencies
 add_subdirectory(deps)
 
+set(GLM_TARGET glm)
+if(TARGET glm::glm)
+  set(GLM_TARGET glm::glm)
+endif()
+
 # Create the two main libraries
 add_subdirectory(brion)
 add_subdirectory(brain)
