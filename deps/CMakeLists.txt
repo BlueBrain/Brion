@@ -75,7 +75,7 @@ if(NOT HighFive_FOUND AND NOT TARGET HighFive)
         FetchContent_Declare(
             HighFive
             GIT_REPOSITORY https://github.com/BlueBrain/HighFive.git
-            GIT_TAG v2.4.0
+            GIT_TAG v2.7.1
             GIT_SHALLOW ON
             GIT_SUBMODULES_RECURSE OFF
             SOURCE_DIR ${CMAKE_CURRENT_SOURCE_DIR}/HighFive
